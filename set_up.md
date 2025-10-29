@@ -34,27 +34,29 @@ docker compose up -d
 This starts the PostgreSQL container on port 5432.
 
 **Database Migrations (Alembic)**
-Step 1 — Initialize Alembic
+Step 1 — Models (Database Tables)
 
-(Do this only once per project)
-```bash
-alembic init migrations
-```
-Step 2 — Update migrations/env.py
+All database tables are defined as Python classes inside the `backend/models/` folder.
+
+Step 2 — Update backend/migrations/env.py
 
 Make sure your models are imported so Alembic can detect them:
 ```python
 from backend.database import Base
-from backend.models import user, role
+from backend.models import user, role, ...
 
 target_metadata = Base.metadata
 ```
 Step 3 — Generate and apply migrations
 ```python
-alembic revision --autogenerate -m "create initial tables"
+alembic revision --autogenerate -m "migration message"
 alembic upgrade head
 ```
 This will create and apply database tables automatically.
+
+Alembic compares your models with the current database and writes a migration file under:
+
+```migrations/versions/<timestamp>migration message.py```
 
 **Viewing Tables**
 
