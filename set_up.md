@@ -128,3 +128,86 @@ http://127.0.0.1:8000/docs (Swagger UI)
 | **Apply Migration** | `alembic upgrade head` |
 | **Rollback Migration** | `alembic downgrade -1` |
 | **Run FastAPI** | `cd backend ; uvicorn app.main:app --reload` |
+
+---
+
+# Frontend Setup Guide 
+
+This document explains how to set up, run, and extend the frontend for the project.
+
+## Overview
+
+**Stack Used:**
+- **React** — Javascript library 
+- **Vite** — Build tool and dev server for React
+- **Axios** — HTTP client for API requests
+- **React Router DOM** — Routing for application
+
+---
+
+## 1. Prerequisites
+
+Make sure everyone has the following installed:
+
+| Tool | Version | Purpose |
+|------|----------|----------|
+| Node.js | 18+ | Frontend runtime |
+| npm | 8+ | Package management |
+| Git | Any | Version control |
+| VS Code | Recommended | Development |
+
+You can verify Node installation:
+```bash
+node -v
+npm -v
+```
+If not installed, download Node.js from https://nodejs.org/. 
+
+##  2. Set Up
+
+1. Navigate to the frontend folder
+```bash
+cd frontend
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Run the dev server
+```bash
+npm run dev
+```
+
+The app will be available at:
+
+http://localhost:5173
+
+## 10. Common Commands
+
+| Task | Command |
+|----------|------------|
+| **Run dev server** | `npm run dev` |
+| **Build for prod** | `npm run build` |
+| **Install dependencies** | `npm install` |
+
+---
+
+# Running Both Together
+
+1. In one terminal:
+```bash
+cd backend
+uvicorn app.main:app --reload
+```
+
+2. In another terminal:
+```bash
+cd frontend
+npm run dev
+```
+
+Now
+- Frontend runs at: http://localhost:5173
+- Backend runs at: http://127.0.0.1:8000
