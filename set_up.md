@@ -33,10 +33,10 @@ docker compose up -d
 ```
 This starts the PostgreSQL container on port 5432.
 
-**Database Migrations (Alembic)**
+**Making Database Migrations (Alembic)**
 Step 1 — Models (Database Tables)
 
-All database tables are defined as Python classes inside the `backend/models/` folder.
+All database tables are defined as Python classes inside the `backend/models/` folder. Make changes to the database here.
 
 Step 2 — Update backend/migrations/env.py
 
@@ -57,6 +57,8 @@ This will create and apply database tables automatically.
 Alembic compares your models with the current database and writes a migration file under:
 
 ```migrations/versions/<timestamp>migration message.py```
+
+Commit both your code and the Alembic migration file when you make database changes :) 
 
 **Viewing Tables**
 
@@ -117,4 +119,4 @@ http://127.0.0.1:8000/docs (Swagger UI)
 | **New Migration** | `alembic revision --autogenerate -m "message"` |
 | **Apply Migration** | `alembic upgrade head` |
 | **Rollback Migration** | `alembic downgrade -1` |
-| **Run FastAPI** | `uvicorn backend.main:app --reload` |
+| **Run FastAPI** | `cd backend ; uvicorn app.main:app --reload` |
