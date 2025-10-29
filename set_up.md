@@ -70,18 +70,19 @@ Once inside, you can run:
 \dt         -- list all tables
 \d users    -- describe the 'users' table
 SELECT * FROM users;  -- view table data
+\q -- quit shell
 ```
 
 Option 2 — Using a Database Client
 
 You can also connect via pgAdmin or TablePlus with these credentials:
-
+```
 Host: localhost
 Port: 5432
 Database: inventory_db
 Username: myuser
 Password: mypassword
-
+```
 **Running the FastAPI App**
 
 Step 1 — Install Dependencies
@@ -91,8 +92,10 @@ pip install -r requirements.txt
 
 Step 2 — Run the App
 
+
 ```bash
-uvicorn backend.main:app --reload
+cd backend
+uvicorn app.main:app --reload   
 ```
 
 The app will be available at:
