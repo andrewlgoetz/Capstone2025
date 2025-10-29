@@ -49,6 +49,7 @@ target_metadata = Base.metadata
 ```
 Step 3 — Generate and apply migrations
 ```python
+cd backend
 alembic revision --autogenerate -m "migration message"
 alembic upgrade head
 ```
@@ -59,6 +60,13 @@ Alembic compares your models with the current database and writes a migration fi
 ```migrations/versions/<timestamp>migration message.py```
 
 Commit both your code and the Alembic migration file when you make database changes :) 
+
+To get the latest change, team members have to run both:
+
+```
+git pull
+alembic upgrade head
+```
 
 **Viewing Tables**
 
