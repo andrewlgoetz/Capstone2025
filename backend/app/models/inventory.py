@@ -14,8 +14,9 @@ class InventoryItem(Base):
     quantity = Column(Integer, default=0)
     unit = Column(String)
     expiration_date = Column(Date, nullable=True)
-
     location_id = Column(Integer, ForeignKey("locations.location_id"), nullable=True)
-
     date_added = Column(DateTime(timezone=True), server_default=func.now())
     last_modified = Column(DateTime(timezone=True), onupdate=func.now())
+    # audit tracking
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    modified_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
