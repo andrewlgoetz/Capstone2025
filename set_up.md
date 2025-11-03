@@ -28,6 +28,8 @@ Make sure everyone has the following installed:
 
 ##  2. Set Up
 
+First make sure the docker app is up and running then run:
+
 ```bash
 docker compose up -d
 ```
