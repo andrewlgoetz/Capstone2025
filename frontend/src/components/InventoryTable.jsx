@@ -18,6 +18,13 @@ import {
   Typography,
   Paper,
   Button,
+  TextField,            // NEW
+  FormControl,          // NEW
+  InputLabel,           // NEW
+  Select,               // NEW
+  MenuItem,             // NEW
+  FormControlLabel,     // NEW
+  Checkbox,             // NEW
 } from '@mui/material'
 import api from '../services/api'
 
@@ -50,8 +57,21 @@ export default function InventoryTable({
   limit = 5,
   showColumns = null,
   onRowClick = null,
+  lowStockThreshold = 10,                   // NEW (configurable)
+  showFilterBar = true,                     // NEW (toggle toolbar)
 }) {
   const [sorting, setSorting] = useState([])
+
+   // --- Filter state (client-side) ----------------------------------------- NEW
+   const [search, setSearch] = useState('')
+   const [categoryFilter, setCategoryFilter] = useState('')
+   const [lowStockOnly, setLowStockOnly] = useState(false)
+
+   // NEW: expiry filters
+    const [expiryFrom, setExpiryFrom] = useState('');     // "YYYY-MM-DD"
+    const [expiryTo, setExpiryTo] = useState('');         // "YYYY-MM-DD"
+    const [onlyWithExpiry, setOnlyWithExpiry] = useState(false);
+    const [expiringInDays, setExpiringInDays] = useState(''); // e.g. "30" or ""
 
   // Decide which columns to render depending on mode & showColumns override
   const effectiveColumns = useMemo(() => {
@@ -86,18 +106,150 @@ export default function InventoryTable({
   // If widget mode, limit rows shown (but react-table still has full data available)
   const displayed = mode === 'widget' ? items.slice(0, limit) : items
 
+  // Build category list from current items (for dropdown) ------------------- NEW
+  const categories = useMemo(() => {
+    return Array.from(new Set(items.map((r) => r.category).filter(Boolean))).sort()
+  }, [items])
+
+  // NEW: date helpers
+const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null); // avoid TZ shifts
+const inNextNDays = (dateStr, n) => {
+  if (!dateStr || !n) return false;
+  const d = new Date(`${dateStr}T00:00:00`);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const limit = new Date(today); limit.setDate(limit.getDate() + Number(n));
+  return d >= today && d <= limit;
+};
+
+const filtered = useMemo(() => {
+  const q = search.trim().toLowerCase();
+  const from = parseYMD(expiryFrom);
+  const to   = parseYMD(expiryTo);
+
+  return displayed.filter((r) => {
+    const matchesText =
+      !q ||
+      [r.name, r.category, r.barcode, r.location_id]
+        .map((v) => String(v ?? '').toLowerCase())
+        .some((txt) => txt.includes(q));
+
+    const matchesCategory   = !categoryFilter || r.category === categoryFilter;
+    const matchesLowStock   = !lowStockOnly || (Number(r.quantity ?? 0) <= lowStockThreshold);
+
+    // --- NEW: expiry rules
+    const hasExpiry = !!r.expiration_date;
+    if (onlyWithExpiry && !hasExpiry) return false;
+
+    let matchesDateRange = true;
+    if (from && hasExpiry) matchesDateRange = matchesDateRange && new Date(`${r.expiration_date}T00:00:00`) >= from;
+    if (to   && hasExpiry) matchesDateRange = matchesDateRange && new Date(`${r.expiration_date}T00:00:00`) <= to;
+    // If a range is set and item has no expiry, exclude it
+    if ((from || to) && !hasExpiry) matchesDateRange = false;
+
+    const matchesExpiringSoon =
+      !expiringInDays || inNextNDays(r.expiration_date, expiringInDays);
+
+    return (
+      matchesText &&
+      matchesCategory &&
+      matchesLowStock &&
+      matchesDateRange &&
+      matchesExpiringSoon
+    );
+  });
+}, [
+  displayed, search, categoryFilter, lowStockOnly, lowStockThreshold,
+  expiryFrom, expiryTo, onlyWithExpiry, expiringInDays
+]);
+
   const table = useReactTable({
-    data: displayed,
+    data: filtered,
     columns: effectiveColumns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    // Optional: default renderer in case a column omits `cell`
+    defaultColumn: { cell: (info) => String(info.getValue() ?? '—') },
   })
 
   return (
     <Paper style={{ padding: 8 }}>
       {isLoading && <LinearProgress />}
+      {/* Tiny filter bar ---------------------------------------------------- NEW */}
+      {showFilterBar && mode === 'full' && (
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            label="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Name, category, barcode, location…"
+          />
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Category</InputLabel>
+            <Select
+              label="Category"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <MenuItem value="">All</MenuItem>
+              {categories.map((c) => (
+                <MenuItem key={c} value={c}>{c}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={lowStockOnly}
+                onChange={(e) => setLowStockOnly(e.target.checked)}
+              />
+            }
+            label={`Low stock (≤ ${lowStockThreshold})`}
+          />
+          {/* NEW: Expiry From / To */}
+        <TextField
+        size="small"
+        label="Expiry from"
+        type="date"
+        value={expiryFrom}
+        onChange={(e) => setExpiryFrom(e.target.value)}
+        InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+        size="small"
+        label="Expiry to"
+        type="date"
+        value={expiryTo}
+        onChange={(e) => setExpiryTo(e.target.value)}
+        InputLabelProps={{ shrink: true }}
+        />
+
+        {/* NEW: Only items with expiry */}
+        <FormControlLabel
+        control={
+            <Checkbox
+            checked={onlyWithExpiry}
+            onChange={(e) => setOnlyWithExpiry(e.target.checked)}
+            />
+        }
+        label="Only items with expiry"
+        />
+
+        {/* NEW (optional): Expiring within N days quick filter */}
+        <TextField
+        size="small"
+        label="Expiring in (days)"
+        type="number"
+        inputProps={{ min: 1 }}
+        value={expiringInDays}
+        onChange={(e) => setExpiringInDays(e.target.value)}
+        sx={{ width: 160 }}
+        />
+        </Box>
+      )}
+      {/* -------------------------------------------------------------------- NEW */}
 
       <Box sx={{ overflowX: 'auto' }}>
         <MuiTable size={mode === 'widget' ? 'small' : 'medium'}>
@@ -150,4 +302,6 @@ InventoryTable.propTypes = {
   limit: PropTypes.number,
   showColumns: PropTypes.arrayOf(PropTypes.string),
   onRowClick: PropTypes.func,
+  lowStockThreshold: PropTypes.number,      // NEW
+  showFilterBar: PropTypes.bool,            // NEW
 }

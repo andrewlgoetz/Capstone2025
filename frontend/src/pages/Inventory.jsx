@@ -126,6 +126,8 @@ export default function Inventory() {
               mode="full"
               items={filtered}
               onRowClick={(item) => navigate(`/inventory/${item.item_id}`)}
+              lowStockThreshold = {5}
+              showFilterBar = {true}  
             />
           ) : (
             <p>No items found.</p>
