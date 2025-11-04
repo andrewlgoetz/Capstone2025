@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 class InventoryBase(BaseModel):
@@ -16,7 +16,9 @@ class InventoryCreate(InventoryBase):
 
 class InventoryRead(InventoryBase):
     item_id: int
-    date_added: Optional[date]
+    date_added: Optional[datetime] = None
+    last_modified: Optional[datetime] = None
+
 
     class Config:
         orm_mode = True

@@ -69,17 +69,15 @@ export default function Inventory() {
     async function fetchItems() {
       setLoading(true)
       setError(null)
-    //   try {
-    //     const res = await api.get('/inventory')
-    //     if (!cancelled) setItems(res.data || [])
-    //   } catch (err) {
-    //     if (!cancelled) setError(err?.message || 'Failed to load inventory')
+      try {
+        const res = await api.get('/inventory/all')
+        if (!cancelled) setItems(res.data || [])
+      } catch (err) {
+        if (!cancelled) setError(err?.message || 'Failed to load inventory')
             
-    //   } finally {
-    //     if (!cancelled) setLoading(false)
-    //   }
-    setItems(dummyItems)
-    setLoading(false)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
     fetchItems()
