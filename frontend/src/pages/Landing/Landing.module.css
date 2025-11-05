@@ -1,0 +1,117 @@
+.landing {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 3rem;
+  align-items: center;
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 38rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.primaryAction {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.25);
+}
+
+.primaryAction:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(79, 70, 229, 0.3);
+}
+
+.secondaryAction {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.secondaryAction:hover {
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.heroPanel {
+  background: linear-gradient(160deg, rgba(79, 70, 229, 0.1), rgba(56, 189, 248, 0.15));
+  border-radius: 1.5rem;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  min-height: 22rem;
+}
+
+.panelContent {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 1rem;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  backdrop-filter: blur(6px);
+}
+
+.panelContent h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.panelContent ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panelContent li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  color: var(--text-muted);
+}
+
+.panelContent strong {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
