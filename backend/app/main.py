@@ -5,17 +5,17 @@ from app.api import inventory_routes, barcode_routes
 
 app = FastAPI(title="Inventory Management API")
 
-# Allowed origins (edit as needed)
+# Allowed origins 
 origins = [
     "http://localhost:5173",   # React dev server (Vite)
     "http://127.0.0.1:5173",   # sometimes needed too
     # "https://your-deployed-frontend.com",  # add prod later
 ]
 
-# CORS middleware (add before traffic hits your routes)
+# CORS middleware 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # DO NOT use ["*"] with allow_credentials=True
+    allow_origins=origins,      
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

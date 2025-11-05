@@ -1,20 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Inventory from './pages/Inventory.jsx'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Inventory from './pages/Inventory.jsx'
+import Navbar from './components/Navbar.jsx'
+// import Dashboard from './pages/Dashboard.jsx'
+import Home from './pages/Home.jsx'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <BrowserRouter>
-      {/* <Navbar /> */}
+      <Navbar />
       <Routes>
-        {/* <Route path="/" element={<Dashboard />} /> */}
-        <Route path="/" element={<Inventory />} />
-        {/* <Route path="/login" element={<Login />} /> */}
+        <Route path="/" element={<Home />} />
+        <Route path="/inventory" element={<Inventory />} />
+        {/* <Route path="/dashboard" element={<Dashboard />} /> */}
       </Routes>
     </BrowserRouter>
   )
