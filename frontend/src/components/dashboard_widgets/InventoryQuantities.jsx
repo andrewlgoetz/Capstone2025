@@ -1,59 +1,32 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
 
-// Colorblind-safe palette (no black)
 const COLORS = [
-    "#4E79A7", // Muted Blue
-    "#F28E2B", // Muted Orange
-    "#59A14F", // Muted Green
-    "#E15759", // Muted Red
-    "#76B7B2", // Teal
-    "#EDC949", // Goldenrod
-    "#B07AA1", // Muted Purple
-    "#9C755F", // Brown
-    "#BAB0AC", // Gray
+  "#4E79A7", "#F28E2B", "#59A14F", "#E15759",
+  "#76B7B2", "#EDC949", "#B07AA1", "#9C755F", "#BAB0AC",
 ];
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    title: {
-      display: true,
-      font: { size: 20, weight: "bold" },
-      padding: 20,
-    },
-    tooltip: {
-      backgroundColor: "rgba(0,0,0,0.85)",
-      padding: 12,
-      cornerRadius: 6,
-    },
-  },
-  scales: {
-    x: { grid: { display: false } },
-    y: { grid: { color: "rgba(200, 200, 200, 0.2)" } },
-  },
-};
+const InventoryQuantitiesBarChart = ({ inventory }) => {
+  const [selectedCategory, setSelectedCategory] = useState("");
 
-const InventoryBarChart = ({
-  title,
-  data,
-  categories,
-  selectedCategory,
-  onCategoryChange,
-}) => {
+  const categories = useMemo(
+    () => [...new Set(inventory.map((item) => item.category).filter(Boolean))],
+    [inventory]
+  );
 
-  // Build dataset for bar chart
-  const labels = data.map((item) => item.name);
-  const values = data.map((item) => item.quantity);
+  const filtered = selectedCategory
+    ? inventory.filter((i) => i.category === selectedCategory)
+    : inventory;
 
-  const chartData = {
+  const labels = filtered.map((i) => i.name);
+  const values = filtered.map((i) => i.quantity);
+
+  const data = {
     labels,
     datasets: [
       {
-        label: "Quantity",
+        label: "Stock Level",
         data: values,
         backgroundColor: labels.map((_, i) => COLORS[i % COLORS.length]),
         borderRadius: 6,
@@ -62,51 +35,53 @@ const InventoryBarChart = ({
     ],
   };
 
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: "Stock Levels by Item",
+        font: { size: 18, weight: "bold" },
+        padding: 20,
+      },
+    },
+  };
+
   return (
-    <div style={{ marginBottom: "30px" }}>
-      <div style={{ marginBottom: "12px", display: "flex", gap: "12px" }}>
-        {categories?.length > 0 && (
-          <>
-            <label>Category:</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => onCategoryChange(e.target.value)}
-              style={{
-                padding: "6px 10px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-              }}
-            >
-              <option value="">All</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
+    <div
+      style={{
+        background: "white",
+        borderRadius: "12px",
+        padding: "24px",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+        height: "450px",
+      }}
+    >
+      <div style={{ marginBottom: "14px", display: "flex", gap: "12px" }}>
+        <label>Category:</label>
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          style={{
+            padding: "6px 10px",
+            borderRadius: "6px",
+            border: "1px solid #ccc",
+          }}
+        >
+          <option value="">All</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
-      <div
-        style={{
-          background: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-          height: "450px",
-        }}
-      >
-        <Bar
-          data={chartData}
-          options={{
-            ...chartOptions,
-            plugins: { ...chartOptions.plugins, title: { ...chartOptions.plugins.title, text: title } }
-          }}
-        />
+      <div style={{ position: "relative", height: "350px" }}>
+        <Bar data={data} options={options} />
       </div>
     </div>
   );
 };
 
-export default InventoryBarChart;
+export default InventoryQuantitiesBarChart;
