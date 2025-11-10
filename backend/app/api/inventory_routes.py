@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead
+from sqlalchemy import desc
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -40,3 +41,17 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return {"message": "Item deleted successfully"}
+
+@router.get("/inventory/topitems")
+def get_top_items(db: Session = Depends(get_db)):
+    # Hardcoded values for bank_id and limit
+    bank_id = 1
+    limit = 10
+
+    items = db.query(InventoryItem)\
+              .filter(InventoryItem.bank_id == bank_id)\
+              .order_by(desc(InventoryItem.quantity))\
+              .limit(limit)\
+              .all()
+
+    return items
