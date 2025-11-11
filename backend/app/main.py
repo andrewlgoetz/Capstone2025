@@ -9,7 +9,9 @@ app = FastAPI(title="Inventory Management API")
 # Allowed origins 
 origins = [
     "http://localhost:5173",   # React dev server (Vite)
+    "http://localhost:5174",
     "http://127.0.0.1:5173",   # sometimes needed too
+    "http://127.0.0.1:5174",
     # "https://your-deployed-frontend.com",  # add prod later
 ]
 

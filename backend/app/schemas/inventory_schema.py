@@ -28,7 +28,7 @@ class InventoryCreate(BaseModel):
     location_id: Optional[int] = None
 
 class InventoryRead(InventoryCreate):
-    item_id: int
+    # item_id: int
     bank_id: int
     date_added: Optional[datetime] = None
     last_modified: Optional[datetime] = None
