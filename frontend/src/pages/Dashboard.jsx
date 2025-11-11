@@ -3,6 +3,7 @@ import api from "../services/api";
 import InventoryQuantitiesBarChart from "../components/dashboard_widgets/InventoryQuantities";
 import InventoryCategoryPie from "../components/dashboard_widgets/InventoryCategories";
 import LowStockItems from "../components/dashboard_widgets/LowStockItems";
+import ExpiringSoon from "../components/dashboard_widgets/ExpiringSoon";
 
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -29,6 +30,7 @@ const Dashboard = () => {
             <InventoryQuantitiesBarChart inventory={inventoryData} />
             <InventoryCategoryPie inventory={inventoryData} />
             <LowStockItems inventory={inventoryData} />
+            <ExpiringSoon data={inventoryData} days={14} />
             {/* more widgets will simply drop in */}
           </div>
         </div>
