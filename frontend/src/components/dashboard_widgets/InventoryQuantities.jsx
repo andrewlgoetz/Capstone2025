@@ -60,7 +60,7 @@ const InventoryQuantitiesBarChart = ({ inventory }) => {
       }}
     >
       <div style={{ marginBottom: "14px", display: "flex", gap: "12px" }}>
-        <label>Category:</label>
+        <label style={{ color: "grey" }}>Category:</label>
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}

@@ -1,24 +1,5 @@
 import React, { useState, useMemo } from "react";
-
-// Same emoji mapping used in LowStockItems
-const EMOJI_BY_CATEGORY = {
-  "Pasta": "🍝",
-  "Canned Goods": "🥫",
-  "Produce": "🥦",
-  "Grains": "🌾",
-  "Snacks": "🍪",
-  "Beverages": "🧃",
-  "Dairy": "🧀",
-  "Frozen": "🧊",
-  "Protein": "🍗",
-  "Hygiene": "🧴",
-  "Baby": "🍼",
-  "Household": "🧻",
-};
-
-function emojiForCategory(category) {
-  return EMOJI_BY_CATEGORY[category] || "📦";
-}
+import { getItemEmoji } from "./emojiMap";
 
 const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon" }) => {
   const [thresholdDays, setThresholdDays] = useState(days);
@@ -93,7 +74,7 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon
             }}
           >
             <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#111827" }}>
-              <span style={{ fontSize: "18px" }}>{emojiForCategory(item.category)}</span>
+              <span style={{ fontSize: "18px" }}>{getItemEmoji(item.name, item.category)}</span>
               {item.name || "(unnamed item)"}
             </span>
 

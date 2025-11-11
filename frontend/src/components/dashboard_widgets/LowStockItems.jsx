@@ -1,23 +1,5 @@
 import React, { useState, useMemo } from "react";
-
-const EMOJI_BY_CATEGORY = {
-  "Pasta": "🍝",
-  "Canned Goods": "🥫",
-  "Produce": "🥦",
-  "Grains": "🌾",
-  "Snacks": "🍪",
-  "Beverages": "🧃",
-  "Dairy": "🧀",
-  "Frozen": "🧊",
-  "Meat": "🍗",
-  "Hygiene": "🧴",
-  "Baby": "🍼",
-  "Household": "🧻",
-};
-
-function emojiForCategory(category) {
-  return EMOJI_BY_CATEGORY[category] || "📦";
-}
+import { getItemEmoji } from "./emojiMap";
 
 const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
   const maxQuantity = useMemo(
@@ -94,7 +76,7 @@ const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
       {lowStockItems.length === 0 ? (
         <p style={{ color: "#6c757d" }}>No items are below the selected threshold.</p>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px", textAlign: "left" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
               <th style={{ padding: "8px", color: "#6c757d" }}>Item</th>
@@ -105,9 +87,10 @@ const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
           <tbody>
             {lowStockItems.map((item) => (
               <tr key={item.item_id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "8px", color: "#6c757d" }}>{item.name}</td>
                 <td style={{ padding: "8px", color: "#6c757d" }}>
-                  {emojiForCategory(item.category)} {item.category || "—"}
+                {getItemEmoji(item.name, item.category)}{"  "}{item.name}</td>
+                <td style={{ padding: "8px", color: "#6c757d" }}>
+                {item.category || "—"}
                 </td>
                 <td style={{ padding: "8px", fontWeight: "600", color: "#E15759" }}>
                   {item.quantity}
