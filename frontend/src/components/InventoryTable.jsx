@@ -112,19 +112,30 @@ export default function InventoryTable({
 
   // Decide which columns to render depending on mode (full table vs widget) & showColumns override
   const effectiveColumns = useMemo(() => {
-    let cols = DEFAULT_COLUMNS;
+    // let cols = DEFAULT_COLUMNS;
+    // hide the DB id and insert serial column
+    const serialCol = {
+      id: "serial",
+      header: "No.",
+      enableSorting: false,
+      cell: ({row}) => row.index + 1,
+    };
+    let cols = DEFAULT_COLUMNS.filter(c => c.accessorKey !== 'item_id');
     if (mode === "widget") {
-      cols = DEFAULT_COLUMNS.filter((c) =>
-        ["name", "quantity", "unit", "item_id"].includes(c.accessorKey)
-      );
+      cols = cols.filter((c) =>
+        ["name", "quantity", "unit"].includes(c.accessorKey)
+        );
+      // cols = DEFAULT_COLUMNS.filter((c) =>
+      //   ["name", "quantity", "unit", "item_id"].includes(c.accessorKey)
+      // );
     }
     if (Array.isArray(showColumns) && showColumns.length > 0) {
       cols = cols.filter((c) => showColumns.includes(c.accessorKey));
     }
-    return cols.map((c) => ({
-    ...c, 
-    cell: c.cell || ((info) => info.getValue()), 
-  }));
+    return [serialCol, ...cols].map((c) => ({
+      ...c,
+      cell: c.cell || ((info) => info.getValue()),
+      }));
   }, [mode, showColumns]);
 
   // If widget mode, limit rows shown
