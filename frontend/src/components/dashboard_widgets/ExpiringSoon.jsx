@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { getItemEmoji } from "./emojiMap";
+import ExpandableText from "../common/ExpandableText";
 
 const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon" }) => {
   const [thresholdDays, setThresholdDays] = useState(days);
@@ -8,7 +9,7 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon
 
   const expiring = useMemo(() => {
     return (data || [])
-      .filter(item => item.expiration_date)        // must have a date
+      .filter(item => item.expiration_date)
       .map(item => {
         const exp = new Date(item.expiration_date);
         const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
@@ -26,8 +27,10 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon
         borderRadius: 12,
         boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         padding: 16,
+        textAlign: "left"
       }}
     >
+      {/* Title + Count */}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#1f2937" }}>{title}</h3>
         <span style={{
@@ -41,7 +44,7 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon
         </span>
       </div>
 
-      {/* SLIDER */}
+      {/* Slider */}
       <div style={{ marginBottom: 14 }}>
         <label style={{ fontSize: 13, color: "#475569", display: "block", marginBottom: 4 }}>
           Show items expiring in ≤ <strong>{thresholdDays}</strong> days
@@ -57,32 +60,56 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon
       </div>
 
       {expiring.length === 0 ? (
-        <p style={{ color: "#6b7280", fontSize: 14 }}>
-          No items expiring soon.
-        </p>
+        <p style={{ color: "#6b7280", fontSize: 14 }}>No items expiring soon.</p>
       ) : (
-        expiring.map((item, index) => (
-          <div
-            key={item.item_id || index}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "10px 0",
-              borderTop: index === 0 ? "1px solid #e5e7eb" : "",
-              borderBottom: "1px solid #e5e7eb",
-            }}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#111827" }}>
-              <span style={{ fontSize: "18px" }}>{getItemEmoji(item.name, item.category)}</span>
-              {item.name || "(unnamed item)"}
-            </span>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #e5e7eb", color: "#6b7280", textAlign: "left" }}>
+              <th style={{ padding: "8px 4px" }}>Item</th>
+              <th style={{ padding: "8px 4px" }}>Location</th>
+              <th style={{ padding: "8px 4px" }}>Expires</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expiring.map((item) => (
+              <tr key={item.item_id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                {/* ITEM */}
+                <td style={{ padding: "8px 4px", whiteSpace: "nowrap" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#111827" }}>
+                    <span style={{ fontSize: "18px" }}>{getItemEmoji(item.name, item.category)}</span>
+                    {item.name}
+                  </span>
+                </td>
 
-            <span style={{ color: item.diffDays <= 3 ? "#b91c1c" : "#d97706", fontWeight: 600 }}>
-              {item.diffDays === 0 ? "Today" : `${item.diffDays}d`}
-            </span>
-          </div>
-        ))
+                {/* LOCATION (left-aligned, multi-line, expandable notes) */}
+                <td style={{ padding: "8px", color: "#6c757d", textAlign: "left" }}>
+                {(() => {
+                    const fullLocation = [
+                    item.location_name,
+                    item.location_address,
+                    item.location_notes
+                    ]
+                    .filter(Boolean)
+                    .join(" — ");
+
+                    return (
+                    <ExpandableText
+                        text={fullLocation || "No location info"}
+                        maxLength={30}  // tweak to your dashboard width
+                    />
+                    );
+                })()}
+                </td>
+
+
+                {/* EXPIRATION */}
+                <td style={{ padding: "10px 4px", fontWeight: 600, color: item.diffDays <= 3 ? "#b91c1c" : "#d97706" }}>
+                  {item.diffDays === 0 ? "Today" : `${item.diffDays}d`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
