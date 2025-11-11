@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import inventory_routes, barcode_routes
+from app.models import *
 
 app = FastAPI(title="Inventory Management API")
 
