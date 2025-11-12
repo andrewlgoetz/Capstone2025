@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Capstone Inventory API",
+    "_postman_id": "e2b3b9f0-1111-4444-aaaa-000000000001",
+    "description": "MVP collection to test barcode + inventory endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "knownBarcode", "value": "0123456789123" },
+    { "key": "unknownBarcode", "value": "0001112223334" }
+  ],
+  "item": [
+    {
+      "name": "Barcode → Lookup (dummy registry)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/barcode/{{knownBarcode}}", "host": ["{{baseUrl}}"], "path": ["barcode", "{{knownBarcode}}"] }
+      }
+    },
+    {
+      "name": "Barcode → Scan (KNOWN)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"barcode\": \"{{knownBarcode}}\"\n}" },
+        "url": { "raw": "{{baseUrl}}/barcode/scan", "host": ["{{baseUrl}}"], "path": ["barcode", "scan"] }
+      }
+    },
+    {
+      "name": "Barcode → Scan (NEW)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"barcode\": \"{{unknownBarcode}}\"\n}" },
+        "url": { "raw": "{{baseUrl}}/barcode/scan", "host": ["{{baseUrl}}"], "path": ["barcode", "scan"] }
+      }
+    },
+    {
+      "name": "Barcode → Add Item (create via /barcode/add)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Canned Beans\",\n  \"category\": \"Food\",\n  \"barcode\": \"{{unknownBarcode}}\",\n  \"quantity\": 10,\n  \"unit\": \"pcs\",\n  \"expiration_date\": null,\n  \"location_id\": null\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/barcode/add", "host": ["{{baseUrl}}"], "path": ["barcode", "add"] }
+      }
+    },
+    {
+      "name": "Inventory → Add Item (create via /inventory/add)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Item\",\n  \"category\": \"Misc\",\n  \"barcode\": \"1112223334445\",\n  \"quantity\": 3,\n  \"unit\": \"pcs\",\n  \"expiration_date\": null,\n  \"location_id\": null\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/inventory/add", "host": ["{{baseUrl}}"], "path": ["inventory", "add"] }
+      }
+    },
+    {
+      "name": "Inventory → List All",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/inventory/all", "host": ["{{baseUrl}}"], "path": ["inventory", "all"] }
+      }
+    },
+    {
+      "name": "Inventory → Get By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/inventory/1", "host": ["{{baseUrl}}"], "path": ["inventory", "1"] }
+      }
+    },
+    {
+      "name": "Inventory → Delete By Id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/inventory/1", "host": ["{{baseUrl}}"], "path": ["inventory", "1"] }
+      }
+    }
+  ]
+}
