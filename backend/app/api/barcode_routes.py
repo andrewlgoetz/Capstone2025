@@ -43,11 +43,11 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
 
 @router.post("/scan", response_model=ScanResponse)
 def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
-
-    if not payload.barcode:
+    code= inventory_service.normalize_barcode(payload.barcode)
+    if not code:
         raise HTTPException(status_code=400, detail="barcode is required")
     # code = _normalize_barcode(payload.barcode)
-    code= inventory_service.normalize_barcode(payload.barcode)
+    
 
     # Barcode exists
     # existing = db.query(InventoryItem).filter(InventoryItem.barcode == code).first()
@@ -55,7 +55,7 @@ def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
     if existing:
         return ScanResponse(
             status="KNOWN",
-            item=InventoryRead.from_orm(existing),
+            item=InventoryRead.model_validate(existing),
             candidate_info=None
         )
     

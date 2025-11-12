@@ -24,12 +24,13 @@ class ScanRequest(BaseModel):
     barcode: str
     quantity: int
 
-class InventoryRead(InventoryBase):
-    item_id: int
-    date_added: Optional[date]
+# old
+# class InventoryRead(InventoryBase):
+#     item_id: int
+#     date_added: Optional[date]
 
-    class Config:
-        orm_mode = True
+#     class Config:
+#         orm_mode = True
 
 # TODO, this is the response model from a scan request 
 # what info related to a barcdoe do we want to maintain
@@ -38,10 +39,6 @@ class BarcodeInfo(BaseModel):
     category: Optional[str]
     barcode: Optional[str]
 
-class ScanResponse(BaseModel):
-    status: Literal["KNOWN", "NEW"]
-    item: Optional[InventoryRead] = None
-    candidate_info: Optional[BarcodeInfo] = None
 
 class InventoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -58,3 +55,8 @@ class InventoryRead(BaseModel):
     last_modified: Optional[datetime] = None
     created_by: Optional[int] = None
     modified_by: Optional[int] = None
+
+class ScanResponse(BaseModel):
+    status: Literal["KNOWN", "NEW"]
+    item: Optional[InventoryRead] = None
+    candidate_info: Optional[BarcodeInfo] = None   
