@@ -1,65 +1,82 @@
-import styles from './InventoryTable.module.css'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Box,
+} from '@mui/material'
 
-// Backward-compatible default sample (used by Dashboard)
 const defaultItems = [
   { id: 'SKU-1201', name: 'Wireless barcode scanner', category: 'Hardware', stock: 24, reorderPoint: 15, status: 'Healthy' },
   { id: 'SKU-3380', name: 'Thermal shipping labels (500 pack)', category: 'Supplies', stock: 8, reorderPoint: 20, status: 'Restock soon' },
   { id: 'SKU-8845', name: 'Handheld POS terminal', category: 'Hardware', stock: 3, reorderPoint: 10, status: 'Critical' },
 ]
 
-const statusClass = {
-  Healthy: 'statusHealthy',
-  'Restock soon': 'statusWarning',
-  Critical: 'statusCritical',
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Healthy':
+      return 'success'
+    case 'Restock soon':
+      return 'warning'
+    case 'Critical':
+      return 'error'
+    default:
+      return 'default'
+  }
 }
 
-// Generic, reusable inventory table
-// Props:
-// - title?: string
-// - caption?: string
-// - columns?: Array<{ key: string, header: string, render?: (row) => ReactNode }>
-// - items?: any[]
 const InventoryTable = ({ title = 'Top products', caption = 'Snapshot of stock levels across key SKUs.', columns, items }) => {
   const rows = items ?? defaultItems
 
-  // Default column set (for Dashboard compatibility)
   const cols = columns ?? [
     { key: 'id', header: 'SKU' },
-    { key: 'name', header: 'Product', render: (r) => <span className={styles.primaryText}>{r.name}</span> },
+    { key: 'name', header: 'Product', render: (r) => <strong>{r.name}</strong> },
     { key: 'category', header: 'Category' },
     { key: 'stock', header: 'On hand' },
     { key: 'reorderPoint', header: 'Reorder point' },
     { key: 'status', header: 'Status', render: (r) => (
-      <span className={`${styles.status} ${styles[statusClass[r.status] ?? 'statusHealthy']}`}>{r.status}</span>
+      <Chip label={r.status} color={getStatusColor(r.status)} variant="outlined" size="small" />
     ) },
   ]
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.headerRow}>
-        <h2>{title}</h2>
-        {caption ? <p className={styles.caption}>{caption}</p> : null}
-      </div>
+    <Box>
+      {title || caption ? (
+        <Box sx={{ mb: 2 }}>
+          {title && <h2 style={{ margin: '0 0 0.5rem 0' }}>{title}</h2>}
+          {caption && <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>{caption}</p>}
+        </Box>
+      ) : null}
 
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            {cols.map((c) => (
-              <th key={c.key} scope="col">{c.header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, idx) => (
-            <tr key={row.id ?? idx}>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: '#f3f4f6' }}>
               {cols.map((c) => (
-                <td key={c.key}>{c.render ? c.render(row) : row[c.key]}</td>
+                <TableCell key={c.key} sx={{ fontWeight: 600 }}>
+                  {c.header}
+                </TableCell>
               ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id} hover>
+                {cols.map((c) => (
+                  <TableCell key={c.key}>
+                    {c.render ? c.render(row) : row[c.key]}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   )
 }
 

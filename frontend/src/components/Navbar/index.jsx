@@ -1,37 +1,70 @@
 import { NavLink } from 'react-router-dom'
-import styles from './Navbar.module.css'
+import AppBar from '@mui/material/AppBar'
+import Toolbar from '@mui/material/Toolbar'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
+import Box from '@mui/material/Box'
 
 const Navbar = () => {
   return (
-    <header className={styles.navbar}>
-      <NavLink to="/" className={styles.brand}>
-        StockScope
-      </NavLink>
-
-      <nav className={styles.links} aria-label="Primary navigation">
-        <NavLink to="/" className={({ isActive }) =>
-          `${styles.link} ${isActive ? styles.active : ''}`
-        }>
-          Home
-        </NavLink>
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `${styles.link} ${isActive ? styles.active : ''}`
-          }
+    <AppBar position="static">
+      <Toolbar>
+        <Typography 
+          variant="h6" 
+          component={NavLink}
+          to="/"
+          sx={{ 
+            flexGrow: 1, 
+            fontWeight: 600,
+            textDecoration: 'none',
+            color: 'inherit',
+            '&:hover': {
+              opacity: 0.9
+            }
+          }}
         >
-          Dashboard
-        </NavLink>
-        <NavLink
-          to="/login"
-          className={({ isActive }) =>
-            `${styles.link} ${isActive ? styles.active : ''}`
-          }
-        >
-          Login
-        </NavLink>
-      </nav>
-    </header>
+          StockScope
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button 
+            color="inherit" 
+            component={NavLink} 
+            to="/"
+            sx={{
+              '&.active': {
+                fontWeight: 'bold',
+              }
+            }}
+          >
+            Home
+          </Button>
+          <Button 
+            color="inherit" 
+            component={NavLink} 
+            to="/dashboard"
+            sx={{
+              '&.active': {
+                fontWeight: 'bold',
+              }
+            }}
+          >
+            Dashboard
+          </Button>
+          <Button 
+            color="inherit" 
+            component={NavLink} 
+            to="/login"
+            sx={{
+              '&.active': {
+                fontWeight: 'bold',
+              }
+            }}
+          >
+            Login
+          </Button>
+        </Box>
+      </Toolbar>
+    </AppBar>
   )
 }
 

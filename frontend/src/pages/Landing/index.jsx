@@ -1,27 +1,35 @@
 import React, { useMemo, useState } from 'react'
+import {
+  Box,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  TextField,
+  Button,
+  Fab,
+  Menu,
+  MenuItem,
+  Paper,
+  Typography,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Stack,
+  Alert,
+} from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search'
+import WarningIcon from '@mui/icons-material/Warning'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import StorageIcon from '@mui/icons-material/Storage'
 import InventoryTable from '../../components/InventoryTable'
-import styles from './Landing.module.css'
-
-const Icon = {
-  Plus: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><path d="M12 5v14M5 12h14"/></svg>
-  ),
-  Alert: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><path d="M12 9v4"/><path d="M12 17h.01"/><path d="m10.29 3.86-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.71-3.14l-8-14a2 2 0 0 0-3.42 0Z"/></svg>
-  ),
-  Clock: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-  ),
-  Box: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><path d="m21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z"/><path d="M3.27 6.96 12 12l8.73-5.04"/><path d="M12 22V12"/></svg>
-  ),
-  Search: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-  ),
-  ChevronDown: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}><path d="m6 9 6 6 6-6"/></svg>
-  ),
-}
+import ScanSheet from '../../components/ScanSheet'
 
 const sampleItems = [
   { id: 'A-1001', name: 'Pasta (1 lb)', category: 'Dry Goods', qty: 46, unit: 'box', expires: '2026-02-01', location: 'Aisle 1', barcode: '076783001234' },
@@ -30,10 +38,74 @@ const sampleItems = [
   { id: 'A-1100', name: 'Milk (2%)', category: 'Perishables', qty: 18, unit: 'carton', expires: '2025-11-20', location: 'Cooler', barcode: '036000291452' },
 ]
 
+const StatCard = ({ icon: Icon, title, value, badge }) => (
+  <Card>
+    <CardContent>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, bgcolor: 'primary.light', borderRadius: 1, color: 'primary.main' }}>
+          <Icon />
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Typography color="textSecondary" variant="body2">
+            {title}
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            {value}
+          </Typography>
+        </Box>
+        {badge && (
+          <Chip
+            label={badge}
+            size="small"
+            variant="outlined"
+            sx={{ bgcolor: 'primary.light', color: 'primary.main', border: 'none' }}
+          />
+        )}
+      </Box>
+    </CardContent>
+  </Card>
+)
+
+const PlaceholderChart = ({ title }) => (
+  <Card>
+    <CardContent>
+      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+        {title}
+      </Typography>
+      <Box
+        sx={{
+          height: 150,
+          bgcolor: 'rgba(0,0,0,0.05)',
+          borderRadius: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'textSecondary',
+          fontSize: '0.875rem',
+        }}
+      >
+        Chart placeholder
+      </Box>
+    </CardContent>
+  </Card>
+)
+
 const Landing = () => {
   const [query, setQuery] = useState('')
   const [filterLabel, setFilterLabel] = useState('none')
-  const [showFABMenu, setShowFABMenu] = useState(false)
+  const [showScan, setShowScan] = useState(false)
+  const [lastScannedCode, setLastScannedCode] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
+
+  const handleScan = (code) => {
+    setLastScannedCode(code)
+    const item = sampleItems.find(i => i.barcode === code)
+    if (item) {
+      setQuery(code)
+    } else {
+      alert('Item not found: ' + code)
+    }
+  }
 
   const lowStock = useMemo(() => sampleItems.filter((i) => i.qty <= 10), [])
   const expiringSoon = useMemo(() => sampleItems.filter((i) => i.category === 'Perishables'), [])
@@ -47,181 +119,208 @@ const Landing = () => {
       )
     }
     if (filterLabel !== 'none') {
-      // simple demo filter: show perishables only
       arr = arr.filter((i) => i.category === 'Perishables')
     }
     return arr
   }, [query, filterLabel])
 
   const columns = [
-    { key: 'name', header: 'Item', render: (r) => <span className={styles.cellStrong}>{r.name}</span> },
+    { key: 'name', header: 'Item', render: (r) => <strong>{r.name}</strong> },
     { key: 'category', header: 'Category', render: (r) => (
-      <span className={`${styles.tag} ${r.category === 'Perishables' ? styles.tagEmerald : styles.tagGray}`}>{r.category}</span>
+      <Chip
+        label={r.category}
+        size="small"
+        variant="outlined"
+        color={r.category === 'Perishables' ? 'success' : 'default'}
+      />
     ) },
     { key: 'qty', header: 'Qty' },
     { key: 'unit', header: 'Unit' },
     { key: 'expires', header: 'Expires' },
     { key: 'location', header: 'Location' },
-    { key: 'barcode', header: 'Barcode', render: (r) => <span className={styles.muted}>{r.barcode}</span> },
-    { key: 'actions', header: 'Actions', render: () => (
-      <div className={styles.rowActions}>
-        <button className={styles.btnGhost}>Adjust</button>
-        <button className={styles.btnGhost}>Move</button>
-        <button className={styles.btnGhost}>Details</button>
-      </div>
-    ) },
+    { key: 'barcode', header: 'Barcode', render: (r) => <Typography variant="body2" color="textSecondary">{r.barcode}</Typography> },
   ]
 
+  const handleFabMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleFabMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleScanClick = () => {
+    setShowScan(true)
+    handleFabMenuClose()
+  }
+
   return (
-    <div className={styles.container}>
-      <div className={styles.layout}>
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarTitle}>Homepage</div>
-          <nav className={styles.sidebarNav}>
-            <div className={styles.sidebarLink}>• Scan</div>
-            <div>
-              <div className={styles.sidebarLink}>• Inventory</div>
-              <div className={styles.sidebarSubLinks}>
-                <div className={styles.sidebarLine} />
-                <div className={styles.sidebarLine} />
-                <div className={styles.sidebarLine} />
-              </div>
-            </div>
-            <div className={styles.sidebarLink}>• Dashboard</div>
-            <div className={styles.sidebarLink}>• Admin</div>
-          </nav>
-        </aside>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+          Hamilton Food Support
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          Main Warehouse
+        </Typography>
+      </Box>
 
-        <main className={styles.main}>
-          <header className={styles.headerBar}>
-            <div className={styles.headerInner}>
-              <h1 className={styles.headerTitle}>Hamilton Food Support</h1>
-              <div className={styles.locationChip}>
-                <span className={styles.muted}>Location :</span>
-                <span className={styles.locationName}>Main Warehouse</span>
-                <Icon.ChevronDown className={styles.iconSm} />
-              </div>
-            </div>
-          </header>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            icon={WarningIcon}
+            title="Low Stock"
+            value={lowStock.length}
+            badge="Under 10"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            icon={AccessTimeIcon}
+            title="Expiring Soon"
+            value={expiringSoon.length}
+            badge="Perishables"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            icon={StorageIcon}
+            title="TBD"
+            value="—"
+          />
+        </Grid>
+      </Grid>
 
-          <div className={styles.content}>
-            <section className={styles.statGrid}>
-              <StatPill icon={<Icon.Alert className={styles.iconMd} />} title="Low Stock" value={lowStock.length} badge="Under 10" />
-              <StatPill icon={<Icon.Clock className={styles.iconMd} />} title="Expiring Soon" value={expiringSoon.length} badge="Perishables" />
-              <StatPill icon={<Icon.Box className={styles.iconMd} />} title="TBD" value="—" />
-            </section>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} lg={8}>
+          <Card>
+            <CardHeader
+              title="Inventory"
+              action={
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField
+                    size="small"
+                    placeholder="Search name, category, ..."
+                    variant="outlined"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    InputProps={{
+                      startAdornment: <SearchIcon sx={{ mr: 1, color: 'textSecondary' }} />,
+                    }}
+                  />
+                  <Button
+                    size="small"
+                    variant={filterLabel !== 'none' ? 'contained' : 'outlined'}
+                    onClick={() => setFilterLabel(filterLabel === 'none' ? 'demo' : 'none')}
+                  >
+                    Filter: {filterLabel}
+                  </Button>
+                </Box>
+              }
+            />
+            <CardContent>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      {columns.map((c) => (
+                        <TableCell key={c.key} sx={{ fontWeight: 600 }}>
+                          {c.header}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filtered.map((item) => (
+                      <TableRow key={item.id} hover>
+                        {columns.map((c) => (
+                          <TableCell key={c.key}>
+                            {c.render ? c.render(item) : item[c.key]}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Showing 1–24 of 124
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="outlined">Prev</Button>
+                  <Button size="small" variant="contained">1</Button>
+                  <Button size="small" variant="outlined">2</Button>
+                  <Button size="small" variant="outlined">3</Button>
+                  <Button size="small" variant="outlined">Next</Button>
+                </Stack>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-            <section className={styles.middleGrid}>
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardTitle}>Inventory</h2>
-                  <div className={styles.toolbar}>
-                    <div className={styles.searchWrap}>
-                      <Icon.Search className={styles.searchIcon} />
-                      <input
-                        className={styles.searchInput}
-                        placeholder="Search name, category, ..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                      />
-                    </div>
-                    <button className={styles.btnChip} onClick={() => setFilterLabel(filterLabel === 'none' ? 'demo' : 'none')}>
-                      Filter : {filterLabel}
-                    </button>
-                  </div>
-                </div>
+        <Grid item xs={12} lg={4}>
+          <Card>
+            <CardHeader
+              title="Forecast Preview"
+              subheader="Upcoming 30 days"
+            />
+            <CardContent>
+              <Stack spacing={2}>
+                <PlaceholderChart title="Demand" />
+                <PlaceholderChart title="Shortages" />
+                <PlaceholderChart title="Top Categories" />
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-                <InventoryTable title="" caption="" items={filtered} columns={columns} />
+      <Card sx={{ mb: 4 }}>
+        <CardHeader title="Dashboard Preview" />
+        <CardContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+              <PlaceholderChart title="By Category" />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <PlaceholderChart title="Low Stock over time" />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <PlaceholderChart title="Incoming vs. Outgoing" />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
-                <div className={styles.tableFooter}>
-                  <span className={styles.muted}>Showing 1–24 of 124</span>
-                  <div className={styles.pagination}>
-                    <button className={styles.btnGhost}>Prev</button>
-                    <button className={`${styles.btnGhost} ${styles.btnPrimary}`}>1</button>
-                    <button className={styles.btnGhost}>2</button>
-                    <button className={styles.btnGhost}>3</button>
-                    <button className={styles.btnGhost}>Next</button>
-                  </div>
-                </div>
-              </div>
+      <Box sx={{ position: 'fixed', bottom: 24, right: 24 }}>
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={handleFabMenuOpen}
+        >
+          <AddIcon />
+        </Fab>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleFabMenuClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <MenuItem onClick={handleScanClick}>Scan</MenuItem>
+          <MenuItem onClick={handleFabMenuClose}>Update inventory</MenuItem>
+          <MenuItem onClick={handleFabMenuClose}>...Edit</MenuItem>
+        </Menu>
+      </Box>
 
-              <div className={styles.card}>
-                <div className={styles.rightHeader}>
-                  <h3 className={styles.cardTitle}>Forecast Preview</h3>
-                  <span className={styles.rightCaption}>Upcoming 30 days</span>
-                </div>
-                <div className={styles.rightGrid}>
-                  <CardBox title="Demand" />
-                  <CardBox title="Shortages" />
-                  <CardBox title="Top Categories" />
-                </div>
-              </div>
-            </section>
-
-            <section className={styles.card}>
-              <h3 className={styles.cardTitle}>Dashboard Preview</h3>
-              <div className={styles.bottomGrid}>
-                <PlaceholderChart title="By Category" />
-                <PlaceholderChart title="Low Stock over time" />
-                <PlaceholderChart title="Incoming vs. Outgoing" />
-              </div>
-            </section>
-          </div>
-
-          <div className={styles.fabWrap}>
-            <div className={styles.fabInner}>
-              {showFABMenu && (
-                <div className={styles.fabMenu}>
-                  <FABItem label="Scan" />
-                  <FABItem label="Update inventory" />
-                  <FABItem label="...Edit" />
-                </div>
-              )}
-              <button className={styles.fabButton} onClick={() => setShowFABMenu(!showFABMenu)} aria-label="main actions">
-                <Icon.Plus className={styles.iconLg} />
-              </button>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  )
-}
-
-function StatPill({ icon, title, value, badge }) {
-  return (
-    <div className={styles.statPill}>
-      <div className={styles.statIcon}>{icon}</div>
-      <div className={styles.statBody}>
-        <div className={styles.statTitle}>{title}</div>
-        <div className={styles.statValue}>{value}</div>
-      </div>
-      {badge ? <span className={styles.badge}>{badge}</span> : null}
-    </div>
-  )
-}
-
-function CardBox({ title }) {
-  return (
-    <div className={styles.cardBox}>
-      <div className={styles.cardBoxHead}>{title}</div>
-      <div className={styles.cardBoxBody}>Chart or Stats</div>
-    </div>
-  )
-}
-
-function PlaceholderChart({ title }) {
-  return (
-    <div className={styles.chartBox}>
-      <div className={styles.cardBoxHead}>{title}</div>
-      <div className={styles.chartBody}>chart placeholder</div>
-    </div>
-  )
-}
-
-function FABItem({ label }) {
-  return (
-    <button className={styles.btnList}>{label}</button>
+      {showScan && (
+        <ScanSheet
+          onClose={() => setShowScan(false)}
+          onScan={handleScan}
+        />
+      )}
+    </Container>
   )
 }
 
