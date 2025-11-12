@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import date
+from datetime import date,datetime
 from typing import Optional,Literal
 
 class InventoryBase(BaseModel):
@@ -12,7 +12,13 @@ class InventoryBase(BaseModel):
     location_id: Optional[int] # do we want to store this here or in another object, review the relationship with bankID
 
 class InventoryCreate(InventoryBase):
-    pass
+    name: str
+    category: Optional[str] = None
+    barcode: Optional[str] = None
+    quantity: int = 0
+    unit: Optional[str] = None
+    expiration_date: Optional[date] = None
+    location_id: Optional[int] = None
 
 class ScanRequest(BaseModel):
     barcode: str
@@ -36,3 +42,19 @@ class ScanResponse(BaseModel):
     status: Literal["KNOWN", "NEW"]
     item: Optional[InventoryRead] = None
     candidate_info: Optional[BarcodeInfo] = None
+
+class InventoryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    item_id: int
+    bank_id: int
+    name: str
+    category: Optional[str] = None
+    barcode: Optional[str] = None
+    quantity: int
+    unit: Optional[str] = None
+    expiration_date: Optional[date] = None
+    location_id: Optional[int] = None
+    date_added: datetime
+    last_modified: Optional[datetime] = None
+    created_by: Optional[int] = None
+    modified_by: Optional[int] = None

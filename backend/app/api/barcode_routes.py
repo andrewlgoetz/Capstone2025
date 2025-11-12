@@ -50,7 +50,8 @@ def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
     code= inventory_service.normalize_barcode(payload.barcode)
 
     # Barcode exists
-    existing = db.query(InventoryItem).filter(InventoryItem.barcode == code).first()
+    # existing = db.query(InventoryItem).filter(InventoryItem.barcode == code).first()
+    existing = lookup_barcode(code)
     if existing:
         return ScanResponse(
             status="KNOWN",
@@ -59,12 +60,9 @@ def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
         )
     
     #Barcode does not exist
-    info = {}
-    try:
-        info = lookup_barcode(code) or {}
-    except Exception:
-        info = {}
-    
+    info = lookup_barcode(code)
+    if info:
+        return ScanResponse(status="KNOWN", candidate_info=BarcodeInfo(**info))
     # Pass candidate back to frontend
     # Whatever fields a barcode/item has
     candidate = BarcodeInfo(
