@@ -22,6 +22,12 @@ import {
   TableRow,
   Stack,
   Alert,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search'
@@ -30,6 +36,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import StorageIcon from '@mui/icons-material/Storage'
 import InventoryTable from '../../components/InventoryTable'
 import ScanSheet from '../../components/ScanSheet'
+import { fetchProductByBarcode } from '../../services/off'
 
 const sampleItems = [
   { id: 'A-1001', name: 'Pasta (1 lb)', category: 'Dry Goods', qty: 46, unit: 'box', expires: '2026-02-01', location: 'Aisle 1', barcode: '076783001234' },
@@ -96,15 +103,23 @@ const Landing = () => {
   const [showScan, setShowScan] = useState(false)
   const [lastScannedCode, setLastScannedCode] = useState(null)
   const [anchorEl, setAnchorEl] = useState(null)
+  const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
+  const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
 
   const handleScan = (code) => {
     setLastScannedCode(code)
-    const item = sampleItems.find(i => i.barcode === code)
-    if (item) {
-      setQuery(code)
-    } else {
-      alert('Item not found: ' + code)
-    }
+    setQuery(code)
+    setProductDialog({ open: true, loading: true, product: null, error: null })
+    fetchProductByBarcode(code)
+      .then((product) => {
+        setProductDialog({ open: true, loading: false, product, error: null })
+        setSnack({ open: true, message: `Scanned ${code} — ${product.product_name || 'Unknown'}` , severity: 'success' })
+      })
+      .catch((err) => {
+        const msg = err?.code === 'NOT_FOUND' ? `No OpenFoodFacts product for ${code}` : 'Lookup failed'
+        setProductDialog({ open: true, loading: false, product: null, error: msg })
+        setSnack({ open: true, message: msg, severity: 'warning' })
+      })
   }
 
   const lowStock = useMemo(() => sampleItems.filter((i) => i.qty <= 10), [])
@@ -320,6 +335,60 @@ const Landing = () => {
           onScan={handleScan}
         />
       )}
+
+      <Dialog open={productDialog.open} onClose={() => setProductDialog({ open: false, loading: false, product: null, error: null })} maxWidth="xs" fullWidth>
+        <DialogTitle>Product details</DialogTitle>
+        <DialogContent dividers>
+          {productDialog.loading && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <CircularProgress size={20} />
+              <Typography variant="body2">Looking up product…</Typography>
+            </Box>
+          )}
+          {!productDialog.loading && productDialog.error && (
+            <Alert severity="warning">{productDialog.error}</Alert>
+          )}
+          {!productDialog.loading && productDialog.product && (
+            <Stack spacing={1}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {productDialog.product.product_name || 'Unknown product'}
+              </Typography>
+              {productDialog.product.brands && (
+                <Typography variant="body2" color="text.secondary">Brand: {productDialog.product.brands}</Typography>
+              )}
+              {productDialog.product.image_front_small_url && (
+                <Box component="img" src={productDialog.product.image_front_small_url} alt={productDialog.product.product_name} sx={{ width: '100%', borderRadius: 1, mt: 1 }} />
+              )}
+              {productDialog.product.nutriscore_grade && (
+                <Chip size="small" label={`Nutri-Score: ${String(productDialog.product.nutriscore_grade).toUpperCase()}`} color="success" variant="outlined" />
+              )}
+              {productDialog.product.nova_group && (
+                <Chip size="small" label={`NOVA group: ${productDialog.product.nova_group}`} color="info" variant="outlined" />
+              )}
+              {productDialog.product.quantity && (
+                <Typography variant="body2">Quantity: {productDialog.product.quantity}</Typography>
+              )}
+              {productDialog.product.categories && (
+                <Typography variant="body2" color="text.secondary">{productDialog.product.categories}</Typography>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setProductDialog({ open: false, loading: false, product: null, error: null })}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} variant="filled" sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </Container>
   )
 }
