@@ -4,7 +4,7 @@ import {
   TextField, Grid, Button
 } from "@mui/material";
 
-export default function AddItemModal({ open, onClose, onSave, defaultValues }) {
+export default function AddItemModal({ open, onClose, onSave, defaultValues, isSaving }) {
   const [values, setValues] = React.useState({
     name: "",               // required
     category: "",
@@ -100,8 +100,12 @@ export default function AddItemModal({ open, onClose, onSave, defaultValues }) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} color="inherit">Cancel</Button>
-          <Button type="submit" variant="contained">Save</Button>
+          <Button onClick={onClose} color="inherit"  disabled={isSaving}>
+            Cancel
+            </Button>
+          <Button type="submit" variant="contained" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save"}
+            </Button>
         </DialogActions>
       </form>
     </Dialog>
