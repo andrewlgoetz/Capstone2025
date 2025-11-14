@@ -26,13 +26,13 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 15, title = "Expiring Soon
         background: "#fff",
         borderRadius: 12,
         boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-        padding: 16,
+        padding: 24,
         textAlign: "left"
       }}
     >
       {/* Title + Count */}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#1f2937" }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#6c757d" }}>{title}</h3>
         <span style={{
           background: "#1e3a8a",
           color: "#fff",
