@@ -25,17 +25,10 @@ class BarcodeInfo(BaseModel):
     barcode: Optional[str]
 
 
-class InventoryRead(BaseModel):
+class InventoryRead(InventoryCreate):
     model_config = ConfigDict(from_attributes=True)
     item_id: int
     bank_id: int
-    name: str
-    category: Optional[str] = None
-    barcode: Optional[str] = None
-    quantity: int
-    unit: Optional[str] = None
-    expiration_date: Optional[date] = None
-    location_id: Optional[int] = None
     date_added: datetime
     last_modified: Optional[datetime] = None
     created_by: Optional[int] = None
