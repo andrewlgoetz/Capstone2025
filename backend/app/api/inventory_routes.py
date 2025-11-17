@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead
+import app.services.barcode_service as barcode_service
+import app.services.barcode_service as inventory_serivce
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -13,12 +15,17 @@ def get_db():
     finally:
         db.close()
 
+# add a new item
 @router.post("/add", response_model=InventoryRead)
 def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
-    new_item = InventoryItem(**item.dict())
-    db.add(new_item)
-    db.commit()
-    db.refresh(new_item)
+
+    # encapsulate this logic b/c its reused
+    new_item = inventory_serivce.add_item(item, db)
+
+    # new_item = InventoryItem(**item.dict())
+    # db.add(new_item)
+    # db.commit()
+    # db.refresh(new_item)
     return new_item
 
 @router.get("/all", response_model=list[InventoryRead])
