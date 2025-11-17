@@ -22,7 +22,9 @@ def normalize_barcode(code):
     return code or None
 
 def default_bank_id(db):
-    pass
+    # TEMP: until auth/multi-bank is implemented
+    return 1
+
 #TODO LATER: how will bankid be stored, will changing locations change bank id? 
 
     # bank = db.query(FoodBank).first()

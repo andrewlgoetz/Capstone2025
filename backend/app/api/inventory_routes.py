@@ -5,8 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead
-import app.services.barcode_service as barcode_service
-import app.services.barcode_service as inventory_serivce
+import app.services.barcode_service as barcode_service 
+import app.services.inventory_service as inventory_service
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -22,7 +22,7 @@ def get_db():
 def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
 
     # encapsulate this logic b/c its reused
-    new_item = inventory_serivce.add_item(item, db)
+    new_item = inventory_service.add_item(item, db)
 
     # new_item = InventoryItem(**item.dict())
     # db.add(new_item)

@@ -24,7 +24,6 @@ class BarcodeInfo(BaseModel):
     category: Optional[str]
     barcode: Optional[str]
 
-
 class InventoryRead(InventoryCreate):
     model_config = ConfigDict(from_attributes=True)
     item_id: int
