@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
-from app.schemas.inventory_schema import InventoryCreate, InventoryRead
+from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 import app.services.barcode_service as barcode_service 
 import app.services.inventory_service as inventory_service
 
@@ -29,6 +29,15 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
     # db.commit()
     # db.refresh(new_item)
     return new_item
+
+@router.put("/{item_id}", response_model=InventoryRead)
+def update_item(
+    item_id: int,
+    item: InventoryUpdate,
+    db: Session = Depends(get_db),
+):
+    return inventory_service.update_item(item_id, item, db)
+
 
 @router.get("/all", response_model=list[InventoryRead])
 def list_items(db: Session = Depends(get_db)):

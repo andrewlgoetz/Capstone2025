@@ -25,7 +25,7 @@ import {
   Select,
   MenuItem,
   FormControlLabel,
-  Checkbox,
+  Checkbox
 } from "@mui/material";
 import api from "../services/api";
 
