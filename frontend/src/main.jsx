@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
+import './index.css';
 // central cache manager for server state
 const queryClient = new QueryClient({
   defaultOptions: {

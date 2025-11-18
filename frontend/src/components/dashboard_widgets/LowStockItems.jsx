@@ -2,12 +2,12 @@ import React, { useState, useMemo } from "react";
 import { getItemEmoji } from "./emojiMap";
 
 const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
+  const [threshold, setThreshold] = useState(defaultThreshold);
+
   const maxQuantity = useMemo(
-    () => Math.max(...inventory.map(i => i.quantity || 0), 1),
+    () => Math.max(...inventory.map(i => i.quantity || 0), 20),
     [inventory]
   );
-
-  const [threshold, setThreshold] = useState(defaultThreshold);
 
   const lowStockItems = useMemo(() => {
     return inventory
@@ -16,90 +16,57 @@ const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
   }, [inventory, threshold]);
 
   return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: "12px",
-        padding: "24px",
-        boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-      }}
-    >
-      {/* HEADER WITH COUNT BADGE */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#6c757d", margin: 0 }}>
-          Low Stock Items
-        </h2>
-
-        <span
-          style={{
-            background: "#1e3a8a",
-            color: "white",
-            padding: "6px 10px",
-            borderRadius: "6px",
-            fontWeight: 600,
-            fontSize: "14px",
-            minWidth: "32px",
-            textAlign: "center",
-          }}
-        >
-          {lowStockItems.length}
-        </span>
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+           <h3 className="text-lg font-semibold text-slate-700">Low Stock</h3>
+           <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+             {lowStockItems.length}
+           </span>
+        </div>
+        <div className="text-sm text-slate-500">
+           Threshold: <span className="font-medium text-slate-800">{threshold}</span>
+        </div>
       </div>
 
-      {/* DYNAMIC SLIDER */}
-      <div style={{ marginBottom: "18px" }}>
-        <label style={{ fontSize: "14px", color: "#6c757d", marginBottom: "6px", display: "block" }}>
-          Show items with quantity ≤ <strong>{threshold}</strong>
-        </label>
+      <input
+        type="range"
+        min="1"
+        max={maxQuantity}
+        value={threshold}
+        onChange={(e) => setThreshold(Number(e.target.value))}
+        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer mb-6 accent-primary"
+      />
 
-        <input
-          type="range"
-          min="1"
-          max={maxQuantity}
-          value={threshold}
-          onChange={(e) => setThreshold(Number(e.target.value))}
-          style={{
-            width: "100%",
-            cursor: "pointer",
-            accentColor: "#0072B2",
-          }}
-        />
-      </div>
-
-      {lowStockItems.length === 0 ? (
-        <p style={{ color: "#6c757d" }}>No items are below the selected threshold.</p>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px", textAlign: "left" }}>
-          <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
-              <th style={{ padding: "8px", color: "#6c757d" }}>Item</th>
-              <th style={{ padding: "8px", color: "#6c757d" }}>Category</th>
-              <th style={{ padding: "8px", color: "#6c757d" }}>Quantity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lowStockItems.map((item) => (
-              <tr key={item.item_id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "8px", color: "#6c757d" }}>
-                {getItemEmoji(item.name, item.category)}{"  "}{item.name}</td>
-                <td style={{ padding: "8px", color: "#6c757d" }}>
-                {item.category || "—"}
-                </td>
-                <td style={{ padding: "8px", fontWeight: "600", color: "#E15759" }}>
-                  {item.quantity}
-                </td>
+      <div className="overflow-y-auto max-h-[300px] pr-2">
+        {lowStockItems.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-8">Stock levels look healthy.</p>
+        ) : (
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-slate-400 uppercase bg-slate-50 sticky top-0">
+              <tr>
+                <th className="px-3 py-2 rounded-l-md">Item</th>
+                <th className="px-3 py-2">Category</th>
+                <th className="px-3 py-2 text-right rounded-r-md">Qty</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {lowStockItems.map((item) => (
+                <tr key={item.item_id} className="hover:bg-slate-50">
+                  <td className="px-3 py-2 font-medium text-slate-700">
+                    <span className="mr-2">{getItemEmoji(item.name, item.category)}</span>
+                    {item.name}
+                  </td>
+                  <td className="px-3 py-2 text-slate-500">{item.category}</td>
+                  <td className="px-3 py-2 text-right font-bold text-red-600">
+                    {item.quantity}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 };
