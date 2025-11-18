@@ -25,8 +25,11 @@ import {
   Select,
   MenuItem,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
 import api from "../services/api";
 
 const formatDate = (info) => {
@@ -77,6 +80,7 @@ export default function InventoryTable({
   onRowClick = null,
   lowStockThreshold = 10,
   showFilterBar = true,
+  onEditClick = null,
 }) {
   const [sorting, setSorting] = useState([]);
 
@@ -120,6 +124,7 @@ export default function InventoryTable({
       enableSorting: false,
       cell: ({row}) => row.index + 1,
     };
+
     let cols = DEFAULT_COLUMNS.filter(c => c.accessorKey !== 'item_id');
     if (mode === "widget") {
       cols = cols.filter((c) =>
@@ -132,12 +137,37 @@ export default function InventoryTable({
     if (Array.isArray(showColumns) && showColumns.length > 0) {
       cols = cols.filter((c) => showColumns.includes(c.accessorKey));
     }
-    return [serialCol, ...cols].map((c) => ({
-      ...c,
-      cell: c.cell || ((info) => info.getValue()),
-      }));
+    const actionsCol = {
+            id: "actions",
+            header: "Actions",
+            enableSorting: false,
+            cell: ({ row }) => (
+              <Tooltip title="Edit item">
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation(); // don't trigger row click
+                    if (onEditClick) onEditClick(row.original);
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ),
+          };
+      
+          const baseCols = [serialCol, ...cols].map((c) => ({
+            ...c,
+            cell: c.cell || ((info) => info.getValue()),
+          }));
+      
+          return mode === "full" ? [...baseCols, actionsCol] : baseCols;
+  //   return [serialCol, ...cols].map((c) => ({
+  //     ...c,
+  //     cell: c.cell || ((info) => info.getValue()),
+  //     }));
+  // }, [mode, showColumns]);
   }, [mode, showColumns]);
-
   // If widget mode, limit rows shown
   const displayed = mode === "widget" ? items.slice(0, limit) : items;
 
@@ -337,9 +367,9 @@ export default function InventoryTable({
             {table.getPaginationRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                hover
-                onClick={() => onRowClick && onRowClick(row.original)}
-                style={{ cursor: onRowClick ? "pointer" : "default" }}
+                // hover
+                // onClick={() => onRowClick && onRowClick(row.original)}
+                // style={{ cursor: onRowClick ? "pointer" : "default" }}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
@@ -410,6 +440,7 @@ InventoryTable.propTypes = {
   limit: PropTypes.number,
   showColumns: PropTypes.arrayOf(PropTypes.string),
   onRowClick: PropTypes.func,
-  lowStockThreshold: PropTypes.number, // NEW
-  showFilterBar: PropTypes.bool, // NEW
+  lowStockThreshold: PropTypes.number,
+  showFilterBar: PropTypes.bool,
+  onEditClick: PropTypes.func,
 };

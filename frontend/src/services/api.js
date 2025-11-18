@@ -22,4 +22,8 @@ export async function deleteItem(itemId) {
   return res.data;
 }
 
+// Update item
+export const updateItem = (item_id, item) =>
+  api.put(`/inventory/${item_id}`, item);
+
 export default api;
