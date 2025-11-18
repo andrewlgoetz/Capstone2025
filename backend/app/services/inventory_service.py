@@ -156,3 +156,30 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
         )
 
     return db_item
+
+def adjust_item_quantity(item_id: int, delta: int, db: Session) -> InventoryItem:
+    # Load the existing item
+    db_item = (
+        db.query(InventoryItem)
+        .filter(InventoryItem.item_id == item_id)
+        .first()
+    )
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    current_qty = db_item.quantity or 0
+    new_qty = current_qty + delta
+
+    if new_qty < 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient stock: cannot adjust by {delta} from {current_qty}.",
+        )
+
+    # Reuse your update_item helper with absolute quantity
+    updated = update_item(
+        item_id=item_id,
+        item=InventoryUpdate(quantity=new_qty),
+        db=db,
+    )
+    return updated
