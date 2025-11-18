@@ -49,10 +49,13 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
 
     data = item.model_dump()
     data["bank_id"] = bank_id
+    data["last_modified"] = datetime.now()
     if "barcode" in data:
         data["barcode"] = code
 
-    new_item = InventoryItem(**data)
+    new_item = InventoryItem(
+    **data,
+)
     
     try:
         db.add(new_item)

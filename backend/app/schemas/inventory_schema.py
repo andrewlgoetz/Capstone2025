@@ -10,6 +10,7 @@ class InventoryCreate(BaseModel):
     unit: Optional[str] = None
     expiration_date: Optional[date] = None
     location_id: Optional[int] = None
+    last_modified: Optional[datetime] = None
 
 class InventoryRead(InventoryCreate):
     model_config = ConfigDict(from_attributes=True)
