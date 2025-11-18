@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Inventory from './pages/Inventory.jsx'
 import Navbar from './components/Navbar.jsx'
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard.jsx";
 import Home from './pages/Home.jsx';
 
 function App() {
