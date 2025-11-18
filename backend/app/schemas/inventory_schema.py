@@ -47,3 +47,10 @@ class ScanResponse(BaseModel):
     status: Literal["KNOWN", "NEW"]
     item: Optional[InventoryRead] = None
     candidate_info: Optional[BarcodeInfo] = None
+
+class ScanOutResponse(BaseModel):
+    status: Literal["FOUND", "NOT_FOUND"] 
+    item: Optional[InventoryRead] = None
+
+class ScanOutConfirmRequest(BaseModel):
+    quantity: int = Field(..., gt=0)

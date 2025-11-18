@@ -6,7 +6,7 @@ from app.services.barcode_service import lookup_barcode
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.models.food_banks import FoodBank
-from app.schemas.inventory_schema import InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo
+from app.schemas.inventory_schema import * # InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo, ScanOutResponse
 import app.services.inventory_service as inventory_service
 
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
@@ -40,8 +40,42 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
 
     return new_item
 
+@router.post("/scan-out", response_model=ScanOutResponse)
+def scan_out_lookup(payload: ScanRequest, db: Session = Depends(get_db)):
+    code = inventory_service.normalize_barcode(payload.barcode)
+    if not code:
+        raise HTTPException(status_code=400, detail="barcode is required")
 
-@router.post("/scan", response_model=ScanResponse)
+    db_item = (
+        db.query(InventoryItem)
+        .filter(InventoryItem.barcode == code)
+        .first()
+    )
+
+    if not db_item:
+        return ScanOutResponse(status="NOT_FOUND", item=None)
+
+    return ScanOutResponse(
+        status="FOUND",
+        item=InventoryRead.model_validate(db_item),
+    )
+
+#make this optional
+@router.post("/scan-out/{item_id}/confirm", response_model=InventoryRead)
+def confirm_scan_out(
+    item_id: int,
+    payload: ScanOutConfirmRequest,
+    db: Session = Depends(get_db),
+):
+    # Use negative delta to subtract
+    updated = inventory_service.adjust_item_quantity(
+        item_id=item_id,
+        delta=-payload.quantity,
+        db=db,
+    )
+    return InventoryRead.model_validate(updated)
+
+@router.post("/scan-in", response_model=ScanResponse)
 def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
     code= inventory_service.normalize_barcode(payload.barcode)
     if not code:
@@ -71,3 +105,12 @@ def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
     )
 
     return ScanResponse(status="NEW", item = None, candidate = candidate)
+
+@router.post("/{item_id}/increase", response_model=InventoryRead)
+def increase_item_quantity(
+    item_id: int,
+    payload: QuantityDelta,
+    db: Session = Depends(get_db),
+):
+    updated = adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
+    return InventoryRead.model_validate(updated)
