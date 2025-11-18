@@ -1,19 +1,21 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Inventory from './pages/Inventory.jsx'
+import Navbar from './components/Navbar.jsx'
+import Home from './pages/Home.jsx'
 import Dashboard from "./pages/Dashboard";
 
 function App() {
+
   return (
-    <Router>
+    <BrowserRouter>
+      <Navbar />
       <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/inventory" element={<Inventory />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
-    </Router>
-  );
+    </BrowserRouter>
+  )
 }
 
 export default App
