@@ -1,7 +1,7 @@
 location_id,name,address,bank_id,notes
-1,Main Warehouse,"500 King St E",1,"Back storage near loading dock"
-2,Freezer Room,"500 King St E - Unit B",1,"By freezer section"
-3,Front Pantry,"220 Welland Ave",2,"Next to reception"
-4,Cold Storage,"220 Welland Ave - Basement",2,"Keep refrigerated"
-5,Distribution Center,"102 Main St",3,"Main warehouse for sorting"
-6,Storage Unit #2,"104 Main St",3,"Extra dry storage"
+1,Main Warehouse,"500 King St E",1,"A2"
+2,Freezer Room,"500 King St E - Unit B",1,"C2"
+3,Front Pantry,"220 Welland Ave",2,"B3"
+4,Cold Storage,"220 Welland Ave - Basement",2,"B2"
+5,Distribution Center,"102 Main St",3,"A1"
+6,Storage Unit #2,"104 Main St",3,"A6"

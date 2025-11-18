@@ -1,0 +1,13 @@
+.appLayout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2.5rem;
+  min-height: 100vh;
+  padding: 2rem clamp(1rem, 4vw, 3rem) 3rem;
+}
+
+.mainContent {
+  max-width: 1200px;
+  width: 100%;
+  justify-self: center;
+}
