@@ -22,32 +22,48 @@ export default function AddItemModal({
     unit: "",
     expiration_date: "",
     location_id: "",
+    movement_type: "",
+    movement_reason: "",
   });
+
+  // Track original values when editing an item so we can detect changes
+  const [originalValues, setOriginalValues] = React.useState(null);
 
   React.useEffect(() => {
     if (!open) return;
 
     if (defaultValues) {
+      const quantityStr =
+      defaultValues.quantity === null || defaultValues.quantity === undefined
+        ? ""
+        : String(defaultValues.quantity);
+
+      const locationStr =
+        defaultValues.location_id === null || defaultValues.location_id === undefined
+          ? ""
+          : String(defaultValues.location_id);
+
       // Map backend row → form values
       setValues({
         item_id: defaultValues.item_id ?? null,
         name: defaultValues.name ?? "",
         category: defaultValues.category ?? "",
         barcode: defaultValues.barcode ?? "",
-        quantity:
-          defaultValues.quantity === null || defaultValues.quantity === undefined
-            ? ""
-            : String(defaultValues.quantity),
+        quantity: quantityStr,
         unit: defaultValues.unit ?? "",
         expiration_date: defaultValues.expiration_date
           ? String(defaultValues.expiration_date).split("T")[0] // keep YYYY-MM-DD
           : "",
-        location_id:
-          defaultValues.location_id === null ||
-          defaultValues.location_id === undefined
-            ? ""
-            : String(defaultValues.location_id),
+        location_id: locationStr,
+        movement_type: "",  // reset movement fields
+        movement_reason: "",
       });
+
+      setOriginalValues({
+        quantity: quantityStr,
+        location_id: locationStr,
+      });
+
     } else {
       // blank form for add mode
       setValues({
@@ -60,13 +76,40 @@ export default function AddItemModal({
         expiration_date: "",
         location_id: "",
       });
+      setOriginalValues(null);
     }
   }, [defaultValues, open, mode]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setValues((v) => ({ ...v, [name]: value }));
-  };
+
+  const isEditMode = mode !== "add";
+
+  const numericQuantity =
+    values.quantity === "" ? null : Number(values.quantity);
+
+  const numericOriginalQuantity =
+    !originalValues || originalValues.quantity === ""
+      ? null
+      : Number(originalValues.quantity);
+
+  const locationChanged =
+    !!originalValues &&
+    originalValues.location_id !== "" &&
+    values.location_id !== "" &&
+    values.location_id !== originalValues.location_id;
+
+  const quantityDecreased =
+    numericQuantity !== null &&
+    numericOriginalQuantity !== null &&
+    numericQuantity < numericOriginalQuantity;
+
+  // We log a movement when quantity decreases OR location changes (in edit mode)
+  const movementNeeded =
+    isEditMode && !!originalValues && (quantityDecreased || locationChanged);
+
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setValues((v) => ({ ...v, [name]: value }));
+    };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -82,6 +125,13 @@ export default function AddItemModal({
       location_id:
         values.location_id === "" ? null : Number(values.location_id),
     };
+    // Only send movement fields when editing AND movement is needed
+    if (isEditMode && movementNeeded) {
+      payload.movement_type = values.movement_type;
+      if (values.movement_reason.trim()) {
+        payload.movement_reason = values.movement_reason.trim();
+      }
+    }
 
     onSave?.({
       mode,                    // 'add' or 'edit'
@@ -188,6 +238,36 @@ export default function AddItemModal({
                 onChange={handleChange}
               />
             </Grid>
+            {isEditMode && movementNeeded && (
+            <>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth required>
+                  <InputLabel>Movement Type</InputLabel>
+                  <Select
+                    name="movement_type"
+                    label="Movement Type"
+                    value={values.movement_type}
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="OUTBOUND">Outbound</MenuItem>
+                    <MenuItem value="TRANSFER">Transfer</MenuItem>
+                    <MenuItem value="WASTE">Waste</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  name="movement_reason"
+                  label="Movement note (optional)"
+                  fullWidth
+                  value={values.movement_reason}
+                  onChange={handleChange}
+                />
+              </Grid>
+            </>
+          )}
+
           </Grid>
         </DialogContent>
         <DialogActions>

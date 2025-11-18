@@ -77,8 +77,8 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    old_qty = item.quantity
-    old_loc = item.location_id
+    old_qty = db_item.quantity
+    old_loc = db_item.location_id
 
     # Only include fields actually sent from the client
     data = item.model_dump(exclude_unset=True)
@@ -112,8 +112,8 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
 
     db_item.last_modified = datetime.now()
 
-    new_qty = item.quantity
-    new_loc = item.location_id
+    new_qty = db_item.quantity
+    new_loc = db_item.location_id
 
     # Determine what changed (quantity/location)
     qty_delta = None
@@ -124,7 +124,7 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
 
     # If relevant, create an InventoryMovement record
     should_create_movement = (
-        (qty_delta is not None and qty_delta != 0)
+        (qty_delta is not None and qty_delta < 0)
         or loc_changed
     )
 
@@ -136,7 +136,7 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
             )
 
         movement = InventoryMovement(
-            item_id=item.item_id,
+            item_id=db_item.item_id,
             quantity_change=qty_delta if qty_delta is not None else 0,
             movement_type=movement_type,
             reason=movement_reason,
