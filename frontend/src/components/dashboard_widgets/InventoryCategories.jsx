@@ -3,15 +3,8 @@ import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
 const COLORS = [
-  "#4E79A7",
-  "#F28E2B",
-  "#59A14F",
-  "#E15759",
-  "#76B7B2",
-  "#EDC949",
-  "#B07AA1",
-  "#9C755F",
-  "#BAB0AC",
+  "#4f46e5", "#10b981", "#f59e0b", "#ef4444",
+  "#3b82f6", "#8b5cf6", "#ec4899", "#64748b",
 ];
 
 const InventoryCategoryPie = ({ inventory }) => {
@@ -34,49 +27,25 @@ const InventoryCategoryPie = ({ inventory }) => {
     datasets: [
       {
         data: values,
-        backgroundColor: labels.map((_, i) => COLORS[i % COLORS.length]),
-        borderColor: "white",
-        borderWidth: 1,
+        backgroundColor: COLORS,
+        borderWidth: 0,
       },
     ],
   };
 
+  const options = {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "right", labels: { boxWidth: 12, font: { size: 11 } } },
+      title: { display: false },
+    },
+  };
+
   return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: "12px",
-        padding: "24px",
-        boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-      }}
-    >
-      <div style={{ position: "relative", height: "350px" }}>
-        <Pie
-          data={pieData}
-          options={{
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: "right" },
-              title: {
-                display: true,
-                text: "Category Distribution",
-                font: { size: 18, weight: "bold" },
-                padding: 20,
-              },
-              tooltip: {
-                callbacks: {
-                  label: function (context) {
-                    const value = context.raw;
-                    const dataset = context.dataset.data;
-                    const total = dataset.reduce((sum, val) => sum + val, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${context.label}: ${value} items (${percentage}%)`;
-                  },
-                },
-              },
-            },
-          }}
-        />
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-[450px] flex flex-col">
+      <h3 className="text-lg font-semibold text-slate-700 mb-6">Category Distribution</h3>
+      <div className="relative flex-1">
+        <Pie data={pieData} options={options} />
       </div>
     </div>
   );

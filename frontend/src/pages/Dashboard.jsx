@@ -10,31 +10,34 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await api.get("/inventory/all");
-      setInventoryData(res.data);
+      try {
+        const res = await api.get("/inventory/all");
+        setInventoryData(res.data);
+      } catch (error) {
+        console.error("Failed to fetch inventory:", error);
+      }
     };
     fetchData();
   }, []);
 
-    return (
-        <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-          <h1 style={{ marginBottom: "20px" }}>Inventory Dashboard</h1>
-      
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(450px, 1fr))",
-              gap: "24px", // <--- adds space between widgets
-            }}
-          >
-            <InventoryQuantitiesBarChart inventory={inventoryData} />
-            <InventoryCategoryPie inventory={inventoryData} />
-            <LowStockItems inventory={inventoryData} />
-            <ExpiringSoon data={inventoryData} days={14} />
-            {/* more widgets will simply drop in */}
-          </div>
-        </div>
-      );
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
+        <p className="text-slate-500 mt-1">Overview of your inventory health and metrics.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Row: Charts */}
+        <InventoryQuantitiesBarChart inventory={inventoryData} />
+        <InventoryCategoryPie inventory={inventoryData} />
+
+        {/* Bottom Row: Lists */}
+        <LowStockItems inventory={inventoryData} />
+        <ExpiringSoon data={inventoryData} days={30} />
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;
