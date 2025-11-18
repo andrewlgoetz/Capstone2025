@@ -5,7 +5,7 @@ import { Snackbar, Alert } from "@mui/material";
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import InventoryTable from '../components/InventoryTable'
 import AddItemModal from '../components/AddItemModal'
-import { createItem, updateItem } from '../services/api'
+import { createItem, updateItem, deleteItem } from '../services/api'
 
 export default function Inventory() {
   const navigate = useNavigate()
@@ -14,6 +14,8 @@ export default function Inventory() {
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  const [categories, setCategories] = useState([]);
 
   const closeModal = () => {
     setOpen(false);
@@ -60,6 +62,21 @@ export default function Inventory() {
     onError: handleMutationError,
   });
 
+  const deleteItemMutation = useMutation({
+    mutationFn: (item_id) => deleteItem(item_id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+    onError: (e) => {
+      let msg = 'Failed to delete item';
+      if (e?.message) {
+        msg = e.message;
+      }
+      console.error('Delete failed:', e);
+      alert(msg);
+    },
+  });
+
   const isSaving = addItemMutation.isPending || updateItemMutation.isPending;
 
   // ------ handlers called by UI ------
@@ -73,6 +90,15 @@ export default function Inventory() {
     setOpen(true);
   };
 
+  const handleDeleteClick = (item) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${item.name}" (ID ${item.item_id})? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    deleteItemMutation.mutate(item.item_id);
+  };
+
   // called by AddItemModal
   const handleSave = ({ mode, item_id, payload }) => {
     if (mode === 'edit') {
@@ -82,46 +108,6 @@ export default function Inventory() {
     }
   };
 
-//   return (
-//     <Box sx={{ p: 5 }}>
-//       <header style={{ 
-//         display: 'flex', 
-//         justifyContent: 'space-between', 
-//         alignItems: 'center', 
-//         marginBottom: 16 }}
-//         >
-//         <Typography variant="h4">Inventory</Typography>
-//         <Button variant="contained" onClick={() => setOpen(true)}>
-//           Add Item</Button>
-//       </header>
-
-//       <InventoryTable
-//         mode="full"
-//         onRowClick={(item) => navigate(`/inventory/${item.item_id}`)}
-//         lowStockThreshold={25}
-//         showFilterBar
-//       />
-
-//       <AddItemModal
-//         open={open}
-//         onClose={() => setOpen(false)}
-//         onSave={handleSave}
-//         isSaving={addItemMutation.isPending}
-//       />
-
-//       <Snackbar
-//         open={successOpen}
-//         autoHideDuration={3000}
-//         onClose={() => setSuccessOpen(false)}
-//         anchorOrigin={{ vertical: "top", horizontal: "center" }}
-//       >
-//         <Alert onClose={() => setSuccessOpen(false)} severity="success" variant="filled">
-//           Item added successfully!
-//         </Alert>
-//       </Snackbar>
-//     </Box>
-//   )
-// }
 return (
   <Box sx={{ p: 5 }}>
     <header
@@ -140,10 +126,12 @@ return (
 
     <InventoryTable
       mode="full"
-      onRowClick={(item) => navigate(`/inventory/${item.item_id}`)}
+      // onRowClick={(item) => navigate(`/inventory/${item.item_id}`)}
       lowStockThreshold={25}
       showFilterBar
-      onEditClick={handleEditClick}   // 🔗 wire table edit → modal
+      onEditClick={handleEditClick}
+      onDeleteClick={handleDeleteClick}
+      onCategoriesLoaded={(cats) => setCategories(cats)}
     />
 
     <AddItemModal
@@ -152,7 +140,8 @@ return (
       onSave={handleSave}             // gets { mode, item_id, payload }
       isSaving={isSaving}
       mode={editItem ? 'edit' : 'add'}
-      initialValues={editItem}
+      defaultValues={editItem}
+      categories={categories}
     />
 
     <Snackbar

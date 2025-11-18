@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -30,6 +30,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete'; 
 import api from "../services/api";
 
 const formatDate = (info) => {
@@ -75,12 +76,13 @@ const DEFAULT_COLUMNS = [
  */
 export default function InventoryTable({
   mode = "full",
-  limit = 5,
+  limit = 25,
   showColumns = null,
-  onRowClick = null,
   lowStockThreshold = 10,
   showFilterBar = true,
   onEditClick = null,
+  onDeleteClick = null,
+  onCategoriesLoaded = null,
 }) {
   const [sorting, setSorting] = useState([]);
 
@@ -114,15 +116,33 @@ export default function InventoryTable({
   const isLoading = query.isLoading;
   const isError = query.isError;
 
+  const [serialMap, setSerialMap] = useState({});
+
+  useEffect(() => {
+    if (!items.length) {
+      setSerialMap({});
+      return;
+    }
+
+    // Recompute serials 1..N based on current items order
+    const next = {};
+    let serial = 1;
+    const ordered = items;
+
+    ordered.forEach((item) => {
+      next[item.item_id] = serial++;
+    });
+
+    setSerialMap(next);
+  }, [items]);
+
   // Decide which columns to render depending on mode (full table vs widget) & showColumns override
   const effectiveColumns = useMemo(() => {
-    // let cols = DEFAULT_COLUMNS;
-    // hide the DB id and insert serial column
     const serialCol = {
       id: "serial",
       header: "No.",
       enableSorting: false,
-      cell: ({row}) => row.index + 1,
+      cell: ({row}) => serialMap[row.original.item_id] ?? "—",
     };
 
     let cols = DEFAULT_COLUMNS.filter(c => c.accessorKey !== 'item_id');
@@ -130,31 +150,42 @@ export default function InventoryTable({
       cols = cols.filter((c) =>
         ["name", "quantity", "unit"].includes(c.accessorKey)
         );
-      // cols = DEFAULT_COLUMNS.filter((c) =>
-      //   ["name", "quantity", "unit", "item_id"].includes(c.accessorKey)
-      // );
     }
     if (Array.isArray(showColumns) && showColumns.length > 0) {
       cols = cols.filter((c) => showColumns.includes(c.accessorKey));
     }
     const actionsCol = {
-            id: "actions",
-            header: "Actions",
-            enableSorting: false,
-            cell: ({ row }) => (
-              <Tooltip title="Edit item">
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation(); // don't trigger row click
-                    if (onEditClick) onEditClick(row.original);
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            ),
-          };
+      id: "actions",
+      header: "Actions",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <>
+          <Tooltip title="Edit item">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEditClick) onEditClick(row.original);
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Delete item">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDeleteClick) onDeleteClick(row.original);
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </>
+      ),
+    };
       
           const baseCols = [serialCol, ...cols].map((c) => ({
             ...c,
@@ -162,12 +193,7 @@ export default function InventoryTable({
           }));
       
           return mode === "full" ? [...baseCols, actionsCol] : baseCols;
-  //   return [serialCol, ...cols].map((c) => ({
-  //     ...c,
-  //     cell: c.cell || ((info) => info.getValue()),
-  //     }));
-  // }, [mode, showColumns]);
-  }, [mode, showColumns]);
+  }, [mode, showColumns, serialMap, onEditClick]);
   // If widget mode, limit rows shown
   const displayed = mode === "widget" ? items.slice(0, limit) : items;
 
@@ -178,6 +204,12 @@ export default function InventoryTable({
       new Set(items.map((r) => r.category).filter(Boolean))
     ).sort();
   }, [items]);
+
+  useEffect(() => {
+    if (onCategoriesLoaded) {
+      onCategoriesLoaded(categories);
+    }
+  }, [categories]);  
 
   // Date helpers
   const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null); // avoid TZ shifts
@@ -439,8 +471,10 @@ InventoryTable.propTypes = {
   mode: PropTypes.oneOf(["full", "widget"]),
   limit: PropTypes.number,
   showColumns: PropTypes.arrayOf(PropTypes.string),
-  onRowClick: PropTypes.func,
+  // onRowClick: PropTypes.func,
   lowStockThreshold: PropTypes.number,
   showFilterBar: PropTypes.bool,
   onEditClick: PropTypes.func,
+  onDeleteClick: PropTypes.func,
+  onCategoriesLoaded: PropTypes.func,
 };
