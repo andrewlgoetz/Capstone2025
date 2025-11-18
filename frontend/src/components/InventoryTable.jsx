@@ -325,7 +325,7 @@ export default function InventoryTable({
               ))}
             </Select>
           </FormControl>
-          {/* <FormControlLabel
+          <FormControlLabel
             control={
               <Checkbox
                 checked={lowStockOnly}
@@ -333,9 +333,9 @@ export default function InventoryTable({
               />
             }
             label={`Low stock (≤ ${lowStockThreshold})`}
-          /> */}
+          />
           {/* NEW: Expiry From / To */}
-          {/* <TextField
+          <TextField
             size="small"
             label="Expiry from"
             type="date"
@@ -350,7 +350,7 @@ export default function InventoryTable({
             value={expiryTo}
             onChange={(e) => setExpiryTo(e.target.value)}
             InputLabelProps={{ shrink: true }}
-          /> */}
+          />
 
           {/* NEW: Only items with expiry */}
           <FormControlLabel
@@ -364,7 +364,7 @@ export default function InventoryTable({
           />
 
           {/* NEW (optional): Expiring within N days quick filter */}
-          {/* <TextField
+          <TextField
             size="small"
             label="Expiring in (days)"
             type="number"
@@ -372,7 +372,7 @@ export default function InventoryTable({
             value={expiringInDays}
             onChange={(e) => setExpiringInDays(e.target.value)}
             sx={{ width: 160 }}
-          /> */}
+          />
         </Box>
       )}
       {/* -------------------------------------------------------------------- NEW */}
