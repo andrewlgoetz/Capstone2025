@@ -17,7 +17,8 @@ import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
-import { fetchInventoryByBarcode } from '../services/api'
+import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
+import { fetchInventoryByBarcode, scanOutInventory } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
 const StatCard = ({ icon: Icon, title, value, accentColor }) => (
@@ -89,6 +90,7 @@ const CategoryChart = ({ title, data = [] }) => {
 const Home = () => {
   const [query, setQuery] = useState('')
   const [showScan, setShowScan] = useState(false)
+  const [scanMode, setScanMode] = useState('in') // 'in' or 'out'
   const [showFabMenu, setShowFabMenu] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
@@ -154,6 +156,27 @@ const Home = () => {
       })
       .catch(() => {
         setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
+        setSnack({ open: true, message: 'Lookup failed', severity: 'warning' })
+      })
+  }
+
+  // Scan out flow: expects barcode exists; opens confirm quantity modal and calls dummy scanOutInventory
+  const [scanOutTarget, setScanOutTarget] = useState(null)
+
+  const handleScanOut = (code) => {
+    // fetch product image and inventory info similar to scan-in, then show quantity modal
+    setProductDialog({ open: true, loading: true, product: null, error: null })
+    Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
+      .then(([prodRes, invRes]) => {
+        const product = prodRes.status === 'fulfilled' ? prodRes.value : null
+        const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
+
+        setProductDialog({ open: false, loading: false, product: product, inventory: inventory, error: null })
+        // show separate modal for quantity confirmation
+        setScanOutTarget({ product, inventory })
+      })
+      .catch(() => {
+        setProductDialog({ open: false, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
         setSnack({ open: true, message: 'Lookup failed', severity: 'warning' })
       })
   }
@@ -268,13 +291,13 @@ const Home = () => {
             <div className="absolute right-0 bottom-16 grid gap-2 p-2 bg-white border border-gray-200 rounded-xl shadow-xl">
               <button 
                 className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                onClick={() => { setShowScan(true); setShowFabMenu(false); }}
+                onClick={() => { setScanMode('in'); setShowScan(true); setShowFabMenu(false); }}
               >
                 Scan In (Add/Update)
               </button>
               <button 
                 className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                onClick={() => { setShowFabMenu(false); /* Update inventory logic */ }}
+                onClick={() => { setScanMode('out'); setShowScan(true); setShowFabMenu(false); }}
               >
                 Scan Out
               </button>
@@ -301,7 +324,31 @@ const Home = () => {
       {showScan && (
         <ScanSheet
           onClose={() => setShowScan(false)}
-          onScan={handleScan}
+          onScan={(code) => {
+            setShowScan(false)
+            if (scanMode === 'out') handleScanOut(code)
+            else handleScan(code)
+          }}
+        />
+      )}
+
+      {/* Scan-Out Quantity Confirmation */}
+      {scanOutTarget && (
+        <ConfirmQuantityModal
+          open={Boolean(scanOutTarget)}
+          onClose={() => setScanOutTarget(null)}
+          initial={{ barcode: scanOutTarget.inventory?.barcode, quantity: 1, name: scanOutTarget.inventory?.name }}
+          imageUrl={scanOutTarget.product?.image_front_small_url}
+          onConfirm={(payload) => {
+            // call dummy API
+            scanOutInventory(payload.barcode, payload.quantity)
+              .then((res) => {
+                console.log('Scan out result', res)
+                setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
+                setScanOutTarget(null)
+              })
+              .catch(() => setSnack({ open: true, message: 'Scan out failed', severity: 'warning' }))
+          }}
         />
       )}
 
