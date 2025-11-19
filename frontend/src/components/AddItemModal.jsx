@@ -101,18 +101,67 @@ export default function AddItemModal({
     numericQuantity !== null &&
     numericOriginalQuantity !== null &&
     numericQuantity < numericOriginalQuantity;
+  
+  // location change → transfer movement
+  const isTransferMovement =
+  isEditMode && !!originalValues && locationChanged;
+
+  // qty decrease only (no location change) → outbound or waste
+  const isQtyMovement =
+  isEditMode &&
+  !!originalValues &&
+  quantityDecreased &&
+  !locationChanged;
+
+  const invalidCombinedChange =
+  isEditMode &&
+  !!originalValues &&
+  quantityDecreased &&
+  locationChanged;
 
   // We log a movement when quantity decreases OR location changes (in edit mode)
-  const movementNeeded =
-    isEditMode && !!originalValues && (quantityDecreased || locationChanged);
+  const movementNeeded = isTransferMovement || isQtyMovement;
 
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      setValues((v) => ({ ...v, [name]: value }));
-    };
+  React.useEffect(() => {
+    if (!isEditMode || !originalValues) return;
+  
+    if (isTransferMovement) {
+      // auto-lock movement type as TRANSFER
+      setValues((v) =>
+        v.movement_type === "TRANSFER"
+          ? v
+          : { ...v, movement_type: "TRANSFER" }
+      );
+    } else if (isQtyMovement) {
+      // if we were previously in transfer mode, clear it so user can pick outbound/waste
+      setValues((v) =>
+        v.movement_type === "TRANSFER"
+          ? { ...v, movement_type: "" }
+          : v
+      );
+    } else {
+      // no movement needed → clear movement_type
+      setValues((v) =>
+        v.movement_type ? { ...v, movement_type: "" } : v
+      );
+    }
+  }, [isEditMode, originalValues, isTransferMovement, isQtyMovement]);
+  
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues((v) => ({ ...v, [name]: value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (invalidCombinedChange) {
+      alert(
+        "Can't change both quantity and location in one edit. Please update one at a time."
+      );
+      return;
+    }
 
     const payload = {
       name: values.name.trim(),
@@ -159,11 +208,12 @@ export default function AddItemModal({
                 type="string"
                 value={values.name}
                 onChange={handleChange}
+                disabled={isEditMode}
               />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth>
+            <FormControl fullWidth disabled={isEditMode}>
               <InputLabel>Category</InputLabel>
               <Select
                 name="category"
@@ -187,6 +237,7 @@ export default function AddItemModal({
                 required
                 value={values.barcode}
                 onChange={handleChange}
+                disabled={isEditMode}
               />
             </Grid>
 
@@ -212,6 +263,7 @@ export default function AddItemModal({
                 type="string"
                 value={values.unit}
                 onChange={handleChange}
+                disabled={isEditMode}
               />
             </Grid>
 
@@ -224,6 +276,7 @@ export default function AddItemModal({
                 value={values.expiration_date}
                 onChange={handleChange}
                 InputLabelProps={{ shrink: true }}
+                disabled={isEditMode}
               />
             </Grid>
 
@@ -240,22 +293,32 @@ export default function AddItemModal({
             </Grid>
             {isEditMode && movementNeeded && (
             <>
+              {/* Movement type */}
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth required>
-                  <InputLabel>Movement Type</InputLabel>
-                  <Select
-                    name="movement_type"
+                {isTransferMovement ? (
+                  // Transfer: lock movement type to TRANSFER
+                  <TextField
                     label="Movement Type"
-                    value={values.movement_type}
-                    onChange={handleChange}
-                  >
-                    <MenuItem value="OUTBOUND">Outbound</MenuItem>
-                    <MenuItem value="TRANSFER">Transfer</MenuItem>
-                    <MenuItem value="WASTE">Waste</MenuItem>
-                  </Select>
-                </FormControl>
+                    value="Transfer"
+                    fullWidth
+                  />
+                ) : (
+                  <FormControl fullWidth required>
+                    <InputLabel>Movement Type</InputLabel>
+                    <Select
+                      name="movement_type"
+                      label="Movement Type"
+                      value={values.movement_type}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="OUTBOUND">Outbound</MenuItem>
+                      <MenuItem value="WASTE">Waste</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
               </Grid>
 
+              {/* Optional note for any movement */}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   name="movement_reason"
@@ -267,7 +330,6 @@ export default function AddItemModal({
               </Grid>
             </>
           )}
-
           </Grid>
         </DialogContent>
         <DialogActions>
