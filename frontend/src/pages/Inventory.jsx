@@ -14,6 +14,7 @@ export default function Inventory() {
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [categories, setCategories] = useState([]);
 
@@ -23,8 +24,9 @@ export default function Inventory() {
   };
 
   // ------ shared success + error handlers ------
-  const handleMutationSuccess = () => {
+  const handleMutationSuccess = (message) => {
     queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    setSuccessMessage(message);
     setSuccessOpen(true);
     closeModal();
   };
@@ -49,17 +51,22 @@ export default function Inventory() {
     alert(msg);
   };
 
+  const handleCloseSnackbar = () => {
+    setSuccessOpen(false);
+    setSuccessMessage("");
+  };
+
    // ------ mutations ------
    const addItemMutation = useMutation({
     mutationFn: createItem,
-    onSuccess: handleMutationSuccess,
-    onError: handleMutationError,
+    onSuccess: () => handleMutationSuccess("Item added successfully!"),
+    onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const updateItemMutation = useMutation({
     mutationFn: ({ item_id, payload }) => updateItem(item_id, payload),
-    onSuccess: handleMutationSuccess,
-    onError: handleMutationError,
+    onSuccess: () => handleMutationSuccess("Item updated successfully!"),
+    onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const deleteItemMutation = useMutation({
@@ -147,16 +154,18 @@ return (
     <Snackbar
       open={successOpen}
       autoHideDuration={3000}
-      onClose={() => setSuccessOpen(false)}
+      onClose={handleCloseSnackbar}
+      message={successMessage}
       anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
       <Alert
-        onClose={() => setSuccessOpen(false)}
-        severity="success"
-        variant="filled"
-      >
-        Item {editItem ? 'updated' : 'added'} successfully!
-      </Alert>
+      onClose={handleCloseSnackbar}
+      severity="success"
+      variant="filled"
+      sx={{ width: '100%' }}
+    >
+      {successMessage}
+    </Alert>
     </Snackbar>
   </Box>
 );

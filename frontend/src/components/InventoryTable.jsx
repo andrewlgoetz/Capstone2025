@@ -112,7 +112,16 @@ export default function InventoryTable({
   });
 
   // State mapping from query
-  const items = query.data ?? [];
+  // const items = query.data ?? [];
+    // State mapping from query
+    const rawItems = query.data ?? [];
+
+    // Always show items in a stable order (e.g., by item_id)
+    const items = useMemo(
+      () => [...rawItems].sort((a, b) => a.item_id - b.item_id),
+      [rawItems]
+    );
+  
   const isLoading = query.isLoading;
   const isError = query.isError;
 
@@ -471,7 +480,6 @@ InventoryTable.propTypes = {
   mode: PropTypes.oneOf(["full", "widget"]),
   limit: PropTypes.number,
   showColumns: PropTypes.arrayOf(PropTypes.string),
-  // onRowClick: PropTypes.func,
   lowStockThreshold: PropTypes.number,
   showFilterBar: PropTypes.bool,
   onEditClick: PropTypes.func,
