@@ -18,7 +18,8 @@ import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 import { fetchProductByBarcode } from '../services/off';
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
-import { fetchInventoryByBarcode, scanOutInventory } from '../services/api'
+import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
+import { fetchInventoryByBarcode, scanOutInventory, increaseInventory } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
 const StatCard = ({ icon: Icon, title, value, accentColor }) => (
@@ -142,8 +143,9 @@ const Home = () => {
   }, [snack.open]);
 
   const handleScan = (code) => {
-    // show loading dialog while fetching 3rd-party product info and dummy inventory
-    setProductDialog({ open: true, loading: true, product: null, error: null })
+  // start a loading lookup but don't open the generic product dialog yet
+  // (we may show increase/quantity modals instead)
+  setProductDialog({ open: false, loading: true, product: null, error: null })
 
     // run both lookups in parallel
     Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
@@ -151,17 +153,27 @@ const Home = () => {
         const product = prodRes.status === 'fulfilled' ? prodRes.value : null
         const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
 
-        setProductDialog({ open: true, loading: false, product: product, inventory: inventory, error: null })
-        setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+        // If inventory is a known item (has item_id), show the increase modal instead of full-edit modal
+        if (inventory && inventory.item_id) {
+          // close the generic product dialog and open the scan-in increase modal
+          setProductDialog({ open: false, loading: false, product: product, inventory: inventory, error: null })
+          setScanInTarget({ product, inventory })
+          setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+        } else {
+    setProductDialog({ open: true, loading: false, product: product, inventory: inventory, error: null })
+          setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+        }
       })
       .catch(() => {
-        setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
+  // show generic dialog on lookup failure
+  setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
         setSnack({ open: true, message: 'Lookup failed', severity: 'warning' })
       })
   }
 
   // Scan out flow: expects barcode exists; opens confirm quantity modal and calls dummy scanOutInventory
   const [scanOutTarget, setScanOutTarget] = useState(null)
+  const [scanInTarget, setScanInTarget] = useState(null)
 
   const handleScanOut = (code) => {
     // fetch product image and inventory info similar to scan-in, then show quantity modal
@@ -348,6 +360,24 @@ const Home = () => {
                 setScanOutTarget(null)
               })
               .catch(() => setSnack({ open: true, message: 'Scan out failed', severity: 'warning' }))
+          }}
+        />
+      )}
+
+      {/* Scan-In (existing item) Increase Confirmation */}
+      {scanInTarget && (
+        <ConfirmIncreaseModal
+          open={Boolean(scanInTarget)}
+          onClose={() => setScanInTarget(null)}
+          initial={{ barcode: scanInTarget.inventory?.barcode, item_id: scanInTarget.inventory?.item_id, name: scanInTarget.inventory?.name, category: scanInTarget.inventory?.category }}
+          imageUrl={scanInTarget.product?.image_front_small_url}
+          onConfirm={(payload) => {
+            increaseInventory(payload.item_id, payload.quantity)
+              .then((res) => {
+                setSnack({ open: true, message: `Added ${payload.quantity} — new qty ${res.quantity}`, severity: 'success' })
+                setScanInTarget(null)
+              })
+              .catch(() => setSnack({ open: true, message: 'Increase failed', severity: 'warning' }))
           }}
         />
       )}

@@ -98,6 +98,13 @@ export async function scanOutInventory(barcode, qty = 1) {
   }
 }
 
+// Increase inventory quantity for an existing item (scan-in known item)
+export async function increaseInventory(item_id, amount = 1) {
+  if (!item_id) throw new Error('item_id required')
+  const res = await api.post(`/barcode/${item_id}/increase`, { amount })
+  return res.data
+}
+
 /*
   Dummy helpers (kept for local testing). Uncomment if you need the old behavior.
 
