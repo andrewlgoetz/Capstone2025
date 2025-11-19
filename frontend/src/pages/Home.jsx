@@ -397,6 +397,7 @@ const Home = () => {
           onClose={() => setProductDialog({ open: false, loading: false, product: null, inventory: null, error: null })}
           initial={productDialog.inventory || { barcode: productDialog.product?.code || '' }}
           imageUrl={productDialog.product?.image_front_small_url}
+          product={productDialog.product}
           onConfirm={(created) => {
             // created is the object returned from the backend createItem
             console.log('Confirmed inventory', created)
