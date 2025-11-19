@@ -121,10 +121,10 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
         <Box className="flex gap-2 flex-col sm:flex-row">
           <Box sx={{ flex: '0 0 160px', display: 'grid', placeItems: 'center' }}>
             {imageUrl ? (
-              // keep image aspect and fit
-              <img src={imageUrl} alt={form.name || 'item image'} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: 8 }} />
+              // taller vertical image (approx 2:3) to match OFF product photos
+              <img src={imageUrl} alt={form.name || 'item image'} style={{ width: 150, height: 220, objectFit: 'cover', borderRadius: 8 }} />
             ) : (
-              <Box sx={{ width: 150, height: 150, bgcolor: '#f3f4f6', borderRadius: 1 }} />
+              <Box sx={{ width: 150, height: 220, bgcolor: '#f3f4f6', borderRadius: 1 }} />
             )}
           </Box>
 
