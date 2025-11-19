@@ -84,17 +84,6 @@ const CategoryChart = ({ title, data = [] }) => {
     );
 };
 
-// Placeholder for other Charts (Used inside the Forecasting card)
-// const PlaceholderChart = ({ title, subtitle }) => (
-//   <div className="bg-white rounded-xl p-4 grid grid-rows-[auto_1fr] shadow-sm border border-gray-200">
-//     <div className="text-base font-semibold text-slate-800 mb-0.5">{title}</div>
-//     <div className="text-xs text-slate-500 mb-2">{subtitle}</div>
-//     <div className="h-32 rounded-md bg-gray-50 grid place-items-center text-slate-400 text-sm border border-dashed border-gray-300">
-//       Chart Placeholder
-//     </div>
-//   </div>
-// );
-
 const Home = () => {
   const [query, setQuery] = useState('')
   const [showScan, setShowScan] = useState(false)

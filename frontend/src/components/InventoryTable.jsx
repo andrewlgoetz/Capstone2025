@@ -48,7 +48,7 @@ export default function InventoryTable({
   onDeleteClick = null,
   onCategoriesLoaded = null,
 }) {
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState(mode === "widget" ? [{ id: 'last_modified', desc: true }] : []);
 
   // Filter controls
   const [search, setSearch] = useState(""); 
@@ -113,7 +113,7 @@ export default function InventoryTable({
     
     if (mode === "widget") {
       cols = cols.filter((c) =>
-        ["name", "quantity", "unit", "expiration_date"].includes(c.accessorKey)
+        ["name", "quantity", "unit", "last_modified"].includes(c.accessorKey)
       );
     }
     if (Array.isArray(showColumns) && showColumns.length > 0) {
@@ -295,9 +295,6 @@ export default function InventoryTable({
             Low stock (≤ {lowStockThreshold})
           </label>
           
-          {/* --- EXPIRY FILTERS START HERE --- */}
-          
-          {/* Expiry From Date */}
           <div className="relative">
             <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry from</label>
             <input
