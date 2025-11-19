@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import date,datetime
 from typing import Optional,Literal
+from app.models.inventory_movement import MovementType
 
 class InventoryCreate(BaseModel):
     name: str
@@ -31,6 +32,10 @@ class InventoryUpdate(BaseModel):
     expiration_date: Optional[date] = None
     location_id: Optional[int] = None
     last_modified: Optional[datetime] = None
+    
+    # used ONLY for InventoryMovement, not stored on InventoryItem
+    movement_type: Optional[MovementType] = None   # OUTBOUND / TRANSFER / WASTE
+    movement_reason: Optional[str] = None
 
 class ScanRequest(BaseModel):
     barcode: str

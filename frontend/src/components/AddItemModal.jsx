@@ -22,32 +22,48 @@ export default function AddItemModal({
     unit: "",
     expiration_date: "",
     location_id: "",
+    movement_type: "",
+    movement_reason: "",
   });
+
+  // Track original values when editing an item so we can detect changes
+  const [originalValues, setOriginalValues] = React.useState(null);
 
   React.useEffect(() => {
     if (!open) return;
 
     if (defaultValues) {
+      const quantityStr =
+      defaultValues.quantity === null || defaultValues.quantity === undefined
+        ? ""
+        : String(defaultValues.quantity);
+
+      const locationStr =
+        defaultValues.location_id === null || defaultValues.location_id === undefined
+          ? ""
+          : String(defaultValues.location_id);
+
       // Map backend row → form values
       setValues({
         item_id: defaultValues.item_id ?? null,
         name: defaultValues.name ?? "",
         category: defaultValues.category ?? "",
         barcode: defaultValues.barcode ?? "",
-        quantity:
-          defaultValues.quantity === null || defaultValues.quantity === undefined
-            ? ""
-            : String(defaultValues.quantity),
+        quantity: quantityStr,
         unit: defaultValues.unit ?? "",
         expiration_date: defaultValues.expiration_date
           ? String(defaultValues.expiration_date).split("T")[0] // keep YYYY-MM-DD
           : "",
-        location_id:
-          defaultValues.location_id === null ||
-          defaultValues.location_id === undefined
-            ? ""
-            : String(defaultValues.location_id),
+        location_id: locationStr,
+        movement_type: "",  // reset movement fields
+        movement_reason: "",
       });
+
+      setOriginalValues({
+        quantity: quantityStr,
+        location_id: locationStr,
+      });
+
     } else {
       // blank form for add mode
       setValues({
@@ -60,8 +76,77 @@ export default function AddItemModal({
         expiration_date: "",
         location_id: "",
       });
+      setOriginalValues(null);
     }
   }, [defaultValues, open, mode]);
+
+
+  const isEditMode = mode !== "add";
+
+  const numericQuantity =
+    values.quantity === "" ? null : Number(values.quantity);
+
+  const numericOriginalQuantity =
+    !originalValues || originalValues.quantity === ""
+      ? null
+      : Number(originalValues.quantity);
+
+  const locationChanged =
+    !!originalValues &&
+    originalValues.location_id !== "" &&
+    values.location_id !== "" &&
+    values.location_id !== originalValues.location_id;
+
+  const quantityDecreased =
+    numericQuantity !== null &&
+    numericOriginalQuantity !== null &&
+    numericQuantity < numericOriginalQuantity;
+  
+  // location change → transfer movement
+  const isTransferMovement =
+  isEditMode && !!originalValues && locationChanged;
+
+  // qty decrease only (no location change) → outbound or waste
+  const isQtyMovement =
+  isEditMode &&
+  !!originalValues &&
+  quantityDecreased &&
+  !locationChanged;
+
+  const invalidCombinedChange =
+  isEditMode &&
+  !!originalValues &&
+  quantityDecreased &&
+  locationChanged;
+
+  // We log a movement when quantity decreases OR location changes (in edit mode)
+  const movementNeeded = isTransferMovement || isQtyMovement;
+
+  React.useEffect(() => {
+    if (!isEditMode || !originalValues) return;
+  
+    if (isTransferMovement) {
+      // auto-lock movement type as TRANSFER
+      setValues((v) =>
+        v.movement_type === "TRANSFER"
+          ? v
+          : { ...v, movement_type: "TRANSFER" }
+      );
+    } else if (isQtyMovement) {
+      // if we were previously in transfer mode, clear it so user can pick outbound/waste
+      setValues((v) =>
+        v.movement_type === "TRANSFER"
+          ? { ...v, movement_type: "" }
+          : v
+      );
+    } else {
+      // no movement needed → clear movement_type
+      setValues((v) =>
+        v.movement_type ? { ...v, movement_type: "" } : v
+      );
+    }
+  }, [isEditMode, originalValues, isTransferMovement, isQtyMovement]);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,6 +155,13 @@ export default function AddItemModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (invalidCombinedChange) {
+      alert(
+        "Can't change both quantity and location in one edit. Please update one at a time."
+      );
+      return;
+    }
 
     const payload = {
       name: values.name.trim(),
@@ -82,6 +174,13 @@ export default function AddItemModal({
       location_id:
         values.location_id === "" ? null : Number(values.location_id),
     };
+    // Only send movement fields when editing AND movement is needed
+    if (isEditMode && movementNeeded) {
+      payload.movement_type = values.movement_type;
+      if (values.movement_reason.trim()) {
+        payload.movement_reason = values.movement_reason.trim();
+      }
+    }
 
     onSave?.({
       mode,                    // 'add' or 'edit'
@@ -109,11 +208,12 @@ export default function AddItemModal({
                 type="string"
                 value={values.name}
                 onChange={handleChange}
+                disabled={isEditMode}
               />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth>
+            <FormControl fullWidth disabled={isEditMode}>
               <InputLabel>Category</InputLabel>
               <Select
                 name="category"
@@ -137,6 +237,7 @@ export default function AddItemModal({
                 required
                 value={values.barcode}
                 onChange={handleChange}
+                disabled={isEditMode}
               />
             </Grid>
 
@@ -162,6 +263,7 @@ export default function AddItemModal({
                 type="string"
                 value={values.unit}
                 onChange={handleChange}
+                disabled={isEditMode}
               />
             </Grid>
 
@@ -174,6 +276,7 @@ export default function AddItemModal({
                 value={values.expiration_date}
                 onChange={handleChange}
                 InputLabelProps={{ shrink: true }}
+                disabled={isEditMode}
               />
             </Grid>
 
@@ -188,6 +291,45 @@ export default function AddItemModal({
                 onChange={handleChange}
               />
             </Grid>
+            {isEditMode && movementNeeded && (
+            <>
+              {/* Movement type */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                {isTransferMovement ? (
+                  // Transfer: lock movement type to TRANSFER
+                  <TextField
+                    label="Movement Type"
+                    value="Transfer"
+                    fullWidth
+                  />
+                ) : (
+                  <FormControl fullWidth required>
+                    <InputLabel>Movement Type</InputLabel>
+                    <Select
+                      name="movement_type"
+                      label="Movement Type"
+                      value={values.movement_type}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="OUTBOUND">Outbound</MenuItem>
+                      <MenuItem value="WASTE">Waste</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              </Grid>
+
+              {/* Optional note for any movement */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  name="movement_reason"
+                  label="Movement note (optional)"
+                  fullWidth
+                  value={values.movement_reason}
+                  onChange={handleChange}
+                />
+              </Grid>
+            </>
+          )}
           </Grid>
         </DialogContent>
         <DialogActions>

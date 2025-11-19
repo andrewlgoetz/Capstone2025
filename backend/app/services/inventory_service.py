@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
+from app.models.inventory_movement import InventoryMovement, MovementType
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -76,8 +77,15 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    old_qty = db_item.quantity
+    old_loc = db_item.location_id
+
     # Only include fields actually sent from the client
     data = item.model_dump(exclude_unset=True)
+
+    # pull out movement-only fields so they are NOT applied to Inventory
+    movement_type = data.pop("movement_type", None)
+    movement_reason = data.pop("movement_reason", None)
 
     # If barcode present, normalize + uniqueness check
     if "barcode" in data:
@@ -103,6 +111,39 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
         setattr(db_item, field, value)
 
     db_item.last_modified = datetime.now()
+
+    new_qty = db_item.quantity
+    new_loc = db_item.location_id
+
+    # Determine what changed (quantity/location)
+    qty_delta = None
+    if new_qty is not None and new_qty != old_qty:
+        qty_delta = new_qty - old_qty  # positive if increased, negative if decreased
+    
+    loc_changed = new_loc is not None and new_loc != old_loc
+
+    # If relevant, create an InventoryMovement record
+    should_create_movement = (
+        (qty_delta is not None and qty_delta < 0)
+        or loc_changed
+    )
+
+    if should_create_movement:
+        if movement_type is None:
+            raise HTTPException(
+                status_code=400,
+                detail="movement_type is required when quantity decreases or location changes",
+            )
+
+        movement = InventoryMovement(
+            item_id=db_item.item_id,
+            quantity_change=qty_delta if qty_delta is not None else 0,
+            movement_type=movement_type,
+            reason=movement_reason,
+            from_location_id=old_loc,
+            to_location_id=new_loc if loc_changed else None,
+        )
+        db.add(movement)
 
     try:
         db.commit()
