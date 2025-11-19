@@ -8,36 +8,16 @@ import {
   getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import {
-  Box,
-  Table as MuiTable,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  LinearProgress,
-  Typography,
-  Paper,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+
+// Importing icons for buttons/UI elements
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete'; 
+import SortIcon from '@mui/icons-material/Sort';
+
 import api from "../services/api";
 
-const formatDate = (info) => {
-  const dateString = info.getValue();
-  if (!dateString) return '—'; // Handle null or empty dates
-  
-  // Split the string at 'T' and return the first part (the date)
+const formatDate = (dateString) => {
+  if (!dateString) return '—';
   return String(dateString).split('T')[0];
 };
 
@@ -49,30 +29,14 @@ const DEFAULT_COLUMNS = [
   { accessorKey: "barcode", header: "Barcode" },
   { accessorKey: "quantity", header: "Qty" },
   { accessorKey: "unit", header: "Unit" },
-  { accessorKey: "expiration_date", header: "Expires" },
+  { accessorKey: "expiration_date", header: "Expires", cell: ({ cell }) => formatDate(cell.getValue()) },
   { accessorKey: "location_id", header: "Location" },
-  { accessorKey: "date_added", header: "Date Added", cell: formatDate},
-  { accessorKey: "last_modified", header: "Date Modified", cell: formatDate },
-  // Actions column with Edit button
-  // {
-  //   id: "actions", 
-  //   header: "Actions",
-  //   enableSorting: false, // Actions columns are usually not sortable
-  //   cell: (info) => (
-  //     // The row data is available via info.row.original
-  //     <EditButton item={info.row.original} />
-  //   ),
-  // },
+  { accessorKey: "date_added", header: "Date Added", cell: ({ cell }) => formatDate(cell.getValue())},
+  { accessorKey: "last_modified", header: "Date Modified", cell: ({ cell }) => formatDate(cell.getValue()) },
 ];
 
 /**
  * InventoryTable
- * Props:
- * - mode: 'full' | 'widget' (widget shows a compact subset)
- * - items: optional array of items (if provided, component will not fetch)
- * - limit: number of rows to show in widget mode
- * - showColumns: optional array of accessorKeys to display (defaults change by mode)
- * - onRowClick: optional callback when clicking a row
  */
 export default function InventoryTable({
   mode = "full",
@@ -87,19 +51,20 @@ export default function InventoryTable({
   const [sorting, setSorting] = useState([]);
 
   // Filter controls
-  const [search, setSearch] = useState(""); // search box
-  const [categoryFilter, setCategoryFilter] = useState(""); // category dropdown
-  const [lowStockOnly, setLowStockOnly] = useState(false); // low stock checkbox
+  const [search, setSearch] = useState(""); 
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [lowStockOnly, setLowStockOnly] = useState(false);
 
-  // Expiry filters
-  const [expiryFrom, setExpiryFrom] = useState(""); // "YYYY-MM-DD"
-  const [expiryTo, setExpiryTo] = useState(""); // "YYYY-MM-DD"
+  // Expiry filters (State remains correct)
+  const [expiryFrom, setExpiryFrom] = useState("");
+  const [expiryTo, setExpiryTo] = useState("");
   const [onlyWithExpiry, setOnlyWithExpiry] = useState(false);
-  const [expiringInDays, setExpiringInDays] = useState(""); // e.g. "30" or ""
+  const [expiringInDays, setExpiringInDays] = useState("");
 
+  // FIX: Conditional pageSize initialization
   const [pagination, setPagination] = useState({
-    pageIndex: 0, // Current page (starts at 0)
-    pageSize: 10, // Number of rows per page (adjust this to fit the screen)
+    pageIndex: 0, 
+    pageSize: mode === 'widget' ? limit : 10, 
   });
 
   // Fetch data
@@ -111,10 +76,10 @@ export default function InventoryTable({
     },
   });
 
-  // State mapping from query
   const items = query.data ?? [];
   const isLoading = query.isLoading;
   const isError = query.isError;
+  const isFetching = query.isFetching;
 
   const [serialMap, setSerialMap] = useState({});
 
@@ -124,7 +89,6 @@ export default function InventoryTable({
       return;
     }
 
-    // Recompute serials 1..N based on current items order
     const next = {};
     let serial = 1;
     const ordered = items;
@@ -136,7 +100,7 @@ export default function InventoryTable({
     setSerialMap(next);
   }, [items]);
 
-  // Decide which columns to render depending on mode (full table vs widget) & showColumns override
+  // Decide which columns to render
   const effectiveColumns = useMemo(() => {
     const serialCol = {
       id: "serial",
@@ -146,59 +110,61 @@ export default function InventoryTable({
     };
 
     let cols = DEFAULT_COLUMNS.filter(c => c.accessorKey !== 'item_id');
+    
     if (mode === "widget") {
       cols = cols.filter((c) =>
-        ["name", "quantity", "unit"].includes(c.accessorKey)
-        );
+        ["name", "quantity", "unit", "expiration_date"].includes(c.accessorKey)
+      );
     }
     if (Array.isArray(showColumns) && showColumns.length > 0) {
       cols = cols.filter((c) => showColumns.includes(c.accessorKey));
     }
+    
     const actionsCol = {
       id: "actions",
       header: "Actions",
       enableSorting: false,
       cell: ({ row }) => (
-        <>
-          <Tooltip title="Edit item">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onEditClick) onEditClick(row.original);
-              }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+        <div className="flex gap-1">
+          <button
+            title="Edit item"
+            className="p-1 rounded-full text-slate-600 hover:bg-gray-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onEditClick) onEditClick(row.original);
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </button>
 
-          <Tooltip title="Delete item">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onDeleteClick) onDeleteClick(row.original);
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </>
+          <button
+            title="Delete item"
+            className="p-1 rounded-full text-red-600 hover:bg-red-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onDeleteClick) onDeleteClick(row.original);
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </button>
+        </div>
       ),
     };
       
-          const baseCols = [serialCol, ...cols].map((c) => ({
-            ...c,
-            cell: c.cell || ((info) => info.getValue()),
-          }));
+    const baseCols = [serialCol, ...cols].map((c) => ({
+      ...c,
+      cell: c.cell || ((info) => info.getValue()),
+    }));
       
-          return mode === "full" ? [...baseCols, actionsCol] : baseCols;
-  }, [mode, showColumns, serialMap, onEditClick]);
-  // If widget mode, limit rows shown
-  const displayed = mode === "widget" ? items.slice(0, limit) : items;
+    return mode === "full" ? [...baseCols, actionsCol] : baseCols;
+  }, [mode, showColumns, serialMap, onEditClick, onDeleteClick]);
+
+  // FIX: Memoize the slice to stabilize the array identity
+  const displayed = useMemo(() => {
+    return mode === "widget" ? items.slice(0, limit) : items;
+  }, [mode, items, limit]);
 
   // ---------------------------Client-side Filtering -------------------------------------
-  // Build category list from current items (for dropdown)
   const categories = useMemo(() => {
     return Array.from(
       new Set(items.map((r) => r.category).filter(Boolean))
@@ -212,7 +178,7 @@ export default function InventoryTable({
   }, [categories]);  
 
   // Date helpers
-  const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null); // avoid TZ shifts
+  const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null); 
   const inNextNDays = (dateStr, n) => {
     if (!dateStr || !n) return false;
     const d = new Date(`${dateStr}T00:00:00`);
@@ -239,7 +205,6 @@ export default function InventoryTable({
       const matchesLowStock =
         !lowStockOnly || Number(r.quantity ?? 0) <= lowStockThreshold;
 
-      // --- NEW: expiry rules
       const hasExpiry = !!r.expiration_date;
       if (onlyWithExpiry && !hasExpiry) return false;
 
@@ -250,7 +215,6 @@ export default function InventoryTable({
       if (to && hasExpiry)
         matchesDateRange =
           matchesDateRange && new Date(`${r.expiration_date}T00:00:00`) <= to;
-      // If a range is set and item has no expiry, exclude it
       if ((from || to) && !hasExpiry) matchesDateRange = false;
 
       const matchesExpiringSoon =
@@ -280,190 +244,202 @@ export default function InventoryTable({
   const table = useReactTable({
     data: filtered,
     columns: effectiveColumns,
-    state: { sorting , pagination},
+    state: { sorting, pagination },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    // Optional: default renderer in case a column omits `cell`
     defaultColumn: { cell: (info) => String(info.getValue() ?? "—") },
   });
 
   return (
-    <Paper style={{ padding: 8 }}>
-      {isLoading && <LinearProgress />}
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-x-auto">
+      {isLoading || isFetching && <div className="h-0.5 w-full bg-blue-500 animate-pulse" />}
+
+      {/* Full Mode Filter Bar: NOW INCLUDES EXPIRY FILTERS */}
       {showFilterBar && mode === "full" && (
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            alignItems: "center",
-            mb: 1,
-            flexWrap: "wrap",
-          }}
-        >
-          <TextField
-            size="small"
-            label="Search"
+        <div className="flex flex-wrap gap-3 items-center p-3 border-b border-gray-200">
+          {/* Search Input */}
+          <input
+            type="text"
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-48 focus:border-slate-500"
+            placeholder="Search name, category..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Name, category, barcode, location…"
           />
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>Category</InputLabel>
-            <Select
-              label="Category"
+          {/* Category Filter */}
+          <div className="relative">
+            <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
+              className="appearance-none block w-40 px-3 py-1.5 border border-gray-300 bg-white rounded-lg text-sm focus:border-slate-500"
             >
-              <MenuItem value="">All</MenuItem>
+              <option value="">All Categories</option>
               {categories.map((c) => (
-                <MenuItem key={c} value={c}>
-                  {c}
-                </MenuItem>
+                <option key={c} value={c}>{c}</option>
               ))}
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={lowStockOnly}
-                onChange={(e) => setLowStockOnly(e.target.checked)}
-              />
-            }
-            label={`Low stock (≤ ${lowStockThreshold})`}
-          />
-          {/* NEW: Expiry From / To */}
-          <TextField
-            size="small"
-            label="Expiry from"
-            type="date"
-            value={expiryFrom}
-            onChange={(e) => setExpiryFrom(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            size="small"
-            label="Expiry to"
-            type="date"
-            value={expiryTo}
-            onChange={(e) => setExpiryTo(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+          </div>
+          {/* Low Stock Checkbox */}
+          <label className="flex items-center text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="rounded text-slate-600 border-gray-300 mr-2"
+              checked={lowStockOnly}
+              onChange={(e) => setLowStockOnly(e.target.checked)}
+            />
+            Low stock (≤ {lowStockThreshold})
+          </label>
+          
+          {/* --- EXPIRY FILTERS START HERE --- */}
+          
+          {/* Expiry From Date */}
+          <div className="relative">
+            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry from</label>
+            <input
+              type="date"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36 mt-2 focus:border-slate-500"
+              value={expiryFrom}
+              onChange={(e) => setExpiryFrom(e.target.value)}
+            />
+          </div>
+          
+          {/* Expiry To Date */}
+          <div className="relative">
+            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry to</label>
+            <input
+              type="date"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36 mt-2 focus:border-slate-500"
+              value={expiryTo}
+              onChange={(e) => setExpiryTo(e.target.value)}
+            />
+          </div>
 
-          {/* NEW: Only items with expiry */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={onlyWithExpiry}
-                onChange={(e) => setOnlyWithExpiry(e.target.checked)}
-              />
-            }
-            label="Only items with expiry"
-          />
-
-          {/* NEW (optional): Expiring within N days quick filter */}
-          <TextField
-            size="small"
-            label="Expiring in (days)"
+          {/* Expiring in (days) quick filter */}
+          <input
             type="number"
-            inputProps={{ min: 1 }}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-32 focus:border-slate-500"
+            placeholder="Expiring in (days)"
+            min="1"
             value={expiringInDays}
             onChange={(e) => setExpiringInDays(e.target.value)}
-            sx={{ width: 160 }}
           />
-        </Box>
-      )}
-      {/* -------------------------------------------------------------------- NEW */}
 
-      <Box sx={{ overflowX: "auto" }}>
-        <MuiTable size={mode === "widget" ? "small" : "medium"}>
-          <TableHead>
+          {/* Only items with expiry Checkbox */}
+          <label className="flex items-center text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="rounded text-slate-600 border-gray-300 mr-2"
+              checked={onlyWithExpiry}
+              onChange={(e) => setOnlyWithExpiry(e.target.checked)}
+            />
+            Only with expiry
+          </label>
+          
+          {/* --- EXPIRY FILTERS END HERE --- */}
+          
+        </div>
+      )}
+
+      {/* Table Container */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <tr key={hg.id}>
                 {hg.headers.map((header) => (
-                  <TableCell key={header.id}>
-                    <Typography variant="caption">
+                  <th
+                    key={header.id}
+                    scope="col"
+                    className="px-4 py-2 text-left text-xs font-medium text-slate-600 uppercase tracking-wider cursor-pointer"
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    <div className="flex items-center gap-1">
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                    </Typography>
-                  </TableCell>
+                      {header.column.getIsSorted() && (
+                          <SortIcon fontSize="inherit" className={`transform transition-transform ${header.column.getIsSorted() === 'desc' ? 'rotate-180' : ''}`} />
+                      )}
+                    </div>
+                  </th>
                 ))}
-              </TableRow>
+              </tr>
             ))}
-          </TableHead>
-          <TableBody>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200 text-sm">
             {table.getPaginationRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                // hover
-                // onClick={() => onRowClick && onRowClick(row.original)}
-                // style={{ cursor: onRowClick ? "pointer" : "default" }}
-              >
+              <tr key={row.id} className="hover:bg-gray-50 transition duration-75">
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <td key={cell.id} className="px-4 py-2 whitespace-nowrap text-slate-700">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+                  </td>
                 ))}
-              </TableRow>
+              </tr>
             ))}
-          </TableBody>
-        </MuiTable>
-      </Box>
+          </tbody>
+        </table>
+      </div>
   
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, padding: 1 }}>
-        <Typography variant="body2">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-        </Typography>
+      {/* Pagination Footer */}
+      {mode === "full" && (
+        <div className="flex justify-end items-center gap-3 p-3 border-t border-gray-200">
+          <span className="text-sm text-slate-600">
+            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          </span>
 
-        <Button
-          size="small"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        
-        <Button
-          size="small"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-        
-        {/* Optional: Jumper input */}
-        <TextField
-          size="small"
-          type="number"
-          label="Go to page"
-          defaultValue={table.getState().pagination.pageIndex + 1}
-          onChange={e => {
-            const page = e.target.value ? Number(e.target.value) - 1 : 0;
-            table.setPageIndex(page);
-          }}
-          sx={{ width: 100 }}
-        />
-      </Box>
+          <button
+            className="px-3 py-1 text-sm font-medium rounded-lg text-slate-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </button>
+          
+          <button
+            className="px-3 py-1 text-sm font-medium rounded-lg text-slate-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </button>
+          
+          {/* Jumper input */}
+          <input
+            type="number"
+            placeholder={String(table.getState().pagination.pageIndex + 1)}
+            className="w-24 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:border-slate-500"
+            onChange={e => {
+              const page = e.target.value ? Number(e.target.value) - 1 : 0;
+              table.setPageIndex(page);
+            }}
+          />
+        </div>
+      )}
 
+      {/* Widget "View all" button */}
       {mode === "widget" && items.length > limit && (
-        <Box sx={{ display: "flex", justifyContent: "flex-end", padding: 1 }}>
-          <Button
-            size="small"
+        <div className="flex justify-end p-3 border-t border-gray-200">
+          <button
+            className="text-sm font-medium text-slate-700 hover:text-slate-900"
             onClick={() => window.location.assign("/inventory")}
           >
             View all
-          </Button>
-        </Box>
+          </button>
+        </div>
       )}
 
       {isError && (
-        <Typography color="error">Failed to load inventory</Typography>
+        <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-300">
+          Failed to load inventory
+        </div>
       )}
-    </Paper>
+    </div>
   );
 }
 
@@ -471,7 +447,6 @@ InventoryTable.propTypes = {
   mode: PropTypes.oneOf(["full", "widget"]),
   limit: PropTypes.number,
   showColumns: PropTypes.arrayOf(PropTypes.string),
-  // onRowClick: PropTypes.func,
   lowStockThreshold: PropTypes.number,
   showFilterBar: PropTypes.bool,
   onEditClick: PropTypes.func,
