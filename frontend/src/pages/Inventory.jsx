@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -19,6 +19,16 @@ export default function Inventory() {
     setOpen(false);
     setEditItem(null);
   };
+
+   useEffect(() => {
+    if (snack.open) {
+      const timer = setTimeout(() => {
+        handleCloseSnackbar();
+      }, 3000); // Hide after 3 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [snack.open]);
 
   // ------ shared success + error handlers ------
   const handleMutationSuccess = (action) => {
