@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, IconButton } from '@mui/material'
+import RemoveIcon from '@mui/icons-material/Remove'
+import AddIcon from '@mui/icons-material/Add'
 
 // Modal for confirming an increase (scan-in for existing item)
 const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm }) => {
@@ -32,14 +34,24 @@ const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
             <TextField label="Name" value={initial.name || ''} InputProps={{ readOnly: true }} />
             <TextField label="Category" value={initial.category || ''} InputProps={{ readOnly: true }} />
 
-            <TextField
-              label="Quantity to add"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              inputProps={{ inputMode: 'numeric' }}
-              sx={{ fontSize: '1.5rem' }}
-              autoFocus
-            />
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <IconButton size="small" onClick={() => setQuantity((q) => Math.max(0, Number(q || 0) - 1))} aria-label="decrease">
+                <RemoveIcon />
+              </IconButton>
+
+              <TextField
+                label="Quantity to add"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                inputProps={{ inputMode: 'numeric' }}
+                sx={{ fontSize: '1.5rem', flex: 1 }}
+                autoFocus
+              />
+
+              <IconButton size="small" onClick={() => setQuantity((q) => Number(q || 0) + 1)} aria-label="increase">
+                <AddIcon />
+              </IconButton>
+            </Box>
 
             <Typography variant="caption" color="textSecondary">Only quantity is editable for existing items.</Typography>
           </Box>

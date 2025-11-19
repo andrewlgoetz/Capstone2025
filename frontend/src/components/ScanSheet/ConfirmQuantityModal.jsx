@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, IconButton } from '@mui/material'
+import RemoveIcon from '@mui/icons-material/Remove'
+import AddIcon from '@mui/icons-material/Add'
 
 // Minimal modal for confirming a quantity to scan out. Props: open, onClose, initial (object with barcode, quantity), imageUrl, onConfirm
 const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, maxQuantity = null }) => {
@@ -36,15 +38,24 @@ const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
             <Box sx={{ width: 180, height: 180, bgcolor: '#f3f4f6', borderRadius: 1 }} />
           )}
 
-          <TextField
-            label="Quantity to take out"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            inputProps={{ inputMode: 'numeric' }}
-            sx={{ mt: 1, fontSize: '1.5rem' }}
-            autoFocus
-            fullWidth
-          />
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: '100%', mt: 1 }}>
+            <IconButton size="small" onClick={() => setQuantity((q) => Math.max(0, Number(q || 0) - 1))} aria-label="decrease">
+              <RemoveIcon />
+            </IconButton>
+
+            <TextField
+              label="Quantity to take out"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              inputProps={{ inputMode: 'numeric' }}
+              sx={{ fontSize: '1.5rem', flex: 1 }}
+              autoFocus
+            />
+
+            <IconButton size="small" onClick={() => setQuantity((q) => Number(q || 0) + 1)} aria-label="increase">
+              <AddIcon />
+            </IconButton>
+          </Box>
 
           <Typography variant="caption" color="textSecondary">Enter number of items to remove from inventory.</Typography>
           {error && <Typography variant="body2" color="error">{error}</Typography>}

@@ -101,7 +101,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
             )}
           </Box>
 
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField label="Barcode" value={form.barcode} InputProps={{ readOnly: true }} />
 
             <TextField
@@ -152,7 +152,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
             )}
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
 
-            <Typography variant="caption" color="textSecondary">You can edit fields before confirming. Quantity is prominently visible above.</Typography>
+            <Typography variant="caption" color="textSecondary">You can edit fields before confirming.</Typography>
             {error && <Typography variant="body2" color="error">{error}</Typography>}
           </Box>
         </Box>
