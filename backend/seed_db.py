@@ -10,7 +10,7 @@ from app.models.inventory import InventoryItem
 # Create a database session
 db = SessionLocal()
 
-def seed_roles(csv_path="data/roles.csv"):
+def seed_roles(csv_path="../data/roles.csv"):
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -22,7 +22,7 @@ def seed_roles(csv_path="data/roles.csv"):
     db.commit()
     print("Roles seeded.")
 
-def seed_food_banks(csv_path="data/food_banks.csv"):
+def seed_food_banks(csv_path="../data/food_banks.csv"):
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -35,7 +35,7 @@ def seed_food_banks(csv_path="data/food_banks.csv"):
     db.commit()
     print("Food banks seeded.")
 
-def seed_users(csv_path="data/users.csv"):
+def seed_users(csv_path="../data/users.csv"):
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -51,7 +51,7 @@ def seed_users(csv_path="data/users.csv"):
     db.commit()
     print("Users seeded.")
 
-def seed_locations(csv_path="data/locations.csv"):
+def seed_locations(csv_path="../data/locations.csv"):
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -66,7 +66,7 @@ def seed_locations(csv_path="data/locations.csv"):
     db.commit()
     print("Locations seeded.")
 
-def seed_inventory(csv_path="data/inventory.csv"):
+def seed_inventory(csv_path="../data/inventory.csv"):
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
