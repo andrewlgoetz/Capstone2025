@@ -12,6 +12,8 @@ import RedeemIcon from '@mui/icons-material/Redeem';
 import ScanSheet from '../components/ScanSheet.jsx'; 
 import InventoryTable from '../components/InventoryTable.jsx';
 import { getItems } from '../services/api';
+import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
+import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
 import { fetchProductByBarcode } from '../services/off'; 
 
@@ -31,29 +33,24 @@ const StatCard = ({ icon: Icon, title, value, accentColor }) => (
 );
 
 const CategoryChart = ({ title, data = [] }) => {
-    // 1. Group and Calculate Totals
     const categoryTotals = useMemo(() => {
         const totals = data.reduce((acc, item) => {
             const category = item.category || 'Other';
             acc[category] = (acc[category] || 0) + (item.quantity || 0);
             return acc;
         }, {});
-        
-        // Convert to array of { category: name, quantity: total }
         return Object.entries(totals).map(([category, quantity]) => ({
             category,
             quantity,
         }));
     }, [data]);
 
-    // 2. Sort and Slice (Top 5)
     const topCategories = useMemo(() => {
         return categoryTotals
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 5);
     }, [categoryTotals]);
 
-    // 3. Calculate Percentages (Relative to the largest category)
     const maxQuantity = topCategories[0]?.quantity || 1;
 
     return (
@@ -88,15 +85,15 @@ const CategoryChart = ({ title, data = [] }) => {
 };
 
 // Placeholder for other Charts (Used inside the Forecasting card)
-const PlaceholderChart = ({ title, subtitle }) => (
-  <div className="bg-white rounded-xl p-4 grid grid-rows-[auto_1fr] shadow-sm border border-gray-200">
-    <div className="text-base font-semibold text-slate-800 mb-0.5">{title}</div>
-    <div className="text-xs text-slate-500 mb-2">{subtitle}</div>
-    <div className="h-32 rounded-md bg-gray-50 grid place-items-center text-slate-400 text-sm border border-dashed border-gray-300">
-      Chart Placeholder
-    </div>
-  </div>
-);
+// const PlaceholderChart = ({ title, subtitle }) => (
+//   <div className="bg-white rounded-xl p-4 grid grid-rows-[auto_1fr] shadow-sm border border-gray-200">
+//     <div className="text-base font-semibold text-slate-800 mb-0.5">{title}</div>
+//     <div className="text-xs text-slate-500 mb-2">{subtitle}</div>
+//     <div className="h-32 rounded-md bg-gray-50 grid place-items-center text-slate-400 text-sm border border-dashed border-gray-300">
+//       Chart Placeholder
+//     </div>
+//   </div>
+// );
 
 const Home = () => {
   const [query, setQuery] = useState('')
@@ -247,18 +244,20 @@ const Home = () => {
 
             {/* Forecasting & Trends */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-4">
-              <h3 className="text-xl font-semibold text-slate-800 tracking-tight">
+              <h3 className="text-xl font-semibold text-slate-800 tracking-tight mb-4">
                 Forecasting & Trends
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <PlaceholderChart 
-                    title="Low Stock Trend" 
-                    subtitle="Historical count over 6 months" 
-                />
-                <PlaceholderChart 
-                    title="Demand Forecast" 
-                    subtitle="Projected unit output (30 days)" 
-                />
+                
+                {/* Low Stock Trend Chart (StockTrend.jsx) */}
+                <div className="min-h-[450px]">
+                    <LowStockTrendChart />
+                </div>
+                
+                {/* Demand Forecast Chart (DemandLineChart.jsx) */}
+                <div className="min-h-[450px]">
+                    <DemandLineChart />
+                </div>
               </div>
             </div>
 
