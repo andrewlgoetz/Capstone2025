@@ -115,11 +115,8 @@ export default function Inventory() {
   };
 
 return (
-  // Main container (Replaces MUI Box sx={{ p: 5 }})
   <div className="min-h-screen bg-gray-50 pb-16">
     <div className="max-w-7xl mx-auto p-4 md:p-6">
-        
-        {/* Header (Replaces MUI Box/header structure) */}
         <header className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
             Inventory Management
