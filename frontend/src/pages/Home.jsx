@@ -30,16 +30,62 @@ const StatCard = ({ icon: Icon, title, value, accentColor }) => (
   </div>
 );
 
-// May be removed/refactored later
-const CategoryChartPlaceholder = ({ title }) => (
-    <div className="bg-white rounded-xl p-4 grid grid-rows-[auto_1fr] shadow-lg border border-gray-200 h-full">
-        {/* Uniform Title Font */}
-        <div className="text-xl font-semibold text-slate-800 mb-3 tracking-tight">{title}</div>
-        <div className="h-full rounded-md bg-gray-50 grid place-items-center text-slate-400 text-sm border border-dashed border-gray-300">
-            Category Distribution Chart
+const CategoryChart = ({ title, data = [] }) => {
+    // 1. Group and Calculate Totals
+    const categoryTotals = useMemo(() => {
+        const totals = data.reduce((acc, item) => {
+            const category = item.category || 'Other';
+            acc[category] = (acc[category] || 0) + (item.quantity || 0);
+            return acc;
+        }, {});
+        
+        // Convert to array of { category: name, quantity: total }
+        return Object.entries(totals).map(([category, quantity]) => ({
+            category,
+            quantity,
+        }));
+    }, [data]);
+
+    // 2. Sort and Slice (Top 5)
+    const topCategories = useMemo(() => {
+        return categoryTotals
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 5);
+    }, [categoryTotals]);
+
+    // 3. Calculate Percentages (Relative to the largest category)
+    const maxQuantity = topCategories[0]?.quantity || 1;
+
+    return (
+        <div className="bg-white rounded-xl p-4 grid grid-rows-[auto_1fr] shadow-lg border border-gray-200 h-full">
+            <div className="text-xl font-semibold text-slate-800 mb-4 tracking-tight">{title}</div>
+            
+            <div className="space-y-4">
+                {topCategories.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-8">No inventory data available for categorization.</p>
+                ) : (
+                    topCategories.map((item) => {
+                        const widthPercent = (item.quantity / maxQuantity) * 100;
+                        return (
+                            <div key={item.category} className="text-sm">
+                                <div className="flex justify-between text-slate-700 mb-0.5">
+                                    <span className="font-medium">{item.category}</span>
+                                    <span className="font-semibold">{item.quantity.toLocaleString()}</span>
+                                </div>
+                                <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-2.5 bg-blue-600 rounded-full transition-all duration-500" 
+                                        style={{ width: `${widthPercent}%` }} 
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // Placeholder for other Charts (Used inside the Forecasting card)
 const PlaceholderChart = ({ title, subtitle }) => (
@@ -124,20 +170,21 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Home
-            </h1>
-            <div className="inline-flex gap-2 items-center rounded-full px-3 py-1 text-sm bg-gray-100 text-slate-600 font-medium border border-gray-200 hidden sm:flex">
-              <LocationOnIcon className="w-4 h-4 text-slate-500" />
-              <span>Main Warehouse</span>
-            </div>
+      <div className="max-w-7xl mx-auto p-4 pb-0">
+        <div className="flex justify-between items-center mb-6">
+          {/* Left Side: Title and Subtitle */}
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Home</h1>
+            <p className="text-slate-500 mt-1">Overview of your inventory health and metrics.</p>
+          </div>
+          
+          {/* Right Side: Location Chip */}
+          <div className="inline-flex gap-2 items-center rounded-full px-3 py-1 text-sm bg-gray-100 text-slate-600 font-medium border border-gray-200 hidden sm:flex">
+            <LocationOnIcon className="w-4 h-4 text-slate-500" />
+            <span>Main Warehouse</span>
           </div>
         </div>
-      </header>
-
+      </div>
       <div className="max-w-7xl mx-auto p-4">
         <main className="space-y-6">  
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -149,13 +196,13 @@ const Home = () => {
               />
               <StatCard
                 icon={WarningIcon}
-                title="Low Stock"
+                title="Low Stock (≤ 10)"
                 value={getWidgetCount(lowStock)}
                 accentColor="text-red-600"
               />
               <StatCard
                 icon={AccessTimeIcon}
-                title="Expiring Soon"
+                title="Expiring Soon (30 days)"
                 value={getWidgetCount(expiringSoon)}
                 accentColor="text-purple-600"
               />
@@ -169,11 +216,10 @@ const Home = () => {
             
             {/* Category Chart and Inventory Table */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Category Distribution Chart  */}
               <div className="lg:col-span-1">
-                  <CategoryChartPlaceholder
+                  <CategoryChart
                       title="Category Distribution"
+                      data={inventoryItems}
                   />
               </div>
 
@@ -185,17 +231,17 @@ const Home = () => {
                       Recent Inventory Activity
                     </h4>
                     <div className="relative">
-                      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      {/* <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input 
                         type="text"
                         className="pl-8 pr-3 py-1.5 border border-gray-300 rounded-full w-48 text-sm focus:ring-slate-500 focus:border-slate-500 transition"
                         placeholder="Quick filter..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                      />
+                      /> */}
                     </div>
                   </div>
-                  {/* <InventoryTable mode="widget" limit={5} showFilterBar={false} /> */}
+                  <InventoryTable mode="widget" limit={5} showFilterBar={false} />
                 </div>
               </div>
             </div>
