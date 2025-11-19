@@ -41,12 +41,14 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
     bank_id = getattr(item, "bank_id", None) or default_bank_id(db)
 
     code = normalize_barcode(getattr(item, "barcode", None))
+    print(f"[inventory_service.add_item] normalized barcode: {code}")
     #does it exist?
     if code:
         dup = db.query(InventoryItem).filter(InventoryItem.barcode == code).first()
+        print(f"[inventory_service.add_item] duplicate check result: {bool(dup)}")
         if dup:
             # TODO return a message here instead?
-            raise HTTPException(status_code=409, detail="Barcode already exists on another item.")
+            raise HTTPException(status_code=409, detail=f"Barcode already exists on another item (item_id={dup.item_id}).")
 
     data = item.model_dump()
     data["bank_id"] = bank_id
@@ -65,7 +67,25 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
     except IntegrityError:
         db.rollback()
         # covers race against unique(barcode) or other constraints
-        raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode).")
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[inventory_service.add_item] IntegrityError: {tb}")
+
+        # Try to recover from out-of-sync primary key sequence by syncing it and retrying once
+        try:
+            print("[inventory_service.add_item] Attempting to sync inventory_item_id_seq and retry insert")
+            db.execute("SELECT setval('inventory_item_id_seq', COALESCE((SELECT MAX(item_id) FROM inventory), 1));")
+            db.commit()
+            # create a fresh ORM object and retry insert
+            retry_item = InventoryItem(**data)
+            db.add(retry_item)
+            db.commit()
+            db.refresh(retry_item)
+            return retry_item
+        except Exception as retry_err:
+            db.rollback()
+            print(f"[inventory_service.add_item] Retry failed: {retry_err}")
+            raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode or PK).")
 
     return new_item
 

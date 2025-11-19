@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography } from '@mui/material'
+import { createItem, fetchInventoryByBarcode, increaseInventory } from '../../services/api'
 
 // A small, extendable confirm modal for inventory items.
 // Props: open, onClose, initial (object), imageUrl, onConfirm
@@ -28,9 +29,51 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
   const handleConfirm = () => {
-    onConfirm?.(form)
-    onClose?.()
+    // perform create on backend, then notify parent
+    setSaving(true)
+    setError(null)
+    const doCreate = async () => {
+      try {
+        const payload = {
+          barcode: form.barcode,
+          quantity: Number(form.quantity) || 0,
+          name: form.name || '',
+          category: form.category || '',
+          expiration_date: form.expiry_date || null,
+        }
+        const created = await createItem(payload)
+        onConfirm?.(created)
+        onClose?.()
+      } catch (err) {
+        console.error('Create item failed', err)
+        const status = err?.response?.status
+        const detail = err?.response?.data?.detail || err.message || 'Create failed'
+        // If barcode already exists, try to increase quantity on existing item instead
+        if (status === 409) {
+          try {
+            const existing = await fetchInventoryByBarcode(form.barcode)
+            if (existing && existing.item_id) {
+              const added = await increaseInventory(existing.item_id, Number(form.quantity) || 0)
+              onConfirm?.(added)
+              onClose?.()
+              return
+            }
+          } catch (innerErr) {
+            console.error('Failed to resolve duplicate barcode by increasing', innerErr)
+            setError(detail)
+            return
+          }
+        }
+        setError(detail)
+      } finally {
+        setSaving(false)
+      }
+    }
+    doCreate()
   }
+
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
 
   return (
     <Dialog open={Boolean(open)} onClose={onClose} maxWidth="sm" fullWidth>
@@ -63,12 +106,15 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
 
             <Typography variant="caption" color="textSecondary">You can edit fields before confirming. Quantity is prominently visible above.</Typography>
+            {error && <Typography variant="body2" color="error">{error}</Typography>}
           </Box>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleConfirm}>Confirm</Button>
+        <Button variant="contained" onClick={handleConfirm} disabled={saving || !form.barcode}>
+          {saving ? 'Saving…' : 'Confirm'}
+        </Button>
       </DialogActions>
     </Dialog>
   )

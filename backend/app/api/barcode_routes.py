@@ -92,18 +92,19 @@ def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
             candidate_info=None
         )
     
-    #Barcode does not exist
+    # Barcode does not exist in our DB — ask the barcode registry
     info = lookup_barcode(code)
     if info:
-        return ScanResponse(status="KNOWN", candidate_info=BarcodeInfo(**info))
-    # Pass candidate back to frontend
-    # Whatever fields a barcode/item has
-    candidate = BarcodeInfo(
-        name=info.get("name"),
-        category = info.get("category")
-    )
+        # return candidate info so frontend can prefill fields (status NEW)
+        candidate = BarcodeInfo(
+            name=info.get("name") if isinstance(info, dict) else None,
+            category=info.get("category") if isinstance(info, dict) else None,
+            barcode=info.get("barcode") if isinstance(info, dict) else code,
+        )
+        return ScanResponse(status="NEW", item=None, candidate_info=candidate)
 
-    return ScanResponse(status="NEW", item = None, candidate = candidate)
+    # No candidate info available
+    return ScanResponse(status="NEW", item=None, candidate_info=None)
 
 @router.post("/{item_id}/increase", response_model=InventoryRead)
 def increase_item_quantity(

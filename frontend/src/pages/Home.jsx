@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -101,6 +101,8 @@ const Home = () => {
     queryFn: getItems,
   });
 
+  const queryClient = useQueryClient();
+
   const LOW_STOCK_THRESHOLD = 10;
   
   // Total Items (Sum of all quantities)
@@ -176,8 +178,9 @@ const Home = () => {
   const [scanInTarget, setScanInTarget] = useState(null)
 
   const handleScanOut = (code) => {
-    // fetch product image and inventory info similar to scan-in, then show quantity modal
-    setProductDialog({ open: true, loading: true, product: null, error: null })
+  // fetch product image and inventory info similar to scan-in, then show quantity modal
+  // don't open the generic dialog while loading; we'll show the quantity modal when ready
+  setProductDialog({ open: false, loading: true, product: null, error: null })
     Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
       .then(([prodRes, invRes]) => {
         const product = prodRes.status === 'fulfilled' ? prodRes.value : null
@@ -389,10 +392,12 @@ const Home = () => {
           onClose={() => setProductDialog({ open: false, loading: false, product: null, inventory: null, error: null })}
           initial={productDialog.inventory || { barcode: productDialog.product?.code || '' }}
           imageUrl={productDialog.product?.image_front_small_url}
-          onConfirm={(payload) => {
-            // for now just log and show a toast; in future this should call create/update endpoints
-            console.log('Confirmed inventory', payload)
-            setSnack({ open: true, message: `Confirmed ${payload.barcode} (qty ${payload.quantity})`, severity: 'success' })
+          onConfirm={(created) => {
+            // created is the object returned from the backend createItem
+            console.log('Confirmed inventory', created)
+            setSnack({ open: true, message: `Created ${created.barcode || created.name} (qty ${created.quantity})`, severity: 'success' })
+            // refresh inventory list
+            try { queryClient.invalidateQueries(["inventoryItems"]) } catch { /* ignore if no client */ }
           }}
         />
       )}
