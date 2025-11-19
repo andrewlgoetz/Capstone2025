@@ -89,9 +89,9 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
 
   return (
     <Dialog open={Boolean(open)} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Confirm inventory</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+      <DialogTitle className="text-xl font-semibold text-slate-800 tracking-tight">Confirm inventory</DialogTitle>
+      <DialogContent className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+        <Box className="flex gap-2 flex-col sm:flex-row">
           <Box sx={{ flex: '0 0 160px', display: 'grid', placeItems: 'center' }}>
             {imageUrl ? (
               // keep image aspect and fit
@@ -158,10 +158,24 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleConfirm} disabled={saving || !form.barcode}>
-          {saving ? 'Saving…' : 'Confirm'}
-        </Button>
+        <div className="w-full flex justify-end gap-2 px-4 pb-4">
+          <button
+            type="button"
+            className="px-4 py-2 rounded hover:bg-gray-100 text-slate-700 font-medium"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className={`px-4 py-2 rounded ${saving || !form.barcode ? 'opacity-50 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}
+            onClick={handleConfirm}
+            disabled={saving || !form.barcode}
+          >
+            {saving ? 'Saving…' : 'Confirm'}
+          </button>
+        </div>
       </DialogActions>
     </Dialog>
   )

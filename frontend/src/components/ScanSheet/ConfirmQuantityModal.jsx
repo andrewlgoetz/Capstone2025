@@ -29,9 +29,9 @@ const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
 
   return (
     <Dialog open={Boolean(open)} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Confirm Scan Out</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', alignItems: 'center' }}>
+      <DialogTitle className="text-lg font-semibold text-slate-800 tracking-tight">Confirm Scan Out</DialogTitle>
+      <DialogContent className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+        <Box className="flex flex-col items-center gap-2">
           {imageUrl ? (
             <img src={imageUrl} alt={initial.name || 'item image'} style={{ width: 180, height: 180, objectFit: 'cover', borderRadius: 8 }} />
           ) : (
@@ -62,8 +62,23 @@ const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleConfirm}>Confirm</Button>
+        <div className="w-full flex justify-end gap-2 px-4 pb-4">
+          <button
+            type="button"
+            className="px-4 py-2 rounded hover:bg-gray-100 text-slate-700 font-medium"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-white"
+            onClick={handleConfirm}
+          >
+            Confirm
+          </button>
+        </div>
       </DialogActions>
     </Dialog>
   )

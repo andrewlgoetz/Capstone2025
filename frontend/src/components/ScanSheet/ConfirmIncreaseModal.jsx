@@ -18,9 +18,9 @@ const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
 
   return (
     <Dialog open={Boolean(open)} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Scan In — Add Quantity</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+      <DialogTitle className="text-lg font-semibold text-slate-800 tracking-tight">Scan In — Add Quantity</DialogTitle>
+      <DialogContent className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+        <Box className="flex gap-2 flex-col sm:flex-row">
           <Box sx={{ flex: '0 0 160px', display: 'grid', placeItems: 'center' }}>
             {imageUrl ? (
               <img src={imageUrl} alt={initial.name || 'item image'} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: 8 }} />
@@ -58,8 +58,23 @@ const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleConfirm}>Confirm</Button>
+        <div className="w-full flex justify-end gap-2 px-4 pb-4">
+          <button
+            type="button"
+            className="px-4 py-2 rounded hover:bg-gray-100 text-slate-700 font-medium"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-white"
+            onClick={handleConfirm}
+          >
+            Confirm
+          </button>
+        </div>
       </DialogActions>
     </Dialog>
   )
