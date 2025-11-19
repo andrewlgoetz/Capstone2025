@@ -4,6 +4,8 @@ import InventoryQuantitiesBarChart from "../components/dashboard_widgets/Invento
 import InventoryCategoryPie from "../components/dashboard_widgets/InventoryCategories";
 import LowStockItems from "../components/dashboard_widgets/LowStockItems";
 import ExpiringSoon from "../components/dashboard_widgets/ExpiringSoon";
+import DemandLineChart from "../components/dashboard_widgets/DemandLineChart";
+import StockTrend from "../components/dashboard_widgets/StockTrend";
 
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
