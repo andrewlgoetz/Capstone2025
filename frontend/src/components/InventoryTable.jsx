@@ -9,7 +9,6 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
-// Importing icons for buttons/UI elements
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete'; 
 import SortIcon from '@mui/icons-material/Sort';
@@ -35,9 +34,7 @@ const DEFAULT_COLUMNS = [
   { accessorKey: "last_modified", header: "Date Modified", cell: ({ cell }) => formatDate(cell.getValue()) },
 ];
 
-/**
- * InventoryTable
- */
+
 export default function InventoryTable({
   mode = "full",
   limit = 25,
@@ -50,24 +47,20 @@ export default function InventoryTable({
 }) {
   const [sorting, setSorting] = useState(mode === "widget" ? [{ id: 'last_modified', desc: true }] : []);
 
-  // Filter controls
   const [search, setSearch] = useState(""); 
   const [categoryFilter, setCategoryFilter] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
 
-  // Expiry filters (State remains correct)
   const [expiryFrom, setExpiryFrom] = useState("");
   const [expiryTo, setExpiryTo] = useState("");
   const [onlyWithExpiry, setOnlyWithExpiry] = useState(false);
   const [expiringInDays, setExpiringInDays] = useState("");
 
-  // FIX: Conditional pageSize initialization
   const [pagination, setPagination] = useState({
     pageIndex: 0, 
     pageSize: mode === 'widget' ? limit : 10, 
   });
 
-  // Fetch data
   const query = useQuery({
     queryKey: ["inventory", { mode }],
     queryFn: async () => {
@@ -239,7 +232,7 @@ export default function InventoryTable({
     onlyWithExpiry,
     expiringInDays,
   ]);
-  // --------------------------------------------------------------------------------------
+
 
   const table = useReactTable({
     data: filtered,
@@ -284,7 +277,6 @@ export default function InventoryTable({
               <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
             </div>
           </div>
-          {/* Low Stock Checkbox */}
           <label className="flex items-center text-sm text-slate-700">
             <input
               type="checkbox"
@@ -305,7 +297,6 @@ export default function InventoryTable({
             />
           </div>
           
-          {/* Expiry To Date */}
           <div className="relative">
             <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry to</label>
             <input
@@ -315,8 +306,6 @@ export default function InventoryTable({
               onChange={(e) => setExpiryTo(e.target.value)}
             />
           </div>
-
-          {/* Expiring in (days) quick filter */}
           <input
             type="number"
             className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-32 focus:border-slate-500"
@@ -326,7 +315,6 @@ export default function InventoryTable({
             onChange={(e) => setExpiringInDays(e.target.value)}
           />
 
-          {/* Only items with expiry Checkbox */}
           <label className="flex items-center text-sm text-slate-700">
             <input
               type="checkbox"
@@ -337,12 +325,9 @@ export default function InventoryTable({
             Only with expiry
           </label>
           
-          {/* --- EXPIRY FILTERS END HERE --- */}
-          
         </div>
       )}
 
-      {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -383,7 +368,6 @@ export default function InventoryTable({
         </table>
       </div>
   
-      {/* Pagination Footer */}
       {mode === "full" && (
         <div className="flex justify-end items-center gap-3 p-3 border-t border-gray-200">
           <span className="text-sm text-slate-600">
@@ -406,7 +390,6 @@ export default function InventoryTable({
             Next
           </button>
           
-          {/* Jumper input */}
           <input
             type="number"
             placeholder={String(table.getState().pagination.pageIndex + 1)}
@@ -419,7 +402,6 @@ export default function InventoryTable({
         </div>
       )}
 
-      {/* Widget "View all" button */}
       {mode === "widget" && items.length > limit && (
         <div className="flex justify-end p-3 border-t border-gray-200">
           <button
