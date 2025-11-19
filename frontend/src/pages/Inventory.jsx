@@ -1,25 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'
-// Import icons for use in buttons
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 
-// Import components and utilities
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import InventoryTable from '../components/InventoryTable'
-import AddItemModal from '../components/AddItemModal' // Assuming AddItemModal uses its own styles
+import AddItemModal from '../components/AddItemModal'
 import { createItem, updateItem, deleteItem } from '../services/api'
 
 export default function Inventory() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-
-  // Use state to track categories loaded by InventoryTable for AddItemModal
+  const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
   const [categories, setCategories] = useState([]);
 
   const closeModal = () => {
@@ -28,10 +21,9 @@ export default function Inventory() {
   };
 
   // ------ shared success + error handlers ------
-  const handleMutationSuccess = (message) => {
+  const handleMutationSuccess = (action) => {
     queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    setSuccessMessage(message);
-    setSuccessOpen(true);
+    setSnack({ open: true, message: `Item ${action} successfully!`, severity: 'success' });
     closeModal();
   };
 
@@ -52,34 +44,29 @@ export default function Inventory() {
     }
 
     console.error('Save failed:', { payload, server: data, error: e });
-    // Use alert for synchronous error feedback
     alert(msg);
   };
 
   const handleCloseSnackbar = () => {
-    setSuccessOpen(false);
-    setSuccessMessage("");
+    setSnack((s) => ({ ...s, open: false }));
   };
 
    // ------ mutations ------
    const addItemMutation = useMutation({
     mutationFn: createItem,
-    onSuccess: () => handleMutationSuccess("Item added successfully!"),
+    onSuccess: () => handleMutationSuccess("added"),
     onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const updateItemMutation = useMutation({
     mutationFn: ({ item_id, payload }) => updateItem(item_id, payload),
-    onSuccess: () => handleMutationSuccess("Item updated successfully!"),
+    onSuccess: () => handleMutationSuccess("updated"),
     onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const deleteItemMutation = useMutation({
     mutationFn: (item_id) => deleteItem(item_id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      setSnack({ open: true, message: 'Item deleted successfully!', severity: 'warning' });
-    },
+    onSuccess: () => handleMutationSuccess("deleted"),
     onError: (e) => {
       let msg = 'Failed to delete item';
       if (e?.message) {
@@ -147,7 +134,7 @@ return (
           onCategoriesLoaded={(cats) => setCategories(cats)}
         />
 
-        {/* Add/Edit Modal (Assumes AddItemModal will also use Tailwind or its own styling) */}
+        {/* Add/Edit Modal (Assumes AddItemModal uses Tailwind) */}
         <AddItemModal
           open={open}
           onClose={closeModal}
@@ -157,23 +144,27 @@ return (
           defaultValues={editItem}
           categories={categories}
         />
-
-    <Snackbar
-      open={successOpen}
-      autoHideDuration={3000}
-      onClose={handleCloseSnackbar}
-      message={successMessage}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-    >
-      <Alert
-      onClose={handleCloseSnackbar}
-      severity="success"
-      variant="filled"
-      sx={{ width: '100%' }}
-    >
-      {successMessage}
-    </Alert>
-    </Snackbar>
-  </Box>
+        {snack.open && (
+          <div 
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
+          >
+            <div 
+              className={`p-3 text-sm rounded-lg shadow-xl flex items-center justify-between gap-4 ${
+                snack.severity === 'success' ? 'bg-emerald-600 text-white' : 
+                snack.severity === 'warning' ? 'bg-amber-500 text-slate-900' : 'bg-slate-600 text-white'
+              }`}
+            >
+              <p>{snack.message}</p>
+              <button 
+                className="opacity-70 hover:opacity-100" 
+                onClick={handleCloseSnackbar}
+              >
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+    </div>
+  </div>
 );
 }

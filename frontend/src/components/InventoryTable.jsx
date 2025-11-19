@@ -9,18 +9,17 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete'; 
-import SortIcon from '@mui/icons-material/Sort';
-
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SortIcon from "@mui/icons-material/Sort";
 import api from "../services/api";
 
 const formatDate = (dateString) => {
-  if (!dateString) return '—';
-  return String(dateString).split('T')[0];
+  if (!dateString) return "—";
+  return String(dateString).split("T")[0];
 };
 
-// Default columns mapping to backend `inventory` table
+// Default columns mapping to backend inventory table
 const DEFAULT_COLUMNS = [
   { accessorKey: "item_id", header: "ID" },
   { accessorKey: "name", header: "Name" },
@@ -28,26 +27,38 @@ const DEFAULT_COLUMNS = [
   { accessorKey: "barcode", header: "Barcode" },
   { accessorKey: "quantity", header: "Qty" },
   { accessorKey: "unit", header: "Unit" },
-  { accessorKey: "expiration_date", header: "Expires", cell: ({ cell }) => formatDate(cell.getValue()) },
+  {
+    accessorKey: "expiration_date",
+    header: "Expires",
+    cell: ({ cell }) => formatDate(cell.getValue()),
+  },
   { accessorKey: "location_id", header: "Location" },
-  { accessorKey: "date_added", header: "Date Added", cell: ({ cell }) => formatDate(cell.getValue())},
-  { accessorKey: "last_modified", header: "Date Modified", cell: ({ cell }) => formatDate(cell.getValue()) },
+  {
+    accessorKey: "date_added",
+    header: "Date Added",
+    cell: ({ cell }) => formatDate(cell.getValue()),
+  },
+  {
+    accessorKey: "last_modified",
+    header: "Date Modified",
+    cell: ({ cell }) => formatDate(cell.getValue()),
+  },
 ];
 
-
 export default function InventoryTable({
-  mode = "full",
-  limit = 25,
-  showColumns = null,
-  lowStockThreshold = 10,
+  mode = "full", // "full" or "widget"
+  limit = 25, // max rows in widget mode
+  showColumns = null, // array of accessorKeys to show
+  lowStockThreshold = 10, 
   showFilterBar = true,
   onEditClick = null,
   onDeleteClick = null,
   onCategoriesLoaded = null,
 }) {
-  const [sorting, setSorting] = useState(mode === "widget" ? [{ id: 'last_modified', desc: true }] : []);
-
-  const [search, setSearch] = useState(""); 
+  const [sorting, setSorting] = useState(
+    mode === "widget" ? [{ id: "last_modified", desc: true }] : []
+  );
+  const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
 
@@ -57,8 +68,8 @@ export default function InventoryTable({
   const [expiringInDays, setExpiringInDays] = useState("");
 
   const [pagination, setPagination] = useState({
-    pageIndex: 0, 
-    pageSize: mode === 'widget' ? limit : 10, 
+    pageIndex: 0,
+    pageSize: mode === "widget" ? limit : 10,
   });
 
   const query = useQuery({
@@ -70,19 +81,24 @@ export default function InventoryTable({
   });
 
   // State mapping from query
-  // const items = query.data ?? [];
-    // State mapping from query
-    const rawItems = query.data ?? [];
+  const rawItems = query.data ?? [];
 
-    // Always show items in a stable order (e.g., by item_id)
-    const items = useMemo(
-      () => [...rawItems].sort((a, b) => a.item_id - b.item_id),
-      [rawItems]
-    );
-  
+  // Sort all items by last_modified descending for the widget view
+  const items = useMemo(() => {
+    // We only need this explicit sort in widget mode where slicing is applied.
+    if (mode === "widget") {
+      return [...rawItems].sort((a, b) => {
+        const dateA = a.last_modified ? new Date(a.last_modified) : new Date(0);
+        const dateB = b.last_modified ? new Date(b.last_modified) : new Date(0);
+        // Descending order
+        return dateB - dateA;
+      });
+    }
+    // In full mode, keep the original array reference for internal table sorting
+    return rawItems;
+  }, [rawItems, mode]);
   const isLoading = query.isLoading;
   const isError = query.isError;
-  const isFetching = query.isFetching;
 
   const [serialMap, setSerialMap] = useState({});
 
@@ -109,11 +125,11 @@ export default function InventoryTable({
       id: "serial",
       header: "No.",
       enableSorting: false,
-      cell: ({row}) => serialMap[row.original.item_id] ?? "—",
+      cell: ({ row }) => serialMap[row.original.item_id] ?? "—",
     };
 
-    let cols = DEFAULT_COLUMNS.filter(c => c.accessorKey !== 'item_id');
-    
+    let cols = DEFAULT_COLUMNS.filter((c) => c.accessorKey !== "item_id");
+
     if (mode === "widget") {
       cols = cols.filter((c) =>
         ["name", "quantity", "unit", "last_modified"].includes(c.accessorKey)
@@ -122,7 +138,7 @@ export default function InventoryTable({
     if (Array.isArray(showColumns) && showColumns.length > 0) {
       cols = cols.filter((c) => showColumns.includes(c.accessorKey));
     }
-    
+
     const actionsCol = {
       id: "actions",
       header: "Actions",
@@ -153,16 +169,15 @@ export default function InventoryTable({
         </div>
       ),
     };
-      
+
     const baseCols = [serialCol, ...cols].map((c) => ({
       ...c,
       cell: c.cell || ((info) => info.getValue()),
     }));
-      
+
     return mode === "full" ? [...baseCols, actionsCol] : baseCols;
   }, [mode, showColumns, serialMap, onEditClick, onDeleteClick]);
 
-  // FIX: Memoize the slice to stabilize the array identity
   const displayed = useMemo(() => {
     return mode === "widget" ? items.slice(0, limit) : items;
   }, [mode, items, limit]);
@@ -178,10 +193,10 @@ export default function InventoryTable({
     if (onCategoriesLoaded) {
       onCategoriesLoaded(categories);
     }
-  }, [categories]);  
+  }, [categories]);
 
   // Date helpers
-  const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null); 
+  const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null);
   const inNextNDays = (dateStr, n) => {
     if (!dateStr || !n) return false;
     const d = new Date(`${dateStr}T00:00:00`);
@@ -243,7 +258,6 @@ export default function InventoryTable({
     expiringInDays,
   ]);
 
-
   const table = useReactTable({
     data: filtered,
     columns: effectiveColumns,
@@ -258,9 +272,7 @@ export default function InventoryTable({
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-x-auto">
-      {isLoading || isFetching && <div className="h-0.5 w-full bg-blue-500 animate-pulse" />}
-
-      {/* Full Mode Filter Bar: NOW INCLUDES EXPIRY FILTERS */}
+      {isLoading && <div className="h-0.5 w-full bg-blue-500 animate-pulse" />}
       {showFilterBar && mode === "full" && (
         <div className="flex flex-wrap gap-3 items-center p-3 border-b border-gray-200">
           {/* Search Input */}
@@ -280,11 +292,19 @@ export default function InventoryTable({
             >
               <option value="">All Categories</option>
               {categories.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+              <svg
+                className="fill-current h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
             </div>
           </div>
           <label className="flex items-center text-sm text-slate-700">
@@ -296,9 +316,11 @@ export default function InventoryTable({
             />
             Low stock (≤ {lowStockThreshold})
           </label>
-          
+
           <div className="relative">
-            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry from</label>
+            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">
+              Expiry from
+            </label>
             <input
               type="date"
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36 mt-2 focus:border-slate-500"
@@ -306,9 +328,11 @@ export default function InventoryTable({
               onChange={(e) => setExpiryFrom(e.target.value)}
             />
           </div>
-          
+
           <div className="relative">
-            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry to</label>
+            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">
+              Expiry to
+            </label>
             <input
               type="date"
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36 mt-2 focus:border-slate-500"
@@ -334,7 +358,6 @@ export default function InventoryTable({
             />
             Only with expiry
           </label>
-          
         </div>
       )}
 
@@ -356,7 +379,14 @@ export default function InventoryTable({
                         header.getContext()
                       )}
                       {header.column.getIsSorted() && (
-                          <SortIcon fontSize="inherit" className={`transform transition-transform ${header.column.getIsSorted() === 'desc' ? 'rotate-180' : ''}`} />
+                        <SortIcon
+                          fontSize="inherit"
+                          className={`transform transition-transform ${
+                            header.column.getIsSorted() === "desc"
+                              ? "rotate-180"
+                              : ""
+                          }`}
+                        />
                       )}
                     </div>
                   </th>
@@ -366,9 +396,15 @@ export default function InventoryTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 text-sm">
             {table.getPaginationRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50 transition duration-75">
+              <tr
+                key={row.id}
+                className="hover:bg-gray-50 transition duration-75"
+              >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-2 whitespace-nowrap text-slate-700">
+                  <td
+                    key={cell.id}
+                    className="px-4 py-2 whitespace-nowrap text-slate-700"
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -377,11 +413,12 @@ export default function InventoryTable({
           </tbody>
         </table>
       </div>
-  
+
       {mode === "full" && (
         <div className="flex justify-end items-center gap-3 p-3 border-t border-gray-200">
           <span className="text-sm text-slate-600">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </span>
 
           <button
@@ -391,7 +428,7 @@ export default function InventoryTable({
           >
             Previous
           </button>
-          
+
           <button
             className="px-3 py-1 text-sm font-medium rounded-lg text-slate-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
             onClick={() => table.nextPage()}
@@ -399,12 +436,12 @@ export default function InventoryTable({
           >
             Next
           </button>
-          
+
           <input
             type="number"
             placeholder={String(table.getState().pagination.pageIndex + 1)}
             className="w-24 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:border-slate-500"
-            onChange={e => {
+            onChange={(e) => {
               const page = e.target.value ? Number(e.target.value) - 1 : 0;
               table.setPageIndex(page);
             }}
