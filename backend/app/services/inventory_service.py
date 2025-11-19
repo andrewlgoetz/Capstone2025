@@ -67,25 +67,7 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
     except IntegrityError:
         db.rollback()
         # covers race against unique(barcode) or other constraints
-        import traceback
-        tb = traceback.format_exc()
-        print(f"[inventory_service.add_item] IntegrityError: {tb}")
-
-        # Try to recover from out-of-sync primary key sequence by syncing it and retrying once
-        try:
-            print("[inventory_service.add_item] Attempting to sync inventory_item_id_seq and retry insert")
-            db.execute("SELECT setval('inventory_item_id_seq', COALESCE((SELECT MAX(item_id) FROM inventory), 1));")
-            db.commit()
-            # create a fresh ORM object and retry insert
-            retry_item = InventoryItem(**data)
-            db.add(retry_item)
-            db.commit()
-            db.refresh(retry_item)
-            return retry_item
-        except Exception as retry_err:
-            db.rollback()
-            print(f"[inventory_service.add_item] Retry failed: {retry_err}")
-            raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode or PK).")
+        raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode or PK).")
 
     return new_item
 
