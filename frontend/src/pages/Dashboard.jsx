@@ -11,7 +11,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get("/inventory/all");
+        const res = await api.get("/inventory/allwithlocation");
         setInventoryData(res.data);
       } catch (error) {
         console.error("Failed to fetch inventory:", error);
