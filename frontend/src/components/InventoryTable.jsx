@@ -69,7 +69,17 @@ export default function InventoryTable({
     },
   });
 
-  const items = query.data ?? [];
+  // State mapping from query
+  // const items = query.data ?? [];
+    // State mapping from query
+    const rawItems = query.data ?? [];
+
+    // Always show items in a stable order (e.g., by item_id)
+    const items = useMemo(
+      () => [...rawItems].sort((a, b) => a.item_id - b.item_id),
+      [rawItems]
+    );
+  
   const isLoading = query.isLoading;
   const isError = query.isError;
   const isFetching = query.isFetching;

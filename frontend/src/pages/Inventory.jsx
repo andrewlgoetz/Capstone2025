@@ -16,7 +16,8 @@ export default function Inventory() {
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Use state to track categories loaded by InventoryTable for AddItemModal
   const [categories, setCategories] = useState([]);
@@ -27,9 +28,10 @@ export default function Inventory() {
   };
 
   // ------ shared success + error handlers ------
-  const handleMutationSuccess = (action) => {
+  const handleMutationSuccess = (message) => {
     queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    setSnack({ open: true, message: `Item ${action} successfully!`, severity: 'success' });
+    setSuccessMessage(message);
+    setSuccessOpen(true);
     closeModal();
   };
 
@@ -54,17 +56,22 @@ export default function Inventory() {
     alert(msg);
   };
 
+  const handleCloseSnackbar = () => {
+    setSuccessOpen(false);
+    setSuccessMessage("");
+  };
+
    // ------ mutations ------
    const addItemMutation = useMutation({
     mutationFn: createItem,
-    onSuccess: () => handleMutationSuccess('added'),
-    onError: handleMutationError,
+    onSuccess: () => handleMutationSuccess("Item added successfully!"),
+    onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const updateItemMutation = useMutation({
     mutationFn: ({ item_id, payload }) => updateItem(item_id, payload),
-    onSuccess: () => handleMutationSuccess('updated'),
-    onError: handleMutationError,
+    onSuccess: () => handleMutationSuccess("Item updated successfully!"),
+    onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const deleteItemMutation = useMutation({
@@ -151,25 +158,22 @@ return (
           categories={categories}
         />
 
-        {/* Snackbar/Toast (Tailwind implementation for consistency) */}
-        {snack.open && (
-          <div 
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
-          >
-            <div 
-              className={`p-3 text-sm rounded-lg shadow-xl flex items-center justify-between gap-4 ${
-                snack.severity === 'success' ? 'bg-emerald-600 text-white' : 
-                snack.severity === 'warning' ? 'bg-amber-500 text-slate-900' : 'bg-slate-600 text-white'
-              }`}
-            >
-              <p>{snack.message}</p>
-              <button className="opacity-70 hover:opacity-100" onClick={() => setSnack(s => ({ ...s, open: false }))}>
-                <CloseIcon className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-    </div>
-  </div>
+    <Snackbar
+      open={successOpen}
+      autoHideDuration={3000}
+      onClose={handleCloseSnackbar}
+      message={successMessage}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+      <Alert
+      onClose={handleCloseSnackbar}
+      severity="success"
+      variant="filled"
+      sx={{ width: '100%' }}
+    >
+      {successMessage}
+    </Alert>
+    </Snackbar>
+  </Box>
 );
 }
