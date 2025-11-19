@@ -305,7 +305,7 @@ const Home = () => {
                 className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
                 onClick={() => { setShowFabMenu(false); /* Edit logic */ }}
               >
-                Edit Location
+               Bulk Import
               </button>
             </div>
           )}

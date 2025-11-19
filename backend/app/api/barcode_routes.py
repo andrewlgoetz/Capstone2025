@@ -112,5 +112,5 @@ def increase_item_quantity(
     payload: QuantityDelta,
     db: Session = Depends(get_db),
 ):
-    updated = adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
+    updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
     return InventoryRead.model_validate(updated)
