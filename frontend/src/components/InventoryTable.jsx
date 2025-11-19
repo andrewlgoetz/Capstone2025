@@ -47,7 +47,7 @@ const DEFAULT_COLUMNS = [
 
 export default function InventoryTable({
   mode = "full", // "full" or "widget"
-  limit = 25, // max rows in widget mode
+  limit = 5, // max rows in widget mode
   showColumns = null, // array of accessorKeys to show
   lowStockThreshold = 10, 
   showFilterBar = true,
@@ -76,48 +76,52 @@ export default function InventoryTable({
     queryKey: ["inventory", { mode }],
     queryFn: async () => {
       const res = await api.get("/inventory/all");
+      console.log(res.data)
       return res.data;
     },
   });
 
-  // State mapping from query
   const rawItems = query.data ?? [];
 
-  // Sort all items by last_modified descending for the widget view
+  const masterSequentialItems = useMemo(
+      () => [...rawItems].sort((a, b) => a.item_id - b.item_id),
+      [rawItems]
+    );
+
+  // used to get the final list for table (in full mode, use sequential order. in widget mode, use last_modified order)
   const items = useMemo(() => {
-    // We only need this explicit sort in widget mode where slicing is applied.
+    // If widget mode, override sequential order with 'last_modified' order
     if (mode === "widget") {
       return [...rawItems].sort((a, b) => {
         const dateA = a.last_modified ? new Date(a.last_modified) : new Date(0);
         const dateB = b.last_modified ? new Date(b.last_modified) : new Date(0);
-        // Descending order
         return dateB - dateA;
       });
     }
-    // In full mode, keep the original array reference for internal table sorting
-    return rawItems;
-  }, [rawItems, mode]);
+    // In full mode, use the sequentially sorted list 
+    return masterSequentialItems;
+  }, [rawItems, mode, masterSequentialItems]); 
+
   const isLoading = query.isLoading;
   const isError = query.isError;
 
   const [serialMap, setSerialMap] = useState({});
 
   useEffect(() => {
-    if (!items.length) {
+    if (!masterSequentialItems.length) {
       setSerialMap({});
       return;
     }
 
     const next = {};
     let serial = 1;
-    const ordered = items;
-
-    ordered.forEach((item) => {
+   // Mmp is built on the sequential list
+    masterSequentialItems.forEach((item) => {
       next[item.item_id] = serial++;
     });
 
     setSerialMap(next);
-  }, [items]);
+  }, [masterSequentialItems]); 
 
   // Decide which columns to render
   const effectiveColumns = useMemo(() => {
