@@ -1,21 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'
-import { Box, Typography, Button } from '@mui/material'
-import { Snackbar, Alert } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import InventoryTable from '../components/InventoryTable'
 import AddItemModal from '../components/AddItemModal'
 import { createItem, updateItem, deleteItem } from '../services/api'
 
 export default function Inventory() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-
+  const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
   const [categories, setCategories] = useState([]);
 
   const closeModal = () => {
@@ -24,10 +21,9 @@ export default function Inventory() {
   };
 
   // ------ shared success + error handlers ------
-  const handleMutationSuccess = (message) => {
+  const handleMutationSuccess = (action) => {
     queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    setSuccessMessage(message);
-    setSuccessOpen(true);
+    setSnack({ open: true, message: `Item ${action} successfully!`, severity: 'success' });
     closeModal();
   };
 
@@ -52,28 +48,25 @@ export default function Inventory() {
   };
 
   const handleCloseSnackbar = () => {
-    setSuccessOpen(false);
-    setSuccessMessage("");
+    setSnack((s) => ({ ...s, open: false }));
   };
 
    // ------ mutations ------
    const addItemMutation = useMutation({
     mutationFn: createItem,
-    onSuccess: () => handleMutationSuccess("Item added successfully!"),
+    onSuccess: () => handleMutationSuccess("added"),
     onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const updateItemMutation = useMutation({
     mutationFn: ({ item_id, payload }) => updateItem(item_id, payload),
-    onSuccess: () => handleMutationSuccess("Item updated successfully!"),
+    onSuccess: () => handleMutationSuccess("updated"),
     onError: (error, variables) => handleMutationError(error, variables),
   });
 
   const deleteItemMutation = useMutation({
     mutationFn: (item_id) => deleteItem(item_id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    },
+    onSuccess: () => handleMutationSuccess("deleted"),
     onError: (e) => {
       let msg = 'Failed to delete item';
       if (e?.message) {
@@ -88,12 +81,12 @@ export default function Inventory() {
 
   // ------ handlers called by UI ------
   const handleAddClick = () => {
-    setEditItem(null);      // add mode
+    setEditItem(null);
     setOpen(true);
   };
 
   const handleEditClick = (item) => {
-    setEditItem(item);      // edit mode, preload this row
+    setEditItem(item);
     setOpen(true);
   };
 
@@ -116,57 +109,62 @@ export default function Inventory() {
   };
 
 return (
-  <Box sx={{ p: 5 }}>
-    <header
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-      }}
-    >
-      <Typography variant="h4">Inventory</Typography>
-      <Button variant="contained" onClick={handleAddClick}>
-        Add Item
-      </Button>
-    </header>
+  <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="max-w-7xl mx-auto p-4 md:p-6">
+        <header className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Inventory Management
+          </h1>
+          <button 
+            className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
+            onClick={handleAddClick}
+          >
+            <AddIcon fontSize="small" />
+            Add Item
+          </button>
+        </header>
 
-    <InventoryTable
-      mode="full"
-      // onRowClick={(item) => navigate(`/inventory/${item.item_id}`)}
-      lowStockThreshold={25}
-      showFilterBar
-      onEditClick={handleEditClick}
-      onDeleteClick={handleDeleteClick}
-      onCategoriesLoaded={(cats) => setCategories(cats)}
-    />
+        {/* Inventory Table */}
+        <InventoryTable
+          mode="full"
+          lowStockThreshold={25}
+          showFilterBar
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeleteClick}
+          onCategoriesLoaded={(cats) => setCategories(cats)}
+        />
 
-    <AddItemModal
-      open={open}
-      onClose={closeModal}
-      onSave={handleSave}             // gets { mode, item_id, payload }
-      isSaving={isSaving}
-      mode={editItem ? 'edit' : 'add'}
-      defaultValues={editItem}
-      categories={categories}
-    />
-
-    <Snackbar
-      open={successOpen}
-      autoHideDuration={3000}
-      onClose={handleCloseSnackbar}
-      message={successMessage}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-    >
-      <Alert
-      onClose={handleCloseSnackbar}
-      severity="success"
-      variant="filled"
-      sx={{ width: '100%' }}
-    >
-      {successMessage}
-    </Alert>
-    </Snackbar>
-  </Box>
+        {/* Add/Edit Modal (Assumes AddItemModal uses Tailwind) */}
+        <AddItemModal
+          open={open}
+          onClose={closeModal}
+          onSave={handleSave}
+          isSaving={isSaving}
+          mode={editItem ? 'edit' : 'add'}
+          defaultValues={editItem}
+          categories={categories}
+        />
+        {snack.open && (
+          <div 
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
+          >
+            <div 
+              className={`p-3 text-sm rounded-lg shadow-xl flex items-center justify-between gap-4 ${
+                snack.severity === 'success' ? 'bg-emerald-600 text-white' : 
+                snack.severity === 'warning' ? 'bg-amber-500 text-slate-900' : 'bg-slate-600 text-white'
+              }`}
+            >
+              <p>{snack.message}</p>
+              <button 
+                className="opacity-70 hover:opacity-100" 
+                onClick={handleCloseSnackbar}
+              >
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+    </div>
+  </div>
 );
 }

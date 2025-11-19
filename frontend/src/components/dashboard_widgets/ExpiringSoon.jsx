@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { getItemEmoji } from "./emojiMap";
 import ExpandableText from "../common/ExpandableText";
 
-const ExpiringSoon = ({ data = [], days = 14, limit = 15 }) => {
+const ExpiringSoon = ({ data = [], days = 14, limit = 20 }) => {
   const [thresholdDays, setThresholdDays] = useState(days);
   const today = new Date();
 
