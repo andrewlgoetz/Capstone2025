@@ -31,7 +31,7 @@ const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
     <Dialog open={Boolean(open)} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle className="text-lg font-semibold text-slate-800 tracking-tight">Confirm Scan Out</DialogTitle>
       <DialogContent className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
-        <Box className="flex flex-col items-center gap-2">
+  <Box className="flex flex-col items-center gap-2 pt-1">
           {imageUrl ? (
             <img src={imageUrl} alt={initial.name || 'item image'} style={{ width: 180, height: 180, objectFit: 'cover', borderRadius: 8 }} />
           ) : (
