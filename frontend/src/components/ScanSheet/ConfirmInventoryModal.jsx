@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import { createItem, fetchInventoryByBarcode, increaseInventory } from '../../services/api'
 
 // A small, extendable confirm modal for inventory items.
@@ -10,8 +10,10 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
     barcode: '',
     quantity: '',
     name: '',
-    category: '',
-    expiry_date: '',
+  category: '',
+  expiry_date: '',
+  unit: 'units',
+  custom_unit: '',
   })
 
   useEffect(() => {
@@ -20,13 +22,19 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
         barcode: initial.barcode || '',
         quantity: initial.quantity ?? '',
         name: initial.name || '',
-        category: initial.category || '',
-        expiry_date: initial.expiry_date || '',
+  category: initial.category || '',
+  expiry_date: initial.expiry_date || '',
+  unit: initial.unit || 'units',
+  custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
+  custom_category: initial.category && !['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other'].includes(initial.category) ? initial.category : '',
       })
     }
   }, [initial])
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  const UNIT_OPTIONS = ['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans','CUSTOM']
+  const CATEGORY_OPTIONS = ['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other','CUSTOM']
 
   const handleConfirm = () => {
     // perform create on backend, then notify parent
@@ -34,12 +42,16 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
     setError(null)
     const doCreate = async () => {
       try {
+        const unitToSend = form.unit === 'CUSTOM' ? (form.custom_unit || null) : form.unit
+        const categoryToSend = form.category === 'CUSTOM' ? (form.custom_category || null) : (form.category || null)
         const payload = {
           barcode: form.barcode,
           quantity: Number(form.quantity) || 0,
           name: form.name || '',
-          category: form.category || '',
+          category: categoryToSend,
+          unit: unitToSend,
           expiration_date: form.expiry_date || null,
+          location_id: 1,
         }
         const created = await createItem(payload)
         onConfirm?.(created)
@@ -101,8 +113,43 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
               autoFocus
             />
 
+            <FormControl fullWidth>
+              <InputLabel id="unit-select-label">Unit</InputLabel>
+              <Select
+                labelId="unit-select-label"
+                value={form.unit}
+                label="Unit"
+                onChange={(e) => setForm(f => ({ ...f, unit: e.target.value }))}
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <MenuItem key={u} value={u}>{u}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {form.unit === 'CUSTOM' && (
+              <TextField label="Custom unit" value={form.custom_unit} onChange={handleChange('custom_unit')} fullWidth />
+            )}
+
             <TextField label="Name" value={form.name} onChange={handleChange('name')} />
-            <TextField label="Category" value={form.category} onChange={handleChange('category')} />
+
+            <FormControl fullWidth>
+              <InputLabel id="category-select-label">Category</InputLabel>
+              <Select
+                labelId="category-select-label"
+                value={form.category || ''}
+                label="Category"
+                onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
+              >
+                {CATEGORY_OPTIONS.map((c) => (
+                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {form.category === 'CUSTOM' && (
+              <TextField label="Custom category" value={form.custom_category || ''} onChange={(e) => setForm(f => ({ ...f, custom_category: e.target.value }))} fullWidth />
+            )}
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
 
             <Typography variant="caption" color="textSecondary">You can edit fields before confirming. Quantity is prominently visible above.</Typography>
