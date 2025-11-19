@@ -5,7 +5,7 @@ import { createItem, fetchInventoryByBarcode, increaseInventory } from '../../se
 // A small, extendable confirm modal for inventory items.
 // Props: open, onClose, initial (object), imageUrl, onConfirm
 
-const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm }) => {
+const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null }) => {
   const [form, setForm] = useState({
     barcode: '',
     quantity: '',
@@ -16,25 +16,52 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
   custom_unit: '',
   })
 
+  const CATEGORY_OPTIONS = React.useMemo(() => ['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other','CUSTOM'], [])
+  const [categoryOptions, setCategoryOptions] = useState(CATEGORY_OPTIONS)
+
   useEffect(() => {
     if (initial) {
+      // build initial form values, preferring provided initial values but falling back to product info
+      const initialName = initial.name || (product?.product_name) || ''
+      const initialQuantity = initial.quantity ?? 1
+      const initialCategory = initial.category || null
+      const initialCustomCategory = initialCategory && !CATEGORY_OPTIONS.includes(initialCategory) ? initialCategory : ''
       setForm({
         barcode: initial.barcode || '',
-        quantity: initial.quantity ?? '',
-        name: initial.name || '',
-  category: initial.category || '',
+        quantity: initialQuantity,
+        name: initialName,
+  category: initialCategory || '',
   expiry_date: initial.expiry_date || '',
   unit: initial.unit || 'units',
   custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
-  custom_category: initial.category && !['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other'].includes(initial.category) ? initial.category : '',
+  custom_category: initialCustomCategory,
       })
     }
-  }, [initial])
+  }, [initial, product, CATEGORY_OPTIONS])
+
+  // when product changes, compute category options so product categories appear at top
+  useEffect(() => {
+    if (!product) return
+    // prefer categories string, fallback to categories_tags
+    let prodCats = []
+    if (product.categories) {
+      prodCats = product.categories.split(',').map(s => s.trim()).filter(Boolean)
+    } else if (product.categories_tags) {
+      prodCats = product.categories_tags.map(t => t.split(':').pop().replace(/-/g, ' '))
+    }
+
+    if (prodCats.length) {
+      // merge with existing options, keeping order and uniqueness
+      const merged = [...prodCats, ...CATEGORY_OPTIONS.filter(c => !prodCats.includes(c))]
+      setCategoryOptions(merged)
+      // if form has no category, prefill with top product category
+      setForm(f => ({ ...f, category: f.category || prodCats[0] || '' }))
+    }
+  }, [product, CATEGORY_OPTIONS])
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
   const UNIT_OPTIONS = ['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans','CUSTOM']
-  const CATEGORY_OPTIONS = ['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other','CUSTOM']
 
   const handleConfirm = () => {
     // perform create on backend, then notify parent
@@ -141,7 +168,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
                 label="Category"
                 onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
               >
-                {CATEGORY_OPTIONS.map((c) => (
+                {categoryOptions.map((c) => (
                   <MenuItem key={c} value={c}>{c}</MenuItem>
                 ))}
               </Select>

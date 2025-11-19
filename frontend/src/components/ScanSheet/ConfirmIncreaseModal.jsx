@@ -7,9 +7,12 @@ import AddIcon from '@mui/icons-material/Add'
 const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm }) => {
   const [quantity, setQuantity] = useState(1)
 
+  // initialize quantity when modal opens (preserve manual edits while open)
   useEffect(() => {
-    setQuantity(1)
-  }, [initial, open])
+    if (open) {
+      setQuantity(1)
+    }
+  }, [open])
 
   const handleConfirm = () => {
     onConfirm?.({ barcode: initial.barcode, item_id: initial.item_id, quantity: Number(quantity) })
@@ -29,7 +32,7 @@ const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
             )}
           </Box>
 
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField label="Barcode" value={initial.barcode || ''} InputProps={{ readOnly: true }} />
             <TextField label="Name" value={initial.name || ''} InputProps={{ readOnly: true }} />
             <TextField label="Category" value={initial.category || ''} InputProps={{ readOnly: true }} />
