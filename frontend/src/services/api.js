@@ -27,9 +27,82 @@ export const updateItem = (item_id, item) =>
   api.put(`/inventory/${item_id}`, item);
 
 export default api;
+// REAL: call backend barcode routes
+// fetchInventoryByBarcode now calls POST /barcode/scan-in which returns a ScanResponse
+export async function fetchInventoryByBarcode(barcode) {
+  if (!barcode) throw new Error('No barcode provided')
+
+  const res = await api.post('/barcode/scan-in', { barcode })
+  // res.data should match ScanResponse: { status: 'KNOWN'|'NEW', item?, candidate_info? }
+  const data = res.data
+
+  if (data.status === 'KNOWN' && data.item) {
+    // normalize to the shape the frontend expects: { barcode, quantity, name, category, expiry_date }
+    const it = data.item
+    return {
+      barcode: it.barcode,
+      quantity: it.quantity,
+      name: it.name,
+      category: it.category,
+      expiry_date: it.expiration_date || it.expiry_date || null,
+      item_id: it.item_id,
+      raw: it,
+    }
+  }
+
+  if (data.status === 'NEW' && data.candidate_info) {
+    const c = data.candidate_info
+    return {
+      barcode: c.barcode || barcode,
+      quantity: 1,
+      name: c.name || '',
+      category: c.category || '',
+      expiry_date: null,
+      raw: data,
+    }
+  }
+
+  // Fallback: return minimal object
+  return { barcode, quantity: 1, name: '', category: '', expiry_date: null, raw: data }
+}
+
+// scanOutInventory: 1) call POST /barcode/scan-out with barcode to find existing item
+// 2) if FOUND, call POST /barcode/scan-out/{item_id}/confirm with { quantity }
+export async function scanOutInventory(barcode, qty = 1) {
+  if (!barcode) throw new Error('No barcode provided')
+
+  // 1) lookup
+  const lookup = await api.post('/barcode/scan-out', { barcode })
+  const lookupData = lookup.data
+
+  if (lookupData.status === 'NOT_FOUND') {
+    return { status: 'NOT_FOUND', barcode }
+  }
+
+  const item = lookupData.item
+  const previous_quantity = item?.quantity ?? 0
+  const item_id = item?.item_id
+
+  // 2) confirm scan out
+  const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, { quantity: qty })
+  const updated = confirmRes.data
+
+  return {
+    status: 'OK',
+    barcode,
+    requested: qty,
+    previous_quantity,
+    remaining_quantity: updated.quantity ?? null,
+    deleted: (updated.quantity === 0),
+    item: updated,
+  }
+}
+
+/*
+  Dummy helpers (kept for local testing). Uncomment if you need the old behavior.
 
 // Dummy: return a hardcoded inventory object for a barcode (async to mimic network)
-export async function fetchInventoryByBarcode(barcode) {
+export async function _dummy_fetchInventoryByBarcode(barcode) {
   // Example hardcoded responses for a couple of barcodes
   const map = {
     '036000291452': {
@@ -61,12 +134,9 @@ export async function fetchInventoryByBarcode(barcode) {
 }
 
 // Dummy scan-out: decrement quantity or simulate deletion for a barcode
-export async function scanOutInventory(barcode, qty = 1) {
-  // For the dummy implementation, call fetchInventoryByBarcode and adjust quantity
-  const item = await fetchInventoryByBarcode(barcode)
-  // If qty >= item.quantity we'll simulate deleting the item
+export async function _dummy_scanOutInventory(barcode, qty = 1) {
+  const item = await _dummy_fetchInventoryByBarcode(barcode)
   const remaining = Math.max(0, (item.quantity || 0) - Number(qty))
-
   return new Promise((resolve) => setTimeout(() => resolve({
     barcode,
     requested: qty,
@@ -75,3 +145,4 @@ export async function scanOutInventory(barcode, qty = 1) {
     deleted: remaining === 0,
   }), 150))
 }
+*/
