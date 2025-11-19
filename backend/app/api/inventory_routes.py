@@ -8,6 +8,7 @@ from app.models.inventory_movement import InventoryMovement, MovementType
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 import app.services.barcode_service as barcode_service 
 import app.services.inventory_service as inventory_service
+from app.models.location import Location
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -39,6 +40,36 @@ def update_item(
 ):
     return inventory_service.update_item(item_id, item, db)
 
+@router.get("/allwithlocation")
+def get_inventory(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            InventoryItem.item_id,
+            InventoryItem.name,
+            InventoryItem.category,
+            InventoryItem.quantity,
+            InventoryItem.expiration_date,
+            Location.name.label("location_name"),
+            Location.address.label("location_address"),
+            Location.notes.label("location_notes"),
+        )
+        .outerjoin(Location, InventoryItem.location_id == Location.location_id)
+        .all()
+    )
+
+    return [
+        {
+            "item_id": r.item_id,
+            "name": r.name,
+            "category": r.category,
+            "quantity": r.quantity,
+            "expiration_date": r.expiration_date,
+            "location_name": r.location_name,
+            "location_address": r.location_address,
+            "location_notes": r.location_notes,
+        }
+        for r in results
+    ]
 
 @router.get("/all", response_model=list[InventoryRead])
 def list_items(db: Session = Depends(get_db)):
