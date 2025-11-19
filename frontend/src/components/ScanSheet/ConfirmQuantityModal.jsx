@@ -2,15 +2,26 @@ import React, { useState, useEffect } from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography } from '@mui/material'
 
 // Minimal modal for confirming a quantity to scan out. Props: open, onClose, initial (object with barcode, quantity), imageUrl, onConfirm
-const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm }) => {
+const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, maxQuantity = null }) => {
   const [quantity, setQuantity] = useState(initial.quantity ?? '')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     setQuantity(initial.quantity ?? '')
   }, [initial])
 
   const handleConfirm = () => {
-    onConfirm?.({ barcode: initial.barcode, quantity: Number(quantity) })
+    const q = Number(quantity) || 0
+    if (q <= 0) {
+      setError('Quantity must be greater than 0')
+      return
+    }
+    if (maxQuantity != null && q > Number(maxQuantity)) {
+      setError(`Quantity cannot exceed available (${maxQuantity})`)
+      return
+    }
+    setError(null)
+    onConfirm?.({ barcode: initial.barcode, quantity: q })
     onClose?.()
   }
 
@@ -36,6 +47,7 @@ const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
           />
 
           <Typography variant="caption" color="textSecondary">Enter number of items to remove from inventory.</Typography>
+          {error && <Typography variant="body2" color="error">{error}</Typography>}
         </Box>
       </DialogContent>
       <DialogActions>

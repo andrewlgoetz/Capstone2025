@@ -8,6 +8,7 @@ from app.models.inventory import InventoryItem
 from app.models.food_banks import FoodBank
 from app.schemas.inventory_schema import * # InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo, ScanOutResponse
 import app.services.inventory_service as inventory_service
+from app.models.inventory_movement import MovementType
 
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
 
@@ -67,11 +68,14 @@ def confirm_scan_out(
     payload: ScanOutConfirmRequest,
     db: Session = Depends(get_db),
 ):
+    # Debug: log payload
+    print(f"[barcode_routes.confirm_scan_out] item_id={item_id}, payload={payload}")
     # Use negative delta to subtract
     updated = inventory_service.adjust_item_quantity(
         item_id=item_id,
         delta=-payload.quantity,
         db=db,
+        movement_type =MovementType.OUTBOUND
     )
     return InventoryRead.model_validate(updated)
 

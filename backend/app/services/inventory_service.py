@@ -195,7 +195,7 @@ def get_item_by_barcode(barcode: str, db: Session) -> InventoryItem:
 
     return db_item
 
-def adjust_item_quantity(item_id: int, delta: int, db: Session) -> InventoryItem:
+def adjust_item_quantity(item_id: int, delta: int, db: Session, movement_type=None) -> InventoryItem:
     # Load the existing item
     db_item = (
         db.query(InventoryItem)
@@ -217,7 +217,7 @@ def adjust_item_quantity(item_id: int, delta: int, db: Session) -> InventoryItem
     # Reuse your update_item helper with absolute quantity
     updated = update_item(
         item_id=item_id,
-        item=InventoryUpdate(quantity=new_qty),
+        item=InventoryUpdate(quantity=new_qty, movement_type=movement_type),
         db=db,
     )
     return updated

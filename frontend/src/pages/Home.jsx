@@ -353,6 +353,7 @@ const Home = () => {
           open={Boolean(scanOutTarget)}
           onClose={() => setScanOutTarget(null)}
           initial={{ barcode: scanOutTarget.inventory?.barcode, quantity: 1, name: scanOutTarget.inventory?.name }}
+          maxQuantity={scanOutTarget.inventory?.quantity}
           imageUrl={scanOutTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
             // call dummy API
@@ -362,7 +363,11 @@ const Home = () => {
                 setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
                 setScanOutTarget(null)
               })
-              .catch(() => setSnack({ open: true, message: 'Scan out failed', severity: 'warning' }))
+              .catch((err) => {
+                console.error('Scan out failed', err)
+                const msg = err?.response?.data?.detail || err?.message || 'Scan out failed'
+                setSnack({ open: true, message: msg, severity: 'warning' })
+              })
           }}
         />
       )}
