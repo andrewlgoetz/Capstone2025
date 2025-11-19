@@ -15,7 +15,9 @@ import { getItems } from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
 import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
-import { fetchProductByBarcode } from '../services/off'; 
+import { fetchProductByBarcode } from '../services/off';
+import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
+import { fetchInventoryByBarcode } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
 const StatCard = ({ icon: Icon, title, value, accentColor }) => (
@@ -138,16 +140,21 @@ const Home = () => {
   }, [snack.open]);
 
   const handleScan = (code) => {
+    // show loading dialog while fetching 3rd-party product info and dummy inventory
     setProductDialog({ open: true, loading: true, product: null, error: null })
-    fetchProductByBarcode(code)
-      .then((product) => {
-        setProductDialog({ open: true, loading: false, product, error: null })
-        setSnack({ open: true, message: `Scanned ${code} — ${product.product_name || 'Unknown'}` , severity: 'success' })
+
+    // run both lookups in parallel
+    Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
+      .then(([prodRes, invRes]) => {
+        const product = prodRes.status === 'fulfilled' ? prodRes.value : null
+        const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
+
+        setProductDialog({ open: true, loading: false, product: product, inventory: inventory, error: null })
+        setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
       })
-      .catch((err) => {
-        const msg = err?.code === 'NOT_FOUND' ? `No OpenFoodFacts product for ${code}` : 'Lookup failed'
-        setProductDialog({ open: true, loading: false, product: null, error: msg })
-        setSnack({ open: true, message: msg, severity: 'warning' })
+      .catch(() => {
+        setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
+        setSnack({ open: true, message: 'Lookup failed', severity: 'warning' })
       })
   }
 
@@ -263,13 +270,13 @@ const Home = () => {
                 className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
                 onClick={() => { setShowScan(true); setShowFabMenu(false); }}
               >
-                Scan Item (Add/Update)
+                Scan In (Add/Update)
               </button>
               <button 
                 className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
                 onClick={() => { setShowFabMenu(false); /* Update inventory logic */ }}
               >
-                Manual Entry
+                Scan Out
               </button>
               <button 
                 className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
@@ -298,70 +305,19 @@ const Home = () => {
         />
       )}
 
-      {/* Product Dialog */}
+      {/* Product / Confirm Inventory Dialog (new) */}
       {productDialog.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setProductDialog({ open: false, loading: false, product: null, error: null })}>
-          <div className="w-full max-w-sm bg-white rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-slate-800">Product details</h3>
-            </div>
-            <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
-              {productDialog.loading && (
-                <div className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <p className="text-sm text-slate-600">Looking up product…</p>
-                </div>
-              )}
-              {!productDialog.loading && productDialog.error && (
-                <div className="p-3 text-sm bg-amber-50 border border-amber-200 text-amber-800 rounded">
-                  {productDialog.error}
-                </div>
-              )}
-              {!productDialog.loading && productDialog.product && (
-                <div className="space-y-2">
-                  <p className="text-lg font-semibold text-slate-900">
-                    {productDialog.product.product_name || 'Unknown product'}
-                  </p>
-                  {productDialog.product.brands && (
-                    <p className="text-sm text-slate-500">Brand: {productDialog.product.brands}</p>
-                  )}
-                  {productDialog.product.image_front_small_url && (
-                    <img src={productDialog.product.image_front_small_url} alt={productDialog.product.product_name} className="w-full rounded-md mt-1 shadow-md" />
-                  )}
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {productDialog.product.nutriscore_grade && (
-                      <span className="text-xs px-2 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-700 rounded-full">
-                        Nutri-Score: {String(productDialog.product.nutriscore_grade).toUpperCase()}
-                      </span>
-                    )}
-                    {productDialog.product.nova_group && (
-                      <span className="text-xs px-2 py-0.5 border border-blue-300 bg-blue-50 text-blue-700 rounded-full">
-                        NOVA group: {productDialog.product.nova_group}
-                      </span>
-                    )}
-                  </div>
-                  {productDialog.product.quantity && (
-                    <p className="text-sm pt-1 text-slate-700">Quantity: {productDialog.product.quantity}</p>
-                  )}
-                  {productDialog.product.categories && (
-                    <p className="text-sm text-slate-500">{productDialog.product.categories}</p>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="p-3 border-t border-gray-200 flex justify-end">
-              <button 
-                onClick={() => setProductDialog({ open: false, loading: false, product: null, error: null })}
-                className="px-3 py-1 text-sm rounded bg-gray-100 text-slate-700 hover:bg-gray-200 transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmInventoryModal
+          open={productDialog.open}
+          onClose={() => setProductDialog({ open: false, loading: false, product: null, inventory: null, error: null })}
+          initial={productDialog.inventory || { barcode: productDialog.product?.code || '' }}
+          imageUrl={productDialog.product?.image_front_small_url}
+          onConfirm={(payload) => {
+            // for now just log and show a toast; in future this should call create/update endpoints
+            console.log('Confirmed inventory', payload)
+            setSnack({ open: true, message: `Confirmed ${payload.barcode} (qty ${payload.quantity})`, severity: 'success' })
+          }}
+        />
       )}
 
       {/* Snackbar/Toast */}

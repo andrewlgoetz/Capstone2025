@@ -27,3 +27,35 @@ export const updateItem = (item_id, item) =>
   api.put(`/inventory/${item_id}`, item);
 
 export default api;
+
+// Dummy: return a hardcoded inventory object for a barcode (async to mimic network)
+export async function fetchInventoryByBarcode(barcode) {
+  // Example hardcoded responses for a couple of barcodes
+  const map = {
+    '036000291452': {
+      barcode: '036000291452',
+      quantity: 18,
+      name: 'Milk (2%)',
+      category: 'Perishables',
+      expiry_date: '2025-11-20',
+    },
+    '076783001234': {
+      barcode: '076783001234',
+      quantity: 46,
+      name: 'Pasta (1 lb)',
+      category: 'Dry Goods',
+      expiry_date: '2026-02-01',
+    },
+  }
+
+  const result = map[barcode] || {
+    barcode,
+    quantity: 1,
+    name: 'Unknown item',
+    category: 'Other',
+    expiry_date: '',
+  }
+
+  // simulate async latency
+  return new Promise((resolve) => setTimeout(() => resolve(result), 150))
+}
