@@ -157,6 +157,24 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session) -> InventoryIt
 
     return db_item
 
+
+def get_item_by_barcode(barcode: str, db: Session) -> InventoryItem:
+    #call barcode service for 3rd party if required (required when new scan we want the image)
+    code = normalize_barcode(barcode)
+    if not code:
+        raise HTTPException(status_code=400, detail="barcode is required")
+
+    db_item = (
+        db.query(InventoryItem)
+        .filter(InventoryItem.barcode == code)
+        .first()
+    )
+
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    return db_item
+
 def adjust_item_quantity(item_id: int, delta: int, db: Session) -> InventoryItem:
     # Load the existing item
     db_item = (

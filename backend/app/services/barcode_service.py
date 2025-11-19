@@ -1,6 +1,21 @@
 # This simulates barcode lookup.
 # Later you can connect to an external product API (like OpenFoodFacts).
 from datetime import datetime, date, timedelta
+from app.schemas.inventory_schema import *
+from app.db.session import SessionLocal
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+def lookup_barcode(barcode: str):
+    return dummy_barcodes.get(barcode, None)
+
 
 # must comply with BarcodeInfo Model
 dummy_barcodes = {
@@ -72,6 +87,3 @@ dummy_barcodes = {
         "modified_by": 1
     }
 }
-
-def lookup_barcode(barcode: str):
-    return dummy_barcodes.get(barcode, None)
