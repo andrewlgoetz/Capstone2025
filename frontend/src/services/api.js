@@ -59,3 +59,19 @@ export async function fetchInventoryByBarcode(barcode) {
   // simulate async latency
   return new Promise((resolve) => setTimeout(() => resolve(result), 150))
 }
+
+// Dummy scan-out: decrement quantity or simulate deletion for a barcode
+export async function scanOutInventory(barcode, qty = 1) {
+  // For the dummy implementation, call fetchInventoryByBarcode and adjust quantity
+  const item = await fetchInventoryByBarcode(barcode)
+  // If qty >= item.quantity we'll simulate deleting the item
+  const remaining = Math.max(0, (item.quantity || 0) - Number(qty))
+
+  return new Promise((resolve) => setTimeout(() => resolve({
+    barcode,
+    requested: qty,
+    previous_quantity: item.quantity || 0,
+    remaining_quantity: remaining,
+    deleted: remaining === 0,
+  }), 150))
+}
