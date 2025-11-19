@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
+from app.models.inventory_movement import InventoryMovement, MovementType
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 import app.services.barcode_service as barcode_service 
 import app.services.inventory_service as inventory_service

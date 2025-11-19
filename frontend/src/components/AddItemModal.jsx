@@ -19,32 +19,48 @@ export default function AddItemModal({
     unit: "",
     expiration_date: "",
     location_id: "",
+    movement_type: "",
+    movement_reason: "",
   });
 
-  useEffect(() => {
+  // Track original values when editing an item so we can detect changes
+  const [originalValues, setOriginalValues] = React.useState(null);
+
+  React.useEffect(() => {
     if (!open) return;
 
     if (defaultValues) {
+      const quantityStr =
+      defaultValues.quantity === null || defaultValues.quantity === undefined
+        ? ""
+        : String(defaultValues.quantity);
+
+      const locationStr =
+        defaultValues.location_id === null || defaultValues.location_id === undefined
+          ? ""
+          : String(defaultValues.location_id);
+
       // Map backend row → form values
       setValues({
         item_id: defaultValues.item_id ?? null,
         name: defaultValues.name ?? "",
         category: defaultValues.category ?? "",
         barcode: defaultValues.barcode ?? "",
-        quantity:
-          defaultValues.quantity === null || defaultValues.quantity === undefined
-            ? ""
-            : String(defaultValues.quantity),
+        quantity: quantityStr,
         unit: defaultValues.unit ?? "",
         expiration_date: defaultValues.expiration_date
           ? String(defaultValues.expiration_date).split("T")[0] // keep YYYY-MM-DD
           : "",
-        location_id:
-          defaultValues.location_id === null ||
-          defaultValues.location_id === undefined
-            ? ""
-            : String(defaultValues.location_id),
+        location_id: locationStr,
+        movement_type: "",  // reset movement fields
+        movement_reason: "",
       });
+
+      setOriginalValues({
+        quantity: quantityStr,
+        location_id: locationStr,
+      });
+
     } else {
       // blank form for add mode
       setValues({
@@ -57,8 +73,77 @@ export default function AddItemModal({
         expiration_date: "",
         location_id: "",
       });
+      setOriginalValues(null);
     }
   }, [defaultValues, open, mode]);
+
+
+  const isEditMode = mode !== "add";
+
+  const numericQuantity =
+    values.quantity === "" ? null : Number(values.quantity);
+
+  const numericOriginalQuantity =
+    !originalValues || originalValues.quantity === ""
+      ? null
+      : Number(originalValues.quantity);
+
+  const locationChanged =
+    !!originalValues &&
+    originalValues.location_id !== "" &&
+    values.location_id !== "" &&
+    values.location_id !== originalValues.location_id;
+
+  const quantityDecreased =
+    numericQuantity !== null &&
+    numericOriginalQuantity !== null &&
+    numericQuantity < numericOriginalQuantity;
+  
+  // location change → transfer movement
+  const isTransferMovement =
+  isEditMode && !!originalValues && locationChanged;
+
+  // qty decrease only (no location change) → outbound or waste
+  const isQtyMovement =
+  isEditMode &&
+  !!originalValues &&
+  quantityDecreased &&
+  !locationChanged;
+
+  const invalidCombinedChange =
+  isEditMode &&
+  !!originalValues &&
+  quantityDecreased &&
+  locationChanged;
+
+  // We log a movement when quantity decreases OR location changes (in edit mode)
+  const movementNeeded = isTransferMovement || isQtyMovement;
+
+  React.useEffect(() => {
+    if (!isEditMode || !originalValues) return;
+  
+    if (isTransferMovement) {
+      // auto-lock movement type as TRANSFER
+      setValues((v) =>
+        v.movement_type === "TRANSFER"
+          ? v
+          : { ...v, movement_type: "TRANSFER" }
+      );
+    } else if (isQtyMovement) {
+      // if we were previously in transfer mode, clear it so user can pick outbound/waste
+      setValues((v) =>
+        v.movement_type === "TRANSFER"
+          ? { ...v, movement_type: "" }
+          : v
+      );
+    } else {
+      // no movement needed → clear movement_type
+      setValues((v) =>
+        v.movement_type ? { ...v, movement_type: "" } : v
+      );
+    }
+  }, [isEditMode, originalValues, isTransferMovement, isQtyMovement]);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +152,13 @@ export default function AddItemModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (invalidCombinedChange) {
+      alert(
+        "Can't change both quantity and location in one edit. Please update one at a time."
+      );
+      return;
+    }
 
     const payload = {
       name: values.name.trim(),
@@ -79,6 +171,13 @@ export default function AddItemModal({
       location_id:
         values.location_id === "" ? null : Number(values.location_id),
     };
+    // Only send movement fields when editing AND movement is needed
+    if (isEditMode && movementNeeded) {
+      payload.movement_type = values.movement_type;
+      if (values.movement_reason.trim()) {
+        payload.movement_reason = values.movement_reason.trim();
+      }
+    }
 
     onSave?.({
       mode,                    // 'add' or 'edit'
@@ -94,160 +193,159 @@ export default function AddItemModal({
   const selectClass = "appearance-none block w-full p-2 border border-gray-300 bg-white rounded-lg text-sm focus:border-slate-500";
   
   return (
-    // Tailwind Modal Overlay (Fixed position, full screen)
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      
-      {/* Modal Card (White background, centered, shadow) */}
-      <div 
-        className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
-      >
-        
-        {/* Dialog Title */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-slate-800">
-            {mode === "add" ? "Add Inventory Item" : "Edit Inventory Item"}
-          </h2>
-        </div>
-        
-        <form onSubmit={handleSubmit}>
-          {/* Dialog Content */}
-          <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto divide-y divide-gray-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Name */}
-              <div>
-                <label htmlFor="name" className={labelClass}>Name <span className="text-red-500">*</span></label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={values.name}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        {mode === "add" ? "Add Inventory Item" : "Edit Inventory Item"}
+      </DialogTitle>
+      <form onSubmit={handleSubmit}>
+        <DialogContent dividers>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                name="name"
+                label="Name"
+                fullWidth
+                required
+                type="string"
+                value={values.name}
+                onChange={handleChange}
+                disabled={isEditMode}
+              />
+            </Grid>
 
-              {/* Category Select */}
-              <div>
-                <label htmlFor="category" className={labelClass}>Category <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <select
-                    id="category"
-                    name="category"
-                    required
-                    value={values.category}
-                    onChange={handleChange}
-                    className={selectClass}
-                  >
-                    <option value="" disabled>Select category</option>
-                    {categories.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                  </div>
-                </div>
-              </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+            <FormControl fullWidth disabled={isEditMode}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                name="category"
+                label="Category"
+                required
+                value={values.category}
+                onChange={handleChange}
+              >
+                {categories.map((c) => (
+                  <MenuItem key={c} value={c}>{c}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
 
-              {/* Barcode */}
-              <div>
-                <label htmlFor="barcode" className={labelClass}>Barcode <span className="text-red-500">*</span></label>
-                <input
-                  id="barcode"
-                  name="barcode"
-                  type="text"
-                  required
-                  value={values.barcode}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                name="barcode"
+                label="Barcode"
+                fullWidth
+                required
+                value={values.barcode}
+                onChange={handleChange}
+                disabled={isEditMode}
+              />
+            </Grid>
 
-              {/* Quantity */}
-              <div>
-                <label htmlFor="quantity" className={labelClass}>Quantity <span className="text-red-500">*</span></label>
-                <input
-                  id="quantity"
-                  name="quantity"
-                  type="number"
-                  required
-                  value={values.quantity}
-                  onChange={handleChange}
-                  min="0"
-                  className={inputClass}
-                />
-              </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                name="quantity"
+                label="Quantity"
+                fullWidth
+                required
+                type="number"
+                value={values.quantity}
+                onChange={handleChange}
+                inputProps={{ min: 0 }}
+              />
+            </Grid>
 
-              {/* Unit */}
-              <div>
-                <label htmlFor="unit" className={labelClass}>Unit (e.g., cans, jars) <span className="text-red-500">*</span></label>
-                <input
-                  id="unit"
-                  name="unit"
-                  type="text"
-                  required
-                  value={values.unit}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                name="unit"
+                label="Unit (e.g., cans, jars)"
+                fullWidth
+                required
+                type="string"
+                value={values.unit}
+                onChange={handleChange}
+                disabled={isEditMode}
+              />
+            </Grid>
 
-              {/* Expiration Date */}
-              <div>
-                <label htmlFor="expiration_date" className={labelClass}>Expires</label>
-                <input
-                  id="expiration_date"
-                  name="expiration_date"
-                  type="date"
-                  value={values.expiration_date}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                name="expiration_date"
+                label="Expires"
+                type="date"
+                fullWidth
+                value={values.expiration_date}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true }}
+                disabled={isEditMode}
+              />
+            </Grid>
 
-              {/* Location ID */}
-              <div>
-                <label htmlFor="location_id" className={labelClass}>Location ID <span className="text-red-500">*</span></label>
-                <input
-                  id="location_id"
-                  name="location_id"
-                  type="number"
-                  required
-                  value={values.location_id}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                name="location_id"
+                label="Location ID"
+                type="number"
+                fullWidth
+                required
+                value={values.location_id}
+                onChange={handleChange}
+              />
+            </Grid>
+            {isEditMode && movementNeeded && (
+            <>
+              {/* Movement type */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                {isTransferMovement ? (
+                  // Transfer: lock movement type to TRANSFER
+                  <TextField
+                    label="Movement Type"
+                    value="Transfer"
+                    fullWidth
+                  />
+                ) : (
+                  <FormControl fullWidth required>
+                    <InputLabel>Movement Type</InputLabel>
+                    <Select
+                      name="movement_type"
+                      label="Movement Type"
+                      value={values.movement_type}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="OUTBOUND">Outbound</MenuItem>
+                      <MenuItem value="WASTE">Waste</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              </Grid>
+
+              {/* Optional note for any movement */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  name="movement_reason"
+                  label="Movement note (optional)"
+                  fullWidth
+                  value={values.movement_reason}
                   onChange={handleChange}
-                  className={inputClass}
                 />
-              </div>
-            </div>
-          </div>
-          
-          {/* Dialog Actions */}
-          <div className="p-4 border-t border-gray-200 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={onClose} 
-              disabled={isSaving}
-              className="px-4 py-2 text-sm font-medium text-slate-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              disabled={isSaving}
-              className="px-4 py-2 text-sm font-medium text-white bg-slate-800 rounded-lg shadow-md hover:bg-slate-700 transition disabled:opacity-50"
-            >
-              {isSaving
-                ? "Saving..."
-                : mode === "add"
-                ? "Add"
-                : "Save changes"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              </Grid>
+            </>
+          )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="inherit" disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" disabled={isSaving}>
+            {isSaving
+              ? "Saving..."
+              : mode === "add"
+              ? "Add"
+              : "Save changes"}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 }
