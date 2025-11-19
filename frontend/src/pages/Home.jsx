@@ -216,14 +216,6 @@ const Home = () => {
                       Recent Inventory Activity
                     </h4>
                     <div className="relative">
-                      {/* <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input 
-                        type="text"
-                        className="pl-8 pr-3 py-1.5 border border-gray-300 rounded-full w-48 text-sm focus:ring-slate-500 focus:border-slate-500 transition"
-                        placeholder="Quick filter..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                      /> */}
                     </div>
                   </div>
                   <InventoryTable mode="widget" limit={5} showFilterBar={false} />
