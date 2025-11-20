@@ -14,6 +14,7 @@ const ScanSheet = ({ onClose, onScan }) => {
   useEffect(() => {
     const reader = new BrowserMultiFormatReader();
     readerRef.current = reader;
+  const videoEl = videoRef.current
 
     async function start() {
       try {
@@ -28,14 +29,14 @@ const ScanSheet = ({ onClose, onScan }) => {
         await reader.decodeFromVideoDevice(
           id,
           videoRef.current,
-          (result, err) => {
-            if (result) {
-              const text = result.getText();
-              setCode(text);
-              // Auto-submit logic is commented out, leaving manual as in original
-              // onScan?.(text); onClose();
+          (result) => {
+              if (result) {
+                const text = result.getText();
+                setCode(text);
+                // Auto-submit logic is commented out, leaving manual as in original
+                // onScan?.(text); onClose();
+              }
             }
-          }
         );
       } catch (e) {
         setError(e.message || 'Camera error');
@@ -44,14 +45,41 @@ const ScanSheet = ({ onClose, onScan }) => {
 
     start();
 
+    // Cleanup: stop the reader and any active media tracks
     return () => {
-      try { readerRef.current?.reset(); } catch {}
+      try {
+        readerRef.current?.reset();
+      } catch (err) {
+        console.warn('Failed to reset reader during cleanup', err?.message)
+      }
+
+      try {
+        const stream = videoEl?.srcObject
+        if (stream && stream.getTracks) {
+          stream.getTracks().forEach((t) => {
+            try { t.stop() } catch (stopErr) { console.warn('Failed to stop track', stopErr?.message) }
+          })
+        }
+        if (videoEl) videoEl.srcObject = null
+      } catch (err) {
+        console.warn('Failed to stop media tracks', err?.message)
+      }
+
+  try { setDeviceId(null) } catch { /* ignore */ }
     };
   }, []);
 
   const handleSubmit = () => {
     if (code.trim()) {
       onScan?.(code.trim());
+      // stop camera before closing
+      try { readerRef.current?.reset(); } catch (err) { console.warn('Failed to reset reader', err?.message) }
+      try {
+        const stream = videoRef.current?.srcObject
+        if (stream && stream.getTracks) stream.getTracks().forEach((t) => { try { t.stop() } catch (stopErr) { console.warn('Failed to stop track', stopErr?.message) } })
+        if (videoRef.current) videoRef.current.srcObject = null
+      } catch (err) { console.warn('Failed to stop tracks on submit', err?.message) }
+      setDeviceId(null)
       onClose();
     }
   };
@@ -119,7 +147,16 @@ const ScanSheet = ({ onClose, onScan }) => {
         <div className="absolute bottom-0 right-0 p-4 flex justify-end gap-2 w-full border-t border-gray-100 bg-white">
           <button 
             className="px-3 py-2 border border-gray-300 rounded-xl transition hover:bg-gray-50"
-            onClick={onClose}
+            onClick={() => {
+              try { readerRef.current?.reset(); } catch (err) { console.warn('Failed to reset reader on cancel', err?.message) }
+              try {
+                const stream = videoRef.current?.srcObject
+                if (stream && stream.getTracks) stream.getTracks().forEach((t) => { try { t.stop() } catch (stopErr) { console.warn('Failed to stop track', stopErr?.message) } })
+                if (videoRef.current) videoRef.current.srcObject = null
+              } catch (err) { console.warn('Failed to stop tracks on cancel', err?.message) }
+              setDeviceId(null)
+              onClose()
+            }}
           >
             Cancel
           </button>
