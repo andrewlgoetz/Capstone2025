@@ -16,6 +16,7 @@ import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx
 import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
+import { Link } from 'react-router-dom'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
@@ -426,6 +427,12 @@ const Home = () => {
           </div>
         </div>
       )}
+      {/* Small help button fixed at bottom-left */}
+      <div className="fixed bottom-6 left-6 z-30">
+        <Link to="/help" className="px-3 py-2 rounded bg-white border border-gray-200 shadow-sm text-sm text-slate-700 hover:bg-gray-50">
+          Help
+        </Link>
+      </div>
     </div>
   );
 };
