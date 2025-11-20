@@ -118,6 +118,17 @@ http://127.0.0.1:8000
 
 http://127.0.0.1:8000/docs (Swagger UI)
 
+## 3. Run Backend Unit Tests
+
+With the dependencies installed you can execute the new pytest suite directly from the backend folder:
+
+```bash
+cd backend
+pytest
+```
+
+This automatically discovers all tests under `backend/tests/` and uses the configuration defined in `backend/pytest.ini`.
+
 ## 10. Common Commands
 
 | Task | Command |
