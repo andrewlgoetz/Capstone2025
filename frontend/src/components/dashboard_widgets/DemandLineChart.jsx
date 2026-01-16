@@ -122,7 +122,7 @@ export default function DemandLineChart() {
                           plugins:{
                                     title: {
                                             display: true,
-                                            text: "Items Sold per Month",
+                                            text: "Items Distributed per Month",
                                             font: { size: 18, weight: "bold" },
                                             padding: 20,
                                             align:"center"
