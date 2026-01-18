@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import axios from 'axios';
 
 // !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
-const API_URL = 'http://192.168.2.32'; 
+const API_URL = 'YOURIP:8000'; 
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();

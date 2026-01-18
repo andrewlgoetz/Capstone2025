@@ -232,6 +232,7 @@ Now
 To let the mobile app connect, you must listen on 0.0.0.0 (not just localhost).
 
 ```bash
+cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -262,7 +263,7 @@ npm install
 4.3 - Update const API_URL to match your IP:
 
 ```javascript
-const API_URL = 'http://YOUR_IP';
+const API_URL = 'http://YOUR_IP:8000';
 ```
 
 5. Run the App:
