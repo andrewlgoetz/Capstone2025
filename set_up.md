@@ -235,7 +235,7 @@ To let the mobile app connect, you must listen on 0.0.0.0 (not just localhost).
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-2. Download the Expo Go app on your phone
+2. Download the Expo Go app on your phone (find it in the app store)
 
 3. Navigate to the mobile folder:
 
@@ -251,14 +251,18 @@ npm install
 
 4. Configure IP Address:
 
-Find your computer's local IP (Run ipconfig on Windows or ifconfig on Mac).
+4.1 - Find your computer's local IP.
 
-Open mobile-inventory/app/index.tsx.
+**Windows:** Open Command Prompt, type ipconfig. Look for IPv4 Address (e.g., 192.168.1.15).
 
-Update const API_URL to match your IP:
+**Mac/Linux:** Open Terminal, type ifconfig | grep "inet ". Look for the address like 192.168.x.x.
+
+4.2 - Open mobile-inventory/app/index.tsx.
+
+4.3 - Update const API_URL to match your IP:
 
 ```javascript
-const API_URL = 'http://192.168.1.XX:8000';
+const API_URL = 'http://YOUR_IP';
 ```
 
 5. Run the App:
@@ -267,7 +271,7 @@ const API_URL = 'http://192.168.1.XX:8000';
 npx expo start
 ```
 
-6. Scan the QR code in the terminal with your phone. It'll open the expo go app to show you the app
+6. Scan the QR code in the terminal with your phone. It'll open the expo go app to show you the app!!
 
 NOTE: once the backend is hosted the steps will change to not be through local IP
 
