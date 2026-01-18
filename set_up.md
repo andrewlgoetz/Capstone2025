@@ -258,7 +258,7 @@ npm install
 
 **Mac/Linux:** Open Terminal, type ifconfig | grep "inet ". Look for the address like 192.168.x.x.
 
-4.2 - Open mobile-inventory/app/index.tsx.
+4.2 - Open mobile-inventory/app/(tabs)/index.tsx.
 
 4.3 - Update const API_URL to match your IP:
 
