@@ -12,6 +12,7 @@ origins = [
     "http://localhost:5174",
     "http://127.0.0.1:5173",   # sometimes needed too
     "http://127.0.0.1:5174",
+    "*",  # <--- insecure but allows mobile connection (change later)
     # "https://your-deployed-frontend.com",  # add prod later
 ]
 

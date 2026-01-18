@@ -224,3 +224,50 @@ npm run dev
 Now
 - Frontend runs at: http://localhost:5173
 - Backend runs at: http://127.0.0.1:8000
+
+# Mobile App Setup 
+
+1. Run the Server (Public Mode):
+
+To let the mobile app connect, you must listen on 0.0.0.0 (not just localhost).
+
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+2. Download the Expo Go app on your phone
+
+3. Navigate to the mobile folder:
+
+```bash
+cd mobile-inventory
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+4. Configure IP Address:
+
+Find your computer's local IP (Run ipconfig on Windows or ifconfig on Mac).
+
+Open mobile-inventory/app/index.tsx.
+
+Update const API_URL to match your IP:
+
+```javascript
+const API_URL = 'http://192.168.1.XX:8000';
+```
+
+5. Run the App:
+
+```bash
+npx expo start
+```
+
+6. Scan the QR code in the terminal with your phone. It'll open the expo go app to show you the app
+
+NOTE: once the backend is hosted the steps will change to not be through local IP
+
