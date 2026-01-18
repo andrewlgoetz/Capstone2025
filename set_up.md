@@ -275,4 +275,5 @@ npx expo start
 6. Scan the QR code in the terminal with your phone. It'll open the expo go app to show you the app!!
 
 NOTE: once the backend is hosted the steps will change to not be through local IP
+NOTE2: Your computer and phone must be on the same network to connect through IP
 
