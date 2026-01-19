@@ -4,6 +4,9 @@ import Navbar from './components/Navbar.jsx'
 import Dashboard from "./pages/Dashboard.jsx";
 import Home from './pages/Home.jsx';
 import Help from './pages/Help.jsx'
+import Login from './pages/Login.jsx'
+import Admin from './pages/Admin.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 function App() {
 
@@ -11,10 +14,14 @@ function App() {
     <BrowserRouter>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
-  <Route path="/inventory" element={<Inventory />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-  <Route path="/help" element={<Help />} />
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/admin" element={<Admin />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

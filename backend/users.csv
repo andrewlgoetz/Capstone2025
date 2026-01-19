@@ -6,3 +6,4 @@ user_id,name,email,password_hash,role_id,bank_id
 5,Isabella Brown,isabella@peelfamily.org,hashed_pw_5,1,3
 6,David Moore,david@peelfamily.org,hashed_pw_6,3,3
 7,Alex Rider,alexr@hamfoodbank.ca,hashed_pw_7,4,1
+8,Admin,admin@hamfoodbank.ca,admin123,1,1

@@ -4,6 +4,14 @@ const api = axios.create({
   baseURL: "http://127.0.0.1:8000",  // backend address
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Create a new item
 export async function createItem(item) {
   const res = await api.post("/inventory/add", item);
@@ -27,6 +35,21 @@ export const updateItem = (item_id, item) =>
   api.put(`/inventory/${item_id}`, item);
 
 export default api;
+
+export async function loginUser(credentials) {
+  const res = await api.post("/auth/login", credentials);
+  return res.data;
+}
+
+export async function fetchCurrentUser() {
+  const res = await api.get("/auth/me");
+  return res.data;
+}
+
+export async function createUser(payload) {
+  const res = await api.post("/auth/users", payload);
+  return res.data;
+}
 // REAL: call backend barcode routes
 // fetchInventoryByBarcode now calls POST /barcode/scan-in which returns a ScanResponse
 export async function fetchInventoryByBarcode(barcode) {

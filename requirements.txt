@@ -7,3 +7,6 @@ alembic
 pydantic
 papa
 pytest
+passlib[bcrypt]
+pydantic[email]
+python-jose
