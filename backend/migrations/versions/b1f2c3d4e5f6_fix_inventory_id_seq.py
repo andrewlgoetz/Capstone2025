@@ -22,8 +22,9 @@ def upgrade() -> None:
     op.execute("CREATE SEQUENCE IF NOT EXISTS inventory_item_id_seq;")
 
     # Set sequence value to current max(item_id) so nextval yields max+1
+    # Use GREATEST to ensure minimum value of 1
     op.execute(
-        "SELECT setval('inventory_item_id_seq', COALESCE((SELECT MAX(item_id) FROM inventory), 0));"
+        "SELECT setval('inventory_item_id_seq', GREATEST(COALESCE((SELECT MAX(item_id) FROM inventory), 0), 1), false);"
     )
 
     # Attach sequence as default for the column
