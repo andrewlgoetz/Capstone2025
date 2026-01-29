@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -100,6 +100,25 @@ export default function App(): React.ReactElement {
   });
 
   const anyModalOpen = showNewItemForm || showKnownItemForm || showScanOutForm;
+
+  useEffect(() => {
+    let scanTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    if (isScanning) {
+      scanTimeout = setTimeout(() => {
+        setIsScanning(false);
+        Alert.alert(
+          "Scan Timeout",
+          "Unable to detect barcode. Please try again.",
+          [{ text: "OK", onPress: () => {} }]
+        );
+      }, 7000);
+    }
+
+    return () => {
+      if (scanTimeout) clearTimeout(scanTimeout);
+    };
+  }, [isScanning]);
 
   if (!permission) return <View />;
   if (!permission.granted) {
