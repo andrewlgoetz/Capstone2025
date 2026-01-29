@@ -18,7 +18,7 @@ import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
-const API_URL = 'http://172.17.135.52:8000'; 
+const API_URL = 'http://xxx:8000'; 
 
 interface InventoryItem {
   item_id: number;
