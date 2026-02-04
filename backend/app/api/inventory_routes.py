@@ -9,6 +9,7 @@ from app.schemas.inventory_schema import InventoryCreate, InventoryRead, Invento
 import app.services.barcode_service as barcode_service 
 import app.services.inventory_service as inventory_service
 from app.models.location import Location
+from sqlalchemy import desc
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -31,6 +32,40 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db)):
     # db.commit()
     # db.refresh(new_item)
     return new_item
+
+@router.get("/history")
+def get_recent_items(limit: int = 20, db: Session = Depends(get_db)):
+    """
+    Get the most recently added items (simulated history by Item ID).
+    """
+    results = (
+        db.query(
+            InventoryItem.item_id,
+            InventoryItem.name,
+            InventoryItem.category,
+            InventoryItem.quantity,
+            InventoryItem.unit,
+            InventoryItem.expiration_date,
+            Location.name.label("location_name")
+        )
+        .outerjoin(Location, InventoryItem.location_id == Location.location_id)
+        .order_by(desc(InventoryItem.item_id)) # Highest ID = Newest
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "id": r.item_id,
+            "name": r.name,
+            "category": r.category,
+            "quantity": r.quantity,
+            "unit": r.unit,
+            "location": r.location_name or "Unknown",
+            "expiration": r.expiration_date
+        }
+        for r in results
+    ]
 
 @router.put("/{item_id}", response_model=InventoryRead)
 def update_item(
