@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, List, Literal
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import text
@@ -58,64 +59,51 @@ def extract_demand_forecast_data(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
 ) -> pd.DataFrame:
-    """Builds daily demand series from Postgres
+    """Builds daily demand series from CSV file
     
-    Demand definition:
-    - movement_type = 'OUTBOUND'
-      - quantity_change < 0
-      - demand_qty = SUM(ABS(quantity_change)) per day
-
+    CSV source: data/forecasting/donations_timeseries.csv
+    CSV columns: date, bank_id, item_id, demand_qty
+    
     Returns:
       Bank-level:    bank_id, item_id, date, demand_qty
-      Location-level bank_id, location_id, item_id, date, demand_qty
+      Location-level: bank_id, location_id, item_id, date, demand_qty
+      
+    Note: When group_by_location=True, adds location_id with constant value (1)
+          to maintain consistent API with database version.
     """
     
-    if config.group_by_location:
-        if config.location_source == "movement":
-            location_select = "invmov.from_location_id AS location_id"
-            location_group = "invmov.from_location_id"
-        else:
-            location_select = "inv.location_id AS location_id"
-            location_group = "inv.location_id"
-    else:
-        location_select = None
-        location_group = None
-    where = ["invmov.movement_type = 'OUTBOUND'", "invmov.quantity_change < 0"]
-    params = {}
+    # Read CSV from data/forecasting/donations_timeseries.csv
+    csv_path = Path(__file__).parent.parent.parent.parent / "data" / "forecasting" / "donations_timeseries.csv"
+    df = pd.read_csv(csv_path)
     
+    # Parse date column
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+    
+    # Apply filters
     if bank_id is not None:
-        where.append("inv.bank_id = :bank_id")
-        params["bank_id"] = bank_id
+        df = df[df["bank_id"] == bank_id]
     if start_date is not None:
-        where.append("invmov.created_at >= :start_date")
-        params["start_date"] = start_date
+        start = pd.to_datetime(start_date).date()
+        df = df[df["date"] >= start]
     if end_date is not None:
-        where.append("invmov.created_at <= :end_date")
-        params["end_date"] = end_date
+        end = pd.to_datetime(end_date).date()
+        df = df[df["date"] <= end]
     
-    where_sql = " AND ".join(where)
+    # If group_by_location=True, add constant location_id column
+    # (treating each food bank as single location for now)
+    if config.group_by_location:
+        df["location_id"] = 1
     
-    sql = f"""
-    SELECT
-        inv.bank_id AS bank_id
-        {"," if location_select else ""} {location_select or ""}
-        , invmov.item_id AS item_id
-        , DATE(invmov.created_at) AS date
-        , SUM(ABS(invmov.quantity_change))::int AS demand_qty
-        FROM inventory_movement AS invmov
-        JOIN inventory AS inv ON invmov.item_id = inv.item_id
-        WHERE {where_sql}
-        GROUP BY
-            inv.bank_id
-            {"," if location_group else ""} {location_group or ""}
-            , invmov.item_id
-            , DATE(invmov.created_at)
-        """
-    df = pd.read_sql(text(sql), db.bind, params=params)
-
-    # Fill missing dates with zeros so you have a true time series
+    # Ensure demand_qty is integer
+    df["demand_qty"] = df["demand_qty"].astype(int)
+    
+    # Select and order columns
     group_cols = ["bank_id", "item_id"]
     if config.group_by_location:
         group_cols = ["bank_id", "location_id", "item_id"]
+    
+    output_cols = group_cols + ["date", "demand_qty"]
+    df = df[output_cols]
 
+    # Fill missing dates with zeros so you have a true time series
     return _fill_missing_dates(df, group_cols=group_cols)
