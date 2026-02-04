@@ -21,14 +21,20 @@ import {
   Paper,
   Chip,
   IconButton,
-  Tooltip
+  Tooltip,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Typography,
+  Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import DownloadIcon from '@mui/icons-material/Download';
+import SecurityIcon from '@mui/icons-material/Security';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { updateUser, resetUserPassword, getUserActivityLog } from '../services/api';
+import { updateUser, resetUserPassword, getUserActivityLog, getAllPermissions, getUserPermissions, updateUserPermissions } from '../services/api';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -68,12 +74,45 @@ export default function UserManagementModal({ user, open, onClose }) {
     }
   }, [user]);
 
+  // Fetch all available permissions (for the UI)
+  const { data: allPermissions } = useQuery({
+    queryKey: ['allPermissions'],
+    queryFn: getAllPermissions,
+    staleTime: 1000 * 60 * 60 // Cache for 1 hour - permissions don't change often
+  });
+
+  // Fetch user's current permissions
+  const { data: userPermissions, isLoading: permissionsLoading, refetch: refetchPermissions } = useQuery({
+    queryKey: ['userPermissions', user?.user_id],
+    queryFn: () => getUserPermissions(user.user_id),
+    enabled: false
+  });
+
+  // State for permission changes (local until saved)
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
+  const [permissionsChanged, setPermissionsChanged] = useState(false);
+
   // Fetch activity log only when the tab is opened
   const { data: activityLog, isLoading: activityLoading, refetch: refetchActivity } = useQuery({
     queryKey: ['userActivity', user?.user_id],
     queryFn: () => getUserActivityLog(user.user_id),
     enabled: false // Don't auto-fetch, only fetch when tab is opened
   });
+
+  // Load permissions when Permissions tab is opened
+  useEffect(() => {
+    if (activeTab === 1 && user) {
+      refetchPermissions();
+    }
+  }, [activeTab, user, refetchPermissions]);
+
+  // Sync selectedPermissions with fetched data
+  useEffect(() => {
+    if (userPermissions?.permissions) {
+      setSelectedPermissions(userPermissions.permissions);
+      setPermissionsChanged(false);
+    }
+  }, [userPermissions]);
 
   // Load activity log when Activity tab is opened
   useEffect(() => {
@@ -113,6 +152,52 @@ export default function UserManagementModal({ user, open, onClose }) {
     }
   });
 
+  // Update permissions mutation
+  const updatePermissionsMutation = useMutation({
+    mutationFn: (permissions) => updateUserPermissions(user.user_id, permissions),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userPermissions', user.user_id] });
+      setSuccessMessage('Permissions updated successfully!');
+      setPermissionsChanged(false);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    },
+    onError: (error) => {
+      const message = error.response?.data?.detail || 'Failed to update permissions';
+      setErrorMessage(message);
+      setTimeout(() => setErrorMessage(''), 5000);
+    }
+  });
+
+  const handlePermissionChange = (permissionKey) => {
+    setSelectedPermissions(prev => {
+      const newPermissions = prev.includes(permissionKey)
+        ? prev.filter(p => p !== permissionKey)
+        : [...prev, permissionKey];
+      setPermissionsChanged(true);
+      return newPermissions;
+    });
+  };
+
+  const handleSelectAllInGroup = (groupPermissions) => {
+    setSelectedPermissions(prev => {
+      const allSelected = groupPermissions.every(p => prev.includes(p));
+      let newPermissions;
+      if (allSelected) {
+        // Deselect all in group
+        newPermissions = prev.filter(p => !groupPermissions.includes(p));
+      } else {
+        // Select all in group
+        newPermissions = [...new Set([...prev, ...groupPermissions])];
+      }
+      setPermissionsChanged(true);
+      return newPermissions;
+    });
+  };
+
+  const handleSavePermissions = () => {
+    updatePermissionsMutation.mutate(selectedPermissions);
+  };
+
   const handleUpdateUser = (e) => {
     e.preventDefault();
     updateUserMutation.mutate(formData);
@@ -128,6 +213,8 @@ export default function UserManagementModal({ user, open, onClose }) {
     setActiveTab(0);
     setSuccessMessage('');
     setErrorMessage('');
+    setSelectedPermissions([]);
+    setPermissionsChanged(false);
     onClose();
   };
 
@@ -274,19 +361,85 @@ export default function UserManagementModal({ user, open, onClose }) {
           </form>
         </TabPanel>
 
-        {/* Tab 2: Permissions (Placeholder) */}
+        {/* Tab 2: Permissions */}
         <TabPanel value={activeTab} index={1}>
-          <Box className="text-center py-8">
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">
-              Granular Permissions & Role-Based Access
-            </h3>
-            <p className="text-slate-600 mb-4">
-              This feature will allow you to configure fine-grained permissions for this user.
-            </p>
-            <Alert severity="info">
-              Coming soon: Custom permission management, resource-level access control, and role customization.
-            </Alert>
-          </Box>
+          {permissionsLoading ? (
+            <Box className="flex justify-center py-8">
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <SecurityIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
+                  Select which actions this user can perform
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSavePermissions}
+                  disabled={!permissionsChanged || updatePermissionsMutation.isPending}
+                  sx={{ backgroundColor: '#4f46e5', '&:hover': { backgroundColor: '#4338ca' } }}
+                >
+                  {updatePermissionsMutation.isPending ? 'Saving...' : 'Save Permissions'}
+                </Button>
+              </Box>
+
+              {user.role_id === 1 && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  This user has the Admin role and automatically has all permissions regardless of individual settings.
+                </Alert>
+              )}
+
+              {allPermissions?.groups && Object.entries(allPermissions.groups).map(([groupName, groupPermKeys]) => (
+                <Box key={groupName} sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#334155' }}>
+                      {groupName}
+                    </Typography>
+                    <Button
+                      size="small"
+                      sx={{ ml: 1, minWidth: 'auto', fontSize: '0.7rem' }}
+                      onClick={() => handleSelectAllInGroup(groupPermKeys)}
+                    >
+                      {groupPermKeys.every(p => selectedPermissions.includes(p)) ? 'Deselect All' : 'Select All'}
+                    </Button>
+                  </Box>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <FormGroup>
+                      {groupPermKeys.map(permKey => {
+                        const permInfo = allPermissions.permissions.find(p => p.key === permKey);
+                        return (
+                          <FormControlLabel
+                            key={permKey}
+                            control={
+                              <Checkbox
+                                checked={selectedPermissions.includes(permKey)}
+                                onChange={() => handlePermissionChange(permKey)}
+                                sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
+                              />
+                            }
+                            label={
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {permInfo?.name || permKey}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {permInfo?.description}
+                                </Typography>
+                              </Box>
+                            }
+                            sx={{ alignItems: 'flex-start', mb: 1 }}
+                          />
+                        );
+                      })}
+                    </FormGroup>
+                  </Paper>
+                </Box>
+              ))}
+            </Box>
+          )}
         </TabPanel>
 
         {/* Tab 3: Activity Log */}

@@ -12,7 +12,10 @@ from app.schemas.auth_schema import (
     UserCreate,
     UserRead,
     UserUpdate,
-    TemporaryPasswordResponse
+    TemporaryPasswordResponse,
+    PermissionsListResponse,
+    UserPermissionsUpdate,
+    UserPermissionsResponse
 )
 from app.services import auth_service
 from app.dependencies import get_db, get_current_user, get_current_active_user, require_admin
@@ -259,36 +262,78 @@ def reset_user_password(
 @router.get("/users/{user_id}/activity")
 def get_user_activity(
     user_id: int,
-    current_user: User = Depends(require_admin),  # Used for authorization check
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """
     Admin-only: Get activity log for a specific user.
-    Returns recent inventory transactions and other database operations by this user.
+    Note: Currently returns empty list - requires audit log infrastructure.
     """
-    from app.models.inventory import InventoryItem
-    from sqlalchemy import desc
-
-    # Check if user exists
     user = auth_service.get_user_by_id(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # For now, return inventory items created/modified by this user
-    # In a real system, you'd have an audit log table
-    inventory_items = db.query(InventoryItem).filter(
-        InventoryItem.bank_id == user.bank_id
-    ).order_by(desc(InventoryItem.item_id)).limit(50).all()
+    # Return empty list - we don't have user action tracking yet
+    # A proper implementation would use an audit log table
+    return []
 
-    # Format as activity log
-    activity_log = []
-    for item in inventory_items:
-        activity_log.append({
-            "action": "CREATE",  # In a real system, this would come from audit log
-            "item_id": item.item_id,
-            "item_name": item.name,
-            "details": f"Quantity: {item.quantity}, Category: {item.category}",
-            "timestamp": item.item_id  # Placeholder - in real system would be actual timestamp
-        })
 
-    return activity_log
+# --------------- Permission Management Endpoints ---------------
+
+@router.get("/permissions", response_model=PermissionsListResponse)
+def get_all_permissions(current_user: User = Depends(require_admin)):
+    """
+    Admin-only: Get all available permissions with descriptions and groupings.
+    Used by frontend to display permission options.
+    """
+    from app.services import permission_service
+    return permission_service.get_all_permissions()
+
+
+@router.get("/users/{user_id}/permissions", response_model=UserPermissionsResponse)
+def get_user_permissions(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Admin-only: Get all permissions granted to a specific user.
+    """
+    from app.services import permission_service
+
+    user = auth_service.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    permissions = permission_service.get_user_permissions(user_id, db)
+    return UserPermissionsResponse(user_id=user_id, permissions=permissions)
+
+
+@router.put("/users/{user_id}/permissions", response_model=UserPermissionsResponse)
+def update_user_permissions(
+    user_id: int,
+    data: UserPermissionsUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Admin-only: Update all permissions for a specific user.
+    Replaces existing permissions with the provided list.
+    """
+    from app.services import permission_service
+
+    user = auth_service.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Prevent admin from removing their own permission management access
+    if user_id == current_user.user_id:
+        if permission_service.Permission.USERS_MANAGE_PERMISSIONS.value not in data.permissions:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot remove your own permission management access"
+            )
+
+    permission_service.set_user_permissions(user_id, data.permissions, db)
+    permissions = permission_service.get_user_permissions(user_id, db)
+    return UserPermissionsResponse(user_id=user_id, permissions=permissions)

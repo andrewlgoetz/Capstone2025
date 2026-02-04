@@ -112,6 +112,23 @@ export async function getUserActivityLog(userId) {
   return res.data;
 }
 
+// --------------- Permission API Functions ---------------
+
+export async function getAllPermissions() {
+  const res = await api.get('/auth/permissions');
+  return res.data;
+}
+
+export async function getUserPermissions(userId) {
+  const res = await api.get(`/auth/users/${userId}/permissions`);
+  return res.data;
+}
+
+export async function updateUserPermissions(userId, permissions) {
+  const res = await api.put(`/auth/users/${userId}/permissions`, { permissions });
+  return res.data;
+}
+
 // --------------- Inventory API Functions ---------------
 
 // Create a new item

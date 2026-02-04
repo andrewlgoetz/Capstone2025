@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user.requires_password_change) {
+  if (user.requires_password_change && location.pathname !== '/change-password') {
     // Force password change before accessing protected content
     return <Navigate to="/change-password" replace />;
   }

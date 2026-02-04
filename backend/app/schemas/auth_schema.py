@@ -64,3 +64,29 @@ class TemporaryPasswordResponse(BaseModel):
     """Returned when admin creates a user - shows temp password once."""
     user: UserRead
     temporary_password: str
+
+
+# --------------- Permission Schemas ---------------
+
+class PermissionInfo(BaseModel):
+    """Single permission with metadata."""
+    key: str
+    name: str
+    description: str
+
+
+class PermissionsListResponse(BaseModel):
+    """All available permissions with groupings."""
+    permissions: list[PermissionInfo]
+    groups: dict[str, list[str]]
+
+
+class UserPermissionsUpdate(BaseModel):
+    """Schema for updating a user's permissions."""
+    permissions: list[str]
+
+
+class UserPermissionsResponse(BaseModel):
+    """Schema for returning a user's permissions."""
+    user_id: int
+    permissions: list[str]
