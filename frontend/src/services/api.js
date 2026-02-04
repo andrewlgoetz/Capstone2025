@@ -1,8 +1,118 @@
 import axios from "axios";
+import { jwtDecode } from 'jwt-decode';
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000",  // backend address
 });
+
+// Request interceptor - add JWT token and auto-refresh if needed
+api.interceptors.request.use(
+  async (config) => {
+    let token = localStorage.getItem('access_token');
+
+    if (token) {
+      try {
+        // Check if token is close to expiration (within 5 minutes)
+        const decoded = jwtDecode(token);
+        const expiresIn = decoded.exp * 1000 - Date.now();
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (expiresIn < fiveMinutes && expiresIn > 0) {
+          // Token expiring soon, refresh it
+          try {
+            const response = await axios.post('http://127.0.0.1:8000/auth/refresh', {}, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            token = response.data.access_token;
+            localStorage.setItem('access_token', token);
+          } catch (error) {
+            // Refresh failed, will use old token (might get 401)
+            console.error('Token refresh failed:', error);
+          }
+        }
+      } catch (error) {
+        // Token decode failed, continue with existing token
+        console.error('Token decode error:', error);
+      }
+
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - handle 401 (unauthorized) globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token expired or invalid - redirect to login
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// --------------- Auth API Functions ---------------
+
+// Login - uses axios directly (not api instance) to avoid interceptor on login
+export async function loginUser(email, password) {
+  // OAuth2 form data format
+  const formData = new URLSearchParams();
+  formData.append('username', email);  // OAuth2 uses 'username' field
+  formData.append('password', password);
+
+  const res = await axios.post('http://127.0.0.1:8000/auth/login', formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+  return res.data;
+}
+
+export async function getCurrentUser() {
+  const res = await api.get('/auth/me');
+  return res.data;
+}
+
+export async function changePassword(oldPassword, newPassword) {
+  const res = await api.post('/auth/change-password', {
+    old_password: oldPassword,
+    new_password: newPassword
+  });
+  return res.data;
+}
+
+export async function getAllUsers() {
+  const res = await api.get('/auth/users');
+  return res.data;
+}
+
+export async function createUser(userData) {
+  const res = await api.post('/auth/users', userData);
+  return res.data;
+}
+
+export async function updateUser(userId, userData) {
+  const res = await api.put(`/auth/users/${userId}`, userData);
+  return res.data;
+}
+
+export async function resetUserPassword(userId) {
+  const res = await api.post(`/auth/users/${userId}/reset-password`);
+  return res.data;
+}
+
+export async function getUserActivityLog(userId) {
+  const res = await api.get(`/auth/users/${userId}/activity`);
+  return res.data;
+}
+
+// --------------- Inventory API Functions ---------------
 
 // Create a new item
 export async function createItem(item) {
