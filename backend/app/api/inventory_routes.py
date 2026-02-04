@@ -9,7 +9,8 @@ from app.schemas.inventory_schema import InventoryCreate, InventoryRead, Invento
 import app.services.barcode_service as barcode_service
 import app.services.inventory_service as inventory_service
 from app.models.location import Location
-from app.dependencies import get_db, get_current_active_user
+from app.dependencies import get_db
+from app.services.permission_service import Permission, require_permission
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/inventory", tags=["Inventory"])
 def add_item(
     item: InventoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_CREATE))
 ):
     # encapsulate this logic b/c its reused
     new_item = inventory_service.add_item(item, db)
@@ -29,14 +30,14 @@ def update_item(
     item_id: int,
     item: InventoryUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
     return inventory_service.update_item(item_id, item, db)
 
 @router.get("/allwithlocation")
 def get_inventory(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_VIEW))
 ):
     results = (
         db.query(
@@ -71,7 +72,7 @@ def get_inventory(
 @router.get("/all", response_model=list[InventoryRead])
 def list_items(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_VIEW))
 ):
     return (
         db.query(InventoryItem)
@@ -83,7 +84,7 @@ def list_items(
 def get_item(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_VIEW))
 ):
     item = db.query(InventoryItem).filter(
         InventoryItem.item_id == item_id,
@@ -98,7 +99,7 @@ def get_item(
 def delete_item(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_DELETE))
 ):
     item = db.query(InventoryItem).filter(
         InventoryItem.item_id == item_id,

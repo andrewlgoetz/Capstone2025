@@ -9,14 +9,15 @@ from app.models.user import User
 from app.schemas.inventory_schema import * # InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo, ScanOutResponse
 import app.services.inventory_service as inventory_service
 from app.models.inventory_movement import MovementType
-from app.dependencies import get_db, get_current_active_user
+from app.dependencies import get_db
+from app.services.permission_service import Permission, require_permission
 
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
 
 @router.get("/{barcode}")
 def get_barcode(
     barcode: str,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.SCAN_IN))
 ):
     data = lookup_barcode(barcode)
     if not data:
@@ -28,7 +29,7 @@ def get_barcode(
 def add_item(
     item: InventoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_CREATE))
 ):
     # encapsulate this logic b/c its reused
     new_item = inventory_service.add_item(item, db)
@@ -38,7 +39,7 @@ def add_item(
 def scan_out_lookup(
     payload: ScanRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.SCAN_OUT))
 ):
     code = inventory_service.normalize_barcode(payload.barcode)
     if not code:
@@ -67,7 +68,7 @@ def confirm_scan_out(
     item_id: int,
     payload: ScanOutConfirmRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.SCAN_OUT))
 ):
     # Debug: log payload
     print(f"[barcode_routes.confirm_scan_out] item_id={item_id}, payload={payload}")
@@ -84,7 +85,7 @@ def confirm_scan_out(
 def upsert_scanned_item(
     payload: ScanRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.SCAN_IN))
 ):
     code = inventory_service.normalize_barcode(payload.barcode)
     if not code:
@@ -121,7 +122,7 @@ def increase_item_quantity(
     item_id: int,
     payload: QuantityDelta,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
     updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
     return InventoryRead.model_validate(updated)
