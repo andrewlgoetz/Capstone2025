@@ -1,0 +1,1256 @@
+date,bank_id,item_id,demand_qty
+2025-09-19,1,"""Hello""-brand mouthwash",7157
+2025-07-08,1,Asperges,0
+2025-10-01,1,Avocats frais,15241
+2025-05-13,1,Baby Formula,56992
+2025-12-05,1,Barquettes carton,4998
+2025-09-11,1,Barres protéinées,2520
+2025-05-06,1,Bols en carton et ustensibles bois,7257
+2026-01-16,1,Bouillon de bœuf,0
+2025-05-23,1,Brocoli,2400
+2025-11-14,1,Buns Sésame,4789
+2026-01-23,1,Carottes,93600
+2025-08-11,1,Carottes 50 lbs,51437
+2025-08-12,1,Carottes 50 lbs,0
+2025-08-13,1,Carottes 50 lbs,0
+2025-08-14,1,Carottes 50 lbs,0
+2025-08-15,1,Carottes 50 lbs,0
+2025-08-16,1,Carottes 50 lbs,0
+2025-08-17,1,Carottes 50 lbs,0
+2025-08-18,1,Carottes 50 lbs,0
+2025-08-19,1,Carottes 50 lbs,0
+2025-08-20,1,Carottes 50 lbs,0
+2025-08-21,1,Carottes 50 lbs,0
+2025-08-22,1,Carottes 50 lbs,0
+2025-08-23,1,Carottes 50 lbs,0
+2025-08-24,1,Carottes 50 lbs,0
+2025-08-25,1,Carottes 50 lbs,0
+2025-08-26,1,Carottes 50 lbs,0
+2025-08-27,1,Carottes 50 lbs,0
+2025-08-28,1,Carottes 50 lbs,0
+2025-08-29,1,Carottes 50 lbs,0
+2025-08-30,1,Carottes 50 lbs,0
+2025-08-31,1,Carottes 50 lbs,0
+2025-09-01,1,Carottes 50 lbs,0
+2025-09-02,1,Carottes 50 lbs,0
+2025-09-03,1,Carottes 50 lbs,0
+2025-09-04,1,Carottes 50 lbs,0
+2025-09-05,1,Carottes 50 lbs,0
+2025-09-06,1,Carottes 50 lbs,0
+2025-09-07,1,Carottes 50 lbs,0
+2025-09-08,1,Carottes 50 lbs,0
+2025-09-09,1,Carottes 50 lbs,0
+2025-09-10,1,Carottes 50 lbs,0
+2025-09-11,1,Carottes 50 lbs,0
+2025-09-12,1,Carottes 50 lbs,0
+2025-09-13,1,Carottes 50 lbs,0
+2025-09-14,1,Carottes 50 lbs,0
+2025-09-15,1,Carottes 50 lbs,0
+2025-09-16,1,Carottes 50 lbs,0
+2025-09-17,1,Carottes 50 lbs,0
+2025-09-18,1,Carottes 50 lbs,0
+2025-09-19,1,Carottes 50 lbs,0
+2025-09-20,1,Carottes 50 lbs,0
+2025-09-21,1,Carottes 50 lbs,0
+2025-09-22,1,Carottes 50 lbs,0
+2025-09-23,1,Carottes 50 lbs,0
+2025-09-24,1,Carottes 50 lbs,0
+2025-09-25,1,Carottes 50 lbs,0
+2025-09-26,1,Carottes 50 lbs,0
+2025-09-27,1,Carottes 50 lbs,0
+2025-09-28,1,Carottes 50 lbs,0
+2025-09-29,1,Carottes 50 lbs,0
+2025-09-30,1,Carottes 50 lbs,0
+2025-10-01,1,Carottes 50 lbs,0
+2025-10-02,1,Carottes 50 lbs,0
+2025-10-03,1,Carottes 50 lbs,0
+2025-10-04,1,Carottes 50 lbs,0
+2025-10-05,1,Carottes 50 lbs,0
+2025-10-06,1,Carottes 50 lbs,0
+2025-10-07,1,Carottes 50 lbs,0
+2025-10-08,1,Carottes 50 lbs,0
+2025-10-09,1,Carottes 50 lbs,0
+2025-10-10,1,Carottes 50 lbs,0
+2025-10-11,1,Carottes 50 lbs,0
+2025-10-12,1,Carottes 50 lbs,0
+2025-10-13,1,Carottes 50 lbs,0
+2025-10-14,1,Carottes 50 lbs,0
+2025-10-15,1,Carottes 50 lbs,0
+2025-10-16,1,Carottes 50 lbs,0
+2025-10-17,1,Carottes 50 lbs,0
+2025-10-18,1,Carottes 50 lbs,0
+2025-10-19,1,Carottes 50 lbs,0
+2025-10-20,1,Carottes 50 lbs,0
+2025-10-21,1,Carottes 50 lbs,0
+2025-10-22,1,Carottes 50 lbs,0
+2025-10-23,1,Carottes 50 lbs,0
+2025-10-24,1,Carottes 50 lbs,0
+2025-10-25,1,Carottes 50 lbs,0
+2025-10-26,1,Carottes 50 lbs,0
+2025-10-27,1,Carottes 50 lbs,0
+2025-10-28,1,Carottes 50 lbs,0
+2025-10-29,1,Carottes 50 lbs,0
+2025-10-30,1,Carottes 50 lbs,0
+2025-10-31,1,Carottes 50 lbs,0
+2025-11-01,1,Carottes 50 lbs,25731
+2025-11-02,1,Carottes 50 lbs,0
+2025-11-03,1,Carottes 50 lbs,0
+2025-11-04,1,Carottes 50 lbs,0
+2025-11-05,1,Carottes 50 lbs,0
+2025-11-06,1,Carottes 50 lbs,0
+2025-11-07,1,Carottes 50 lbs,0
+2025-11-08,1,Carottes 50 lbs,0
+2025-11-09,1,Carottes 50 lbs,0
+2025-11-10,1,Carottes 50 lbs,0
+2025-11-11,1,Carottes 50 lbs,0
+2025-11-12,1,Carottes 50 lbs,0
+2025-11-13,1,Carottes 50 lbs,0
+2025-11-14,1,Carottes 50 lbs,0
+2025-11-15,1,Carottes 50 lbs,0
+2025-11-16,1,Carottes 50 lbs,0
+2025-11-17,1,Carottes 50 lbs,0
+2025-11-18,1,Carottes 50 lbs,0
+2025-11-19,1,Carottes 50 lbs,0
+2025-11-20,1,Carottes 50 lbs,0
+2025-11-21,1,Carottes 50 lbs,0
+2025-11-22,1,Carottes 50 lbs,0
+2025-11-23,1,Carottes 50 lbs,0
+2025-11-24,1,Carottes 50 lbs,27000
+2025-10-01,1,Carré citron & barres menthe,2652
+2025-07-09,1,Carrés croustillant au chocolat,756
+2025-11-24,1,Cerfs de Virginie - Gibier saisi,627
+2025-11-25,1,Cerfs de Virginie - Gibier saisi,0
+2025-11-26,1,Cerfs de Virginie - Gibier saisi,0
+2025-11-27,1,Cerfs de Virginie - Gibier saisi,0
+2025-11-28,1,Cerfs de Virginie - Gibier saisi,0
+2025-11-29,1,Cerfs de Virginie - Gibier saisi,0
+2025-11-30,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-01,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-02,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-03,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-04,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-05,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-06,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-07,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-08,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-09,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-10,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-11,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-12,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-13,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-14,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-15,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-16,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-17,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-18,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-19,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-20,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-21,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-22,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-23,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-24,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-25,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-26,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-27,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-28,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-29,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-30,1,Cerfs de Virginie - Gibier saisi,0
+2025-12-31,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-01,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-02,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-03,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-04,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-05,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-06,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-07,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-08,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-09,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-10,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-11,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-12,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-13,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-14,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-15,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-16,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-17,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-18,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-19,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-20,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-21,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-22,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-23,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-24,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-25,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-26,1,Cerfs de Virginie - Gibier saisi,0
+2026-01-27,1,Cerfs de Virginie - Gibier saisi,6033
+2025-05-15,1,Chauffe-main,27214
+2025-08-20,1,Choux-Fleurs,1200
+2025-09-18,1,Conserves pour Chats,5335
+2026-01-26,1,Cornichons,0
+2025-08-18,1,"Couches, lingettes",10079
+2025-08-15,1,Coupes de fruits,28414
+2025-10-17,1,Courges,8838
+2025-10-18,1,Courges,0
+2025-10-19,1,Courges,0
+2025-10-20,1,Courges,0
+2025-10-21,1,Courges,0
+2025-10-22,1,Courges,0
+2025-10-23,1,Courges,0
+2025-10-24,1,Courges,0
+2025-10-25,1,Courges,0
+2025-10-26,1,Courges,0
+2025-10-27,1,Courges,0
+2025-10-28,1,Courges,0
+2025-10-29,1,Courges,0
+2025-10-30,1,Courges,0
+2025-10-31,1,Courges,0
+2025-11-01,1,Courges,0
+2025-11-02,1,Courges,0
+2025-11-03,1,Courges,0
+2025-11-04,1,Courges,0
+2025-11-05,1,Courges,0
+2025-11-06,1,Courges,0
+2025-11-07,1,Courges,0
+2025-11-08,1,Courges,0
+2025-11-09,1,Courges,0
+2025-11-10,1,Courges,0
+2025-11-11,1,Courges,0
+2025-11-12,1,Courges,0
+2025-11-13,1,Courges,0
+2025-11-14,1,Courges,0
+2025-11-15,1,Courges,0
+2025-11-16,1,Courges,0
+2025-11-17,1,Courges,0
+2025-11-18,1,Courges,0
+2025-11-19,1,Courges,0
+2025-11-20,1,Courges,0
+2025-11-21,1,Courges,0
+2025-11-22,1,Courges,0
+2025-11-23,1,Courges,0
+2025-11-24,1,Courges,0
+2025-11-25,1,Courges,0
+2025-11-26,1,Courges,0
+2025-11-27,1,Courges,0
+2025-11-28,1,Courges,0
+2025-11-29,1,Courges,0
+2025-11-30,1,Courges,0
+2025-12-01,1,Courges,0
+2025-12-02,1,Courges,0
+2025-12-03,1,Courges,0
+2025-12-04,1,Courges,0
+2025-12-05,1,Courges,0
+2025-12-06,1,Courges,0
+2025-12-07,1,Courges,0
+2025-12-08,1,Courges,0
+2025-12-09,1,Courges,0
+2025-12-10,1,Courges,0
+2025-12-11,1,Courges,16510
+2025-12-12,1,Courges,0
+2025-12-13,1,Courges,0
+2025-12-14,1,Courges,0
+2025-12-15,1,Courges,0
+2025-12-16,1,Courges,0
+2025-12-17,1,Courges,0
+2025-12-18,1,Courges,16510
+2025-05-08,1,Crisps/wafer sticks,4535
+2026-01-05,1,Crème glacée,11704
+2025-12-16,1,Créme Fouettée 35%,37908
+2025-12-11,1,Céréales déjeuner,32243
+2025-09-02,1,Céréales et riz,5404
+2025-10-28,1,Dindes congelées,78181
+2025-04-23,1,Distributeur de savon,8022
+2025-05-06,1,Divers sec,2252
+2025-07-15,1,Eau pétillante,29251
+2025-10-21,1,Epinards Frais,102
+2025-10-22,1,Epinards Frais,0
+2025-10-23,1,Epinards Frais,0
+2025-10-24,1,Epinards Frais,0
+2025-10-25,1,Epinards Frais,0
+2025-10-26,1,Epinards Frais,0
+2025-10-27,1,Epinards Frais,105
+2025-08-05,1,Epinards et laitues,226
+2025-08-06,1,Epinards et laitues,0
+2025-08-07,1,Epinards et laitues,0
+2025-08-08,1,Epinards et laitues,0
+2025-08-09,1,Epinards et laitues,0
+2025-08-10,1,Epinards et laitues,0
+2025-08-11,1,Epinards et laitues,680
+2025-08-12,1,Epinards et laitues,0
+2025-08-13,1,Epinards et laitues,0
+2025-08-14,1,Epinards et laitues,0
+2025-08-15,1,Epinards et laitues,0
+2025-08-16,1,Epinards et laitues,0
+2025-08-17,1,Epinards et laitues,0
+2025-08-18,1,Epinards et laitues,0
+2025-08-19,1,Epinards et laitues,226
+2025-05-27,1,Frites congelées,5511
+2025-06-27,1,Fromage,3409
+2025-09-23,1,Haricots verts,4939
+2025-08-27,1,Haricots verts en vrac,8565
+2026-01-14,1,Hello Charcoal Mouthwash,12769
+2025-05-20,1,Hydration Drinks,152134
+2025-05-21,1,Hydration Drinks,0
+2025-05-22,1,Hydration Drinks,0
+2025-05-23,1,Hydration Drinks,0
+2025-05-24,1,Hydration Drinks,0
+2025-05-25,1,Hydration Drinks,0
+2025-05-26,1,Hydration Drinks,0
+2025-05-27,1,Hydration Drinks,0
+2025-05-28,1,Hydration Drinks,0
+2025-05-29,1,Hydration Drinks,0
+2025-05-30,1,Hydration Drinks,0
+2025-05-31,1,Hydration Drinks,0
+2025-06-01,1,Hydration Drinks,0
+2025-06-02,1,Hydration Drinks,0
+2025-06-03,1,Hydration Drinks,0
+2025-06-04,1,Hydration Drinks,0
+2025-06-05,1,Hydration Drinks,0
+2025-06-06,1,Hydration Drinks,0
+2025-06-07,1,Hydration Drinks,0
+2025-06-08,1,Hydration Drinks,0
+2025-06-09,1,Hydration Drinks,0
+2025-06-10,1,Hydration Drinks,0
+2025-06-11,1,Hydration Drinks,0
+2025-06-12,1,Hydration Drinks,0
+2025-06-13,1,Hydration Drinks,0
+2025-06-14,1,Hydration Drinks,0
+2025-06-15,1,Hydration Drinks,0
+2025-06-16,1,Hydration Drinks,0
+2025-06-17,1,Hydration Drinks,0
+2025-06-18,1,Hydration Drinks,0
+2025-06-19,1,Hydration Drinks,0
+2025-06-20,1,Hydration Drinks,0
+2025-06-21,1,Hydration Drinks,0
+2025-06-22,1,Hydration Drinks,0
+2025-06-23,1,Hydration Drinks,0
+2025-06-24,1,Hydration Drinks,0
+2025-06-25,1,Hydration Drinks,0
+2025-06-26,1,Hydration Drinks,0
+2025-06-27,1,Hydration Drinks,0
+2025-06-28,1,Hydration Drinks,0
+2025-06-29,1,Hydration Drinks,0
+2025-06-30,1,Hydration Drinks,0
+2025-07-01,1,Hydration Drinks,0
+2025-07-02,1,Hydration Drinks,0
+2025-07-03,1,Hydration Drinks,0
+2025-07-04,1,Hydration Drinks,0
+2025-07-05,1,Hydration Drinks,0
+2025-07-06,1,Hydration Drinks,0
+2025-07-07,1,Hydration Drinks,0
+2025-07-08,1,Hydration Drinks,0
+2025-07-09,1,Hydration Drinks,0
+2025-07-10,1,Hydration Drinks,0
+2025-07-11,1,Hydration Drinks,0
+2025-07-12,1,Hydration Drinks,0
+2025-07-13,1,Hydration Drinks,0
+2025-07-14,1,Hydration Drinks,0
+2025-07-15,1,Hydration Drinks,0
+2025-07-16,1,Hydration Drinks,0
+2025-07-17,1,Hydration Drinks,0
+2025-07-18,1,Hydration Drinks,0
+2025-07-19,1,Hydration Drinks,0
+2025-07-20,1,Hydration Drinks,0
+2025-07-21,1,Hydration Drinks,0
+2025-07-22,1,Hydration Drinks,0
+2025-07-23,1,Hydration Drinks,0
+2025-07-24,1,Hydration Drinks,0
+2025-07-25,1,Hydration Drinks,0
+2025-07-26,1,Hydration Drinks,0
+2025-07-27,1,Hydration Drinks,0
+2025-07-28,1,Hydration Drinks,0
+2025-07-29,1,Hydration Drinks,0
+2025-07-30,1,Hydration Drinks,0
+2025-07-31,1,Hydration Drinks,0
+2025-08-01,1,Hydration Drinks,0
+2025-08-02,1,Hydration Drinks,0
+2025-08-03,1,Hydration Drinks,0
+2025-08-04,1,Hydration Drinks,0
+2025-08-05,1,Hydration Drinks,0
+2025-08-06,1,Hydration Drinks,0
+2025-08-07,1,Hydration Drinks,0
+2025-08-08,1,Hydration Drinks,0
+2025-08-09,1,Hydration Drinks,0
+2025-08-10,1,Hydration Drinks,0
+2025-08-11,1,Hydration Drinks,0
+2025-08-12,1,Hydration Drinks,0
+2025-08-13,1,Hydration Drinks,0
+2025-08-14,1,Hydration Drinks,0
+2025-08-15,1,Hydration Drinks,0
+2025-08-16,1,Hydration Drinks,0
+2025-08-17,1,Hydration Drinks,0
+2025-08-18,1,Hydration Drinks,0
+2025-08-19,1,Hydration Drinks,0
+2025-08-20,1,Hydration Drinks,0
+2025-08-21,1,Hydration Drinks,0
+2025-08-22,1,Hydration Drinks,0
+2025-08-23,1,Hydration Drinks,0
+2025-08-24,1,Hydration Drinks,0
+2025-08-25,1,Hydration Drinks,0
+2025-08-26,1,Hydration Drinks,0
+2025-08-27,1,Hydration Drinks,0
+2025-08-28,1,Hydration Drinks,0
+2025-08-29,1,Hydration Drinks,0
+2025-08-30,1,Hydration Drinks,0
+2025-08-31,1,Hydration Drinks,0
+2025-09-01,1,Hydration Drinks,0
+2025-09-02,1,Hydration Drinks,0
+2025-09-03,1,Hydration Drinks,0
+2025-09-04,1,Hydration Drinks,0
+2025-09-05,1,Hydration Drinks,93600
+2025-08-19,1,"KD, beurre d’arachide, fèves Heinz, etc.",59626
+2025-06-06,1,Kraft divers,20581
+2025-07-16,1,Lait d'avoine,68628
+2025-04-10,1,Laitue,3953
+2025-04-11,1,Laitue,0
+2025-04-12,1,Laitue,0
+2025-04-13,1,Laitue,0
+2025-04-14,1,Laitue,0
+2025-04-15,1,Laitue,0
+2025-04-16,1,Laitue,0
+2025-04-17,1,Laitue,0
+2025-04-18,1,Laitue,0
+2025-04-19,1,Laitue,0
+2025-04-20,1,Laitue,0
+2025-04-21,1,Laitue,0
+2025-04-22,1,Laitue,0
+2025-04-23,1,Laitue,0
+2025-04-24,1,Laitue,0
+2025-04-25,1,Laitue,0
+2025-04-26,1,Laitue,0
+2025-04-27,1,Laitue,0
+2025-04-28,1,Laitue,0
+2025-04-29,1,Laitue,0
+2025-04-30,1,Laitue,0
+2025-05-01,1,Laitue,0
+2025-05-02,1,Laitue,0
+2025-05-03,1,Laitue,0
+2025-05-04,1,Laitue,0
+2025-05-05,1,Laitue,0
+2025-05-06,1,Laitue,0
+2025-05-07,1,Laitue,0
+2025-05-08,1,Laitue,0
+2025-05-09,1,Laitue,0
+2025-05-10,1,Laitue,0
+2025-05-11,1,Laitue,0
+2025-05-12,1,Laitue,0
+2025-05-13,1,Laitue,0
+2025-05-14,1,Laitue,0
+2025-05-15,1,Laitue,0
+2025-05-16,1,Laitue,0
+2025-05-17,1,Laitue,0
+2025-05-18,1,Laitue,0
+2025-05-19,1,Laitue,0
+2025-05-20,1,Laitue,0
+2025-05-21,1,Laitue,0
+2025-05-22,1,Laitue,0
+2025-05-23,1,Laitue,0
+2025-05-24,1,Laitue,0
+2025-05-25,1,Laitue,0
+2025-05-26,1,Laitue,0
+2025-05-27,1,Laitue,0
+2025-05-28,1,Laitue,0
+2025-05-29,1,Laitue,0
+2025-05-30,1,Laitue,0
+2025-05-31,1,Laitue,0
+2025-06-01,1,Laitue,0
+2025-06-02,1,Laitue,0
+2025-06-03,1,Laitue,0
+2025-06-04,1,Laitue,0
+2025-06-05,1,Laitue,0
+2025-06-06,1,Laitue,0
+2025-06-07,1,Laitue,0
+2025-06-08,1,Laitue,0
+2025-06-09,1,Laitue,0
+2025-06-10,1,Laitue,0
+2025-06-11,1,Laitue,0
+2025-06-12,1,Laitue,0
+2025-06-13,1,Laitue,0
+2025-06-14,1,Laitue,0
+2025-06-15,1,Laitue,0
+2025-06-16,1,Laitue,0
+2025-06-17,1,Laitue,0
+2025-06-18,1,Laitue,0
+2025-06-19,1,Laitue,0
+2025-06-20,1,Laitue,0
+2025-06-21,1,Laitue,0
+2025-06-22,1,Laitue,0
+2025-06-23,1,Laitue,0
+2025-06-24,1,Laitue,0
+2025-06-25,1,Laitue,0
+2025-06-26,1,Laitue,0
+2025-06-27,1,Laitue,0
+2025-06-28,1,Laitue,0
+2025-06-29,1,Laitue,0
+2025-06-30,1,Laitue,0
+2025-07-01,1,Laitue,0
+2025-07-02,1,Laitue,0
+2025-07-03,1,Laitue,0
+2025-07-04,1,Laitue,0
+2025-07-05,1,Laitue,0
+2025-07-06,1,Laitue,0
+2025-07-07,1,Laitue,0
+2025-07-08,1,Laitue,0
+2025-07-09,1,Laitue,0
+2025-07-10,1,Laitue,0
+2025-07-11,1,Laitue,0
+2025-07-12,1,Laitue,0
+2025-07-13,1,Laitue,0
+2025-07-14,1,Laitue,0
+2025-07-15,1,Laitue,0
+2025-07-16,1,Laitue,0
+2025-07-17,1,Laitue,0
+2025-07-18,1,Laitue,0
+2025-07-19,1,Laitue,0
+2025-07-20,1,Laitue,0
+2025-07-21,1,Laitue,0
+2025-07-22,1,Laitue,0
+2025-07-23,1,Laitue,4800
+2025-07-24,1,Laitue,0
+2025-07-25,1,Laitue,0
+2025-07-26,1,Laitue,0
+2025-07-27,1,Laitue,0
+2025-07-28,1,Laitue,0
+2025-07-29,1,Laitue,0
+2025-07-30,1,Laitue,0
+2025-07-31,1,Laitue,0
+2025-08-01,1,Laitue,0
+2025-08-02,1,Laitue,0
+2025-08-03,1,Laitue,0
+2025-08-04,1,Laitue,0
+2025-08-05,1,Laitue,0
+2025-08-06,1,Laitue,0
+2025-08-07,1,Laitue,0
+2025-08-08,1,Laitue,0
+2025-08-09,1,Laitue,0
+2025-08-10,1,Laitue,0
+2025-08-11,1,Laitue,0
+2025-08-12,1,Laitue,0
+2025-08-13,1,Laitue,0
+2025-08-14,1,Laitue,0
+2025-08-15,1,Laitue,0
+2025-08-16,1,Laitue,0
+2025-08-17,1,Laitue,0
+2025-08-18,1,Laitue,0
+2025-08-19,1,Laitue,0
+2025-08-20,1,Laitue,0
+2025-08-21,1,Laitue,0
+2025-08-22,1,Laitue,0
+2025-08-23,1,Laitue,0
+2025-08-24,1,Laitue,0
+2025-08-25,1,Laitue,0
+2025-08-26,1,Laitue,0
+2025-08-27,1,Laitue,0
+2025-08-28,1,Laitue,0
+2025-08-29,1,Laitue,0
+2025-08-30,1,Laitue,0
+2025-08-31,1,Laitue,0
+2025-09-01,1,Laitue,0
+2025-09-02,1,Laitue,0
+2025-09-03,1,Laitue,0
+2025-09-04,1,Laitue,0
+2025-09-05,1,Laitue,0
+2025-09-06,1,Laitue,0
+2025-09-07,1,Laitue,0
+2025-09-08,1,Laitue,3300
+2025-09-09,1,Laitue,0
+2025-09-10,1,Laitue,0
+2025-09-11,1,Laitue,0
+2025-09-12,1,Laitue,0
+2025-09-13,1,Laitue,0
+2025-09-14,1,Laitue,0
+2025-09-15,1,Laitue,0
+2025-09-16,1,Laitue,0
+2025-09-17,1,Laitue,0
+2025-09-18,1,Laitue,0
+2025-09-19,1,Laitue,0
+2025-09-20,1,Laitue,0
+2025-09-21,1,Laitue,0
+2025-09-22,1,Laitue,0
+2025-09-23,1,Laitue,0
+2025-09-24,1,Laitue,0
+2025-09-25,1,Laitue,0
+2025-09-26,1,Laitue,0
+2025-09-27,1,Laitue,0
+2025-09-28,1,Laitue,0
+2025-09-29,1,Laitue,0
+2025-09-30,1,Laitue,900
+2025-04-10,1,Laitue (Rive Sud),3953
+2025-09-23,1,Laitue Folia,2250
+2025-09-24,1,Laitue Folia,0
+2025-09-25,1,Laitue Folia,0
+2025-09-26,1,Laitue Folia,0
+2025-09-27,1,Laitue Folia,0
+2025-09-28,1,Laitue Folia,0
+2025-09-29,1,Laitue Folia,0
+2025-09-30,1,Laitue Folia,0
+2025-10-01,1,Laitue Folia,0
+2025-10-02,1,Laitue Folia,0
+2025-10-03,1,Laitue Folia,0
+2025-10-04,1,Laitue Folia,0
+2025-10-05,1,Laitue Folia,0
+2025-10-06,1,Laitue Folia,0
+2025-10-07,1,Laitue Folia,0
+2025-10-08,1,Laitue Folia,1050
+2025-05-06,1,Légumes frais,17236
+2025-05-07,1,Légumes frais,0
+2025-05-08,1,Légumes frais,0
+2025-05-09,1,Légumes frais,0
+2025-05-10,1,Légumes frais,0
+2025-05-11,1,Légumes frais,0
+2025-05-12,1,Légumes frais,0
+2025-05-13,1,Légumes frais,0
+2025-05-14,1,Légumes frais,0
+2025-05-15,1,Légumes frais,0
+2025-05-16,1,Légumes frais,0
+2025-05-17,1,Légumes frais,0
+2025-05-18,1,Légumes frais,0
+2025-05-19,1,Légumes frais,0
+2025-05-20,1,Légumes frais,0
+2025-05-21,1,Légumes frais,0
+2025-05-22,1,Légumes frais,0
+2025-05-23,1,Légumes frais,0
+2025-05-24,1,Légumes frais,0
+2025-05-25,1,Légumes frais,0
+2025-05-26,1,Légumes frais,0
+2025-05-27,1,Légumes frais,0
+2025-05-28,1,Légumes frais,0
+2025-05-29,1,Légumes frais,0
+2025-05-30,1,Légumes frais,0
+2025-05-31,1,Légumes frais,0
+2025-06-01,1,Légumes frais,0
+2025-06-02,1,Légumes frais,0
+2025-06-03,1,Légumes frais,0
+2025-06-04,1,Légumes frais,0
+2025-06-05,1,Légumes frais,0
+2025-06-06,1,Légumes frais,0
+2025-06-07,1,Légumes frais,0
+2025-06-08,1,Légumes frais,0
+2025-06-09,1,Légumes frais,0
+2025-06-10,1,Légumes frais,0
+2025-06-11,1,Légumes frais,0
+2025-06-12,1,Légumes frais,0
+2025-06-13,1,Légumes frais,0
+2025-06-14,1,Légumes frais,0
+2025-06-15,1,Légumes frais,0
+2025-06-16,1,Légumes frais,0
+2025-06-17,1,Légumes frais,0
+2025-06-18,1,Légumes frais,0
+2025-06-19,1,Légumes frais,0
+2025-06-20,1,Légumes frais,0
+2025-06-21,1,Légumes frais,0
+2025-06-22,1,Légumes frais,0
+2025-06-23,1,Légumes frais,0
+2025-06-24,1,Légumes frais,0
+2025-06-25,1,Légumes frais,0
+2025-06-26,1,Légumes frais,0
+2025-06-27,1,Légumes frais,0
+2025-06-28,1,Légumes frais,0
+2025-06-29,1,Légumes frais,0
+2025-06-30,1,Légumes frais,0
+2025-07-01,1,Légumes frais,0
+2025-07-02,1,Légumes frais,0
+2025-07-03,1,Légumes frais,0
+2025-07-04,1,Légumes frais,0
+2025-07-05,1,Légumes frais,0
+2025-07-06,1,Légumes frais,0
+2025-07-07,1,Légumes frais,0
+2025-07-08,1,Légumes frais,0
+2025-07-09,1,Légumes frais,0
+2025-07-10,1,Légumes frais,0
+2025-07-11,1,Légumes frais,0
+2025-07-12,1,Légumes frais,0
+2025-07-13,1,Légumes frais,0
+2025-07-14,1,Légumes frais,0
+2025-07-15,1,Légumes frais,0
+2025-07-16,1,Légumes frais,0
+2025-07-17,1,Légumes frais,0
+2025-07-18,1,Légumes frais,0
+2025-07-19,1,Légumes frais,0
+2025-07-20,1,Légumes frais,0
+2025-07-21,1,Légumes frais,0
+2025-07-22,1,Légumes frais,0
+2025-07-23,1,Légumes frais,0
+2025-07-24,1,Légumes frais,0
+2025-07-25,1,Légumes frais,0
+2025-07-26,1,Légumes frais,0
+2025-07-27,1,Légumes frais,0
+2025-07-28,1,Légumes frais,0
+2025-07-29,1,Légumes frais,0
+2025-07-30,1,Légumes frais,0
+2025-07-31,1,Légumes frais,0
+2025-08-01,1,Légumes frais,0
+2025-08-02,1,Légumes frais,0
+2025-08-03,1,Légumes frais,0
+2025-08-04,1,Légumes frais,0
+2025-08-05,1,Légumes frais,0
+2025-08-06,1,Légumes frais,0
+2025-08-07,1,Légumes frais,0
+2025-08-08,1,Légumes frais,0
+2025-08-09,1,Légumes frais,0
+2025-08-10,1,Légumes frais,0
+2025-08-11,1,Légumes frais,0
+2025-08-12,1,Légumes frais,0
+2025-08-13,1,Légumes frais,0
+2025-08-14,1,Légumes frais,0
+2025-08-15,1,Légumes frais,0
+2025-08-16,1,Légumes frais,0
+2025-08-17,1,Légumes frais,0
+2025-08-18,1,Légumes frais,0
+2025-08-19,1,Légumes frais,0
+2025-08-20,1,Légumes frais,0
+2025-08-21,1,Légumes frais,0
+2025-08-22,1,Légumes frais,0
+2025-08-23,1,Légumes frais,0
+2025-08-24,1,Légumes frais,0
+2025-08-25,1,Légumes frais,0
+2025-08-26,1,Légumes frais,0
+2025-08-27,1,Légumes frais,0
+2025-08-28,1,Légumes frais,0
+2025-08-29,1,Légumes frais,0
+2025-08-30,1,Légumes frais,0
+2025-08-31,1,Légumes frais,0
+2025-09-01,1,Légumes frais,0
+2025-09-02,1,Légumes frais,0
+2025-09-03,1,Légumes frais,0
+2025-09-04,1,Légumes frais,0
+2025-09-05,1,Légumes frais,0
+2025-09-06,1,Légumes frais,0
+2025-09-07,1,Légumes frais,0
+2025-09-08,1,Légumes frais,0
+2025-09-09,1,Légumes frais,0
+2025-09-10,1,Légumes frais,0
+2025-09-11,1,Légumes frais,0
+2025-09-12,1,Légumes frais,0
+2025-09-13,1,Légumes frais,0
+2025-09-14,1,Légumes frais,0
+2025-09-15,1,Légumes frais,0
+2025-09-16,1,Légumes frais,0
+2025-09-17,1,Légumes frais,0
+2025-09-18,1,Légumes frais,0
+2025-09-19,1,Légumes frais,0
+2025-09-20,1,Légumes frais,0
+2025-09-21,1,Légumes frais,0
+2025-09-22,1,Légumes frais,0
+2025-09-23,1,Légumes frais,0
+2025-09-24,1,Légumes frais,0
+2025-09-25,1,Légumes frais,0
+2025-09-26,1,Légumes frais,0
+2025-09-27,1,Légumes frais,0
+2025-09-28,1,Légumes frais,0
+2025-09-29,1,Légumes frais,0
+2025-09-30,1,Légumes frais,0
+2025-10-01,1,Légumes frais,0
+2025-10-02,1,Légumes frais,0
+2025-10-03,1,Légumes frais,0
+2025-10-04,1,Légumes frais,0
+2025-10-05,1,Légumes frais,0
+2025-10-06,1,Légumes frais,0
+2025-10-07,1,Légumes frais,0
+2025-10-08,1,Légumes frais,0
+2025-10-09,1,Légumes frais,0
+2025-10-10,1,Légumes frais,0
+2025-10-11,1,Légumes frais,0
+2025-10-12,1,Légumes frais,0
+2025-10-13,1,Légumes frais,0
+2025-10-14,1,Légumes frais,0
+2025-10-15,1,Légumes frais,0
+2025-10-16,1,Légumes frais,0
+2025-10-17,1,Légumes frais,0
+2025-10-18,1,Légumes frais,0
+2025-10-19,1,Légumes frais,0
+2025-10-20,1,Légumes frais,0
+2025-10-21,1,Légumes frais,0
+2025-10-22,1,Légumes frais,0
+2025-10-23,1,Légumes frais,0
+2025-10-24,1,Légumes frais,0
+2025-10-25,1,Légumes frais,0
+2025-10-26,1,Légumes frais,0
+2025-10-27,1,Légumes frais,0
+2025-10-28,1,Légumes frais,0
+2025-10-29,1,Légumes frais,0
+2025-10-30,1,Légumes frais,16000
+2025-08-20,1,"Légumes frais (Concombre, piment, tomate, patate)",17236
+2025-09-24,1,Microwave Uncle Ben's bowls,3959
+2025-08-21,1,Miel,90
+2025-09-26,1,Mini Marshmallows,2721
+2025-06-17,1,Mix,12702
+2025-06-18,1,Mix,0
+2025-06-19,1,Mix,0
+2025-06-20,1,Mix,0
+2025-06-21,1,Mix,0
+2025-06-22,1,Mix,0
+2025-06-23,1,Mix,0
+2025-06-24,1,Mix,0
+2025-06-25,1,Mix,0
+2025-06-26,1,Mix,0
+2025-06-27,1,Mix,0
+2025-06-28,1,Mix,0
+2025-06-29,1,Mix,0
+2025-06-30,1,Mix,0
+2025-07-01,1,Mix,0
+2025-07-02,1,Mix,0
+2025-07-03,1,Mix,0
+2025-07-04,1,Mix,0
+2025-07-05,1,Mix,0
+2025-07-06,1,Mix,0
+2025-07-07,1,Mix,0
+2025-07-08,1,Mix,0
+2025-07-09,1,Mix,0
+2025-07-10,1,Mix,0
+2025-07-11,1,Mix,0
+2025-07-12,1,Mix,0
+2025-07-13,1,Mix,0
+2025-07-14,1,Mix,0
+2025-07-15,1,Mix,0
+2025-07-16,1,Mix,0
+2025-07-17,1,Mix,0
+2025-07-18,1,Mix,0
+2025-07-19,1,Mix,0
+2025-07-20,1,Mix,0
+2025-07-21,1,Mix,0
+2025-07-22,1,Mix,0
+2025-07-23,1,Mix,0
+2025-07-24,1,Mix,0
+2025-07-25,1,Mix,0
+2025-07-26,1,Mix,0
+2025-07-27,1,Mix,0
+2025-07-28,1,Mix,0
+2025-07-29,1,Mix,0
+2025-07-30,1,Mix,0
+2025-07-31,1,Mix,0
+2025-08-01,1,Mix,0
+2025-08-02,1,Mix,0
+2025-08-03,1,Mix,0
+2025-08-04,1,Mix,0
+2025-08-05,1,Mix,0
+2025-08-06,1,Mix,0
+2025-08-07,1,Mix,0
+2025-08-08,1,Mix,0
+2025-08-09,1,Mix,0
+2025-08-10,1,Mix,0
+2025-08-11,1,Mix,0
+2025-08-12,1,Mix,0
+2025-08-13,1,Mix,0
+2025-08-14,1,Mix,0
+2025-08-15,1,Mix,0
+2025-08-16,1,Mix,0
+2025-08-17,1,Mix,0
+2025-08-18,1,Mix,0
+2025-08-19,1,Mix,0
+2025-08-20,1,Mix,0
+2025-08-21,1,Mix,0
+2025-08-22,1,Mix,0
+2025-08-23,1,Mix,0
+2025-08-24,1,Mix,0
+2025-08-25,1,Mix,0
+2025-08-26,1,Mix,0
+2025-08-27,1,Mix,0
+2025-08-28,1,Mix,0
+2025-08-29,1,Mix,0
+2025-08-30,1,Mix,0
+2025-08-31,1,Mix,0
+2025-09-01,1,Mix,0
+2025-09-02,1,Mix,0
+2025-09-03,1,Mix,0
+2025-09-04,1,Mix,0
+2025-09-05,1,Mix,0
+2025-09-06,1,Mix,0
+2025-09-07,1,Mix,0
+2025-09-08,1,Mix,0
+2025-09-09,1,Mix,0
+2025-09-10,1,Mix,0
+2025-09-11,1,Mix,0
+2025-09-12,1,Mix,0
+2025-09-13,1,Mix,0
+2025-09-14,1,Mix,0
+2025-09-15,1,Mix,0
+2025-09-16,1,Mix,0
+2025-09-17,1,Mix,0
+2025-09-18,1,Mix,0
+2025-09-19,1,Mix,0
+2025-09-20,1,Mix,0
+2025-09-21,1,Mix,0
+2025-09-22,1,Mix,0
+2025-09-23,1,Mix,0
+2025-09-24,1,Mix,0
+2025-09-25,1,Mix,0
+2025-09-26,1,Mix,0
+2025-09-27,1,Mix,0
+2025-09-28,1,Mix,0
+2025-09-29,1,Mix,0
+2025-09-30,1,Mix,0
+2025-10-01,1,Mix,0
+2025-10-02,1,Mix,0
+2025-10-03,1,Mix,0
+2025-10-04,1,Mix,0
+2025-10-05,1,Mix,0
+2025-10-06,1,Mix,0
+2025-10-07,1,Mix,0
+2025-10-08,1,Mix,0
+2025-10-09,1,Mix,0
+2025-10-10,1,Mix,0
+2025-10-11,1,Mix,0
+2025-10-12,1,Mix,0
+2025-10-13,1,Mix,0
+2025-10-14,1,Mix,0
+2025-10-15,1,Mix,0
+2025-10-16,1,Mix,0
+2025-10-17,1,Mix,0
+2025-10-18,1,Mix,0
+2025-10-19,1,Mix,0
+2025-10-20,1,Mix,0
+2025-10-21,1,Mix,22824
+2025-07-15,1,Mix (denrées + produits ménagers),24502
+2025-10-01,1,Mix Kellanova,23601
+2026-01-23,1,Mix Lkellanova,21073
+2025-11-24,1,Mix Légumes frais,19200
+2026-01-26,1,Mix Walmart,2766
+2025-07-21,1,Mix craquelins,3794
+2025-07-22,1,Mix craquelins,0
+2025-07-23,1,Mix craquelins,11899
+2025-07-08,1,Navets,7656
+2025-11-27,1,Oignons Chauves,13000
+2025-12-11,1,Pain Mix,181
+2025-12-12,1,Pain Mix,0
+2025-12-13,1,Pain Mix,0
+2025-12-14,1,Pain Mix,0
+2025-12-15,1,Pain Mix,0
+2025-12-16,1,Pain Mix,0
+2025-12-17,1,Pain Mix,0
+2025-12-18,1,Pain Mix,0
+2025-12-19,1,Pain Mix,0
+2025-12-20,1,Pain Mix,0
+2025-12-21,1,Pain Mix,0
+2025-12-22,1,Pain Mix,250
+2025-12-02,1,Pain ciabatta,300
+2025-07-09,1,Pain proteiné en tranche,742
+2025-05-27,1,Panais,6620
+2025-08-21,1,Pancake Mix,27437
+2025-12-05,1,Paparmanes,33438
+2025-08-12,1,Papier toilette,214
+2025-08-13,1,Papier toilette,0
+2025-08-14,1,Papier toilette,0
+2025-08-15,1,Papier toilette,0
+2025-08-16,1,Papier toilette,0
+2025-08-17,1,Papier toilette,0
+2025-08-18,1,Papier toilette,0
+2025-08-19,1,Papier toilette,0
+2025-08-20,1,Papier toilette,0
+2025-08-21,1,Papier toilette,0
+2025-08-22,1,Papier toilette,0
+2025-08-23,1,Papier toilette,0
+2025-08-24,1,Papier toilette,0
+2025-08-25,1,Papier toilette,0
+2025-08-26,1,Papier toilette,107
+2025-11-05,1,Pate à biscuit - Boisson - Chips,3009
+2025-05-06,1,Patisseries congelés,3428
+2025-12-08,1,Peches en dé 24x113ml,304
+2025-04-09,1,Planche a decouper,3265
+2026-01-23,1,Pomme de terre,0
+2025-08-20,1,Pommes de terre,21772
+2025-09-10,1,Pommes de terre 10 lbs,23133
+2025-09-11,1,Pommes de terre 10 lbs,0
+2025-09-12,1,Pommes de terre 10 lbs,0
+2025-09-13,1,Pommes de terre 10 lbs,0
+2025-09-14,1,Pommes de terre 10 lbs,0
+2025-09-15,1,Pommes de terre 10 lbs,0
+2025-09-16,1,Pommes de terre 10 lbs,0
+2025-09-17,1,Pommes de terre 10 lbs,0
+2025-09-18,1,Pommes de terre 10 lbs,0
+2025-09-19,1,Pommes de terre 10 lbs,0
+2025-09-20,1,Pommes de terre 10 lbs,0
+2025-09-21,1,Pommes de terre 10 lbs,0
+2025-09-22,1,Pommes de terre 10 lbs,0
+2025-09-23,1,Pommes de terre 10 lbs,0
+2025-09-24,1,Pommes de terre 10 lbs,0
+2025-09-25,1,Pommes de terre 10 lbs,0
+2025-09-26,1,Pommes de terre 10 lbs,0
+2025-09-27,1,Pommes de terre 10 lbs,0
+2025-09-28,1,Pommes de terre 10 lbs,0
+2025-09-29,1,Pommes de terre 10 lbs,0
+2025-09-30,1,Pommes de terre 10 lbs,0
+2025-10-01,1,Pommes de terre 10 lbs,0
+2025-10-02,1,Pommes de terre 10 lbs,0
+2025-10-03,1,Pommes de terre 10 lbs,0
+2025-10-04,1,Pommes de terre 10 lbs,0
+2025-10-05,1,Pommes de terre 10 lbs,0
+2025-10-06,1,Pommes de terre 10 lbs,0
+2025-10-07,1,Pommes de terre 10 lbs,0
+2025-10-08,1,Pommes de terre 10 lbs,0
+2025-10-09,1,Pommes de terre 10 lbs,0
+2025-10-10,1,Pommes de terre 10 lbs,0
+2025-10-11,1,Pommes de terre 10 lbs,0
+2025-10-12,1,Pommes de terre 10 lbs,0
+2025-10-13,1,Pommes de terre 10 lbs,0
+2025-10-14,1,Pommes de terre 10 lbs,0
+2025-10-15,1,Pommes de terre 10 lbs,27215
+2025-11-05,1,Pommes de terre en sac de 50 lbs,27215
+2025-12-18,1,Pouding au chocolat,4480
+2025-08-28,1,Produites varés,8012
+2025-10-17,1,Pâte alimentaire,963
+2025-10-18,1,Pâte alimentaire,0
+2025-10-19,1,Pâte alimentaire,0
+2025-10-20,1,Pâte alimentaire,0
+2025-10-21,1,Pâte alimentaire,0
+2025-10-22,1,Pâte alimentaire,0
+2025-10-15,1,Pâte à Pizza Congelée,14082
+2025-07-16,1,Repas congelés variés,5306
+2025-07-11,1,Riz de chou fleur,46109
+2025-07-24,1,Rutabaga,40000
+2025-07-25,1,Rutabaga,0
+2025-07-26,1,Rutabaga,0
+2025-07-27,1,Rutabaga,0
+2025-07-28,1,Rutabaga,45000
+2025-07-29,1,Rutabaga,0
+2025-07-30,1,Rutabaga,0
+2025-07-31,1,Rutabaga,0
+2025-08-01,1,Rutabaga,0
+2025-08-02,1,Rutabaga,0
+2025-08-03,1,Rutabaga,0
+2025-08-04,1,Rutabaga,0
+2025-08-05,1,Rutabaga,0
+2025-08-06,1,Rutabaga,0
+2025-08-07,1,Rutabaga,0
+2025-08-08,1,Rutabaga,0
+2025-08-09,1,Rutabaga,0
+2025-08-10,1,Rutabaga,0
+2025-08-11,1,Rutabaga,0
+2025-08-12,1,Rutabaga,0
+2025-08-13,1,Rutabaga,0
+2025-08-14,1,Rutabaga,0
+2025-08-15,1,Rutabaga,0
+2025-08-16,1,Rutabaga,0
+2025-08-17,1,Rutabaga,0
+2025-08-18,1,Rutabaga,0
+2025-08-19,1,Rutabaga,0
+2025-08-20,1,Rutabaga,0
+2025-08-21,1,Rutabaga,0
+2025-08-22,1,Rutabaga,0
+2025-08-23,1,Rutabaga,0
+2025-08-24,1,Rutabaga,0
+2025-08-25,1,Rutabaga,0
+2025-08-26,1,Rutabaga,0
+2025-08-27,1,Rutabaga,0
+2025-08-28,1,Rutabaga,0
+2025-08-29,1,Rutabaga,0
+2025-08-30,1,Rutabaga,0
+2025-08-31,1,Rutabaga,0
+2025-09-01,1,Rutabaga,0
+2025-09-02,1,Rutabaga,0
+2025-09-03,1,Rutabaga,0
+2025-09-04,1,Rutabaga,0
+2025-09-05,1,Rutabaga,0
+2025-09-06,1,Rutabaga,0
+2025-09-07,1,Rutabaga,0
+2025-09-08,1,Rutabaga,0
+2025-09-09,1,Rutabaga,0
+2025-09-10,1,Rutabaga,0
+2025-09-11,1,Rutabaga,0
+2025-09-12,1,Rutabaga,0
+2025-09-13,1,Rutabaga,0
+2025-09-14,1,Rutabaga,0
+2025-09-15,1,Rutabaga,0
+2025-09-16,1,Rutabaga,0
+2025-09-17,1,Rutabaga,0
+2025-09-18,1,Rutabaga,0
+2025-09-19,1,Rutabaga,0
+2025-09-20,1,Rutabaga,0
+2025-09-21,1,Rutabaga,0
+2025-09-22,1,Rutabaga,0
+2025-09-23,1,Rutabaga,0
+2025-09-24,1,Rutabaga,0
+2025-09-25,1,Rutabaga,0
+2025-09-26,1,Rutabaga,0
+2025-09-27,1,Rutabaga,0
+2025-09-28,1,Rutabaga,0
+2025-09-29,1,Rutabaga,0
+2025-09-30,1,Rutabaga,0
+2025-10-01,1,Rutabaga,0
+2025-10-02,1,Rutabaga,0
+2025-10-03,1,Rutabaga,0
+2025-10-04,1,Rutabaga,0
+2025-10-05,1,Rutabaga,0
+2025-10-06,1,Rutabaga,0
+2025-10-07,1,Rutabaga,0
+2025-10-08,1,Rutabaga,0
+2025-10-09,1,Rutabaga,0
+2025-10-10,1,Rutabaga,0
+2025-10-11,1,Rutabaga,0
+2025-10-12,1,Rutabaga,0
+2025-10-13,1,Rutabaga,0
+2025-10-14,1,Rutabaga,0
+2025-10-15,1,Rutabaga,0
+2025-10-16,1,Rutabaga,0
+2025-10-17,1,Rutabaga,0
+2025-10-18,1,Rutabaga,0
+2025-10-19,1,Rutabaga,0
+2025-10-20,1,Rutabaga,0
+2025-10-21,1,Rutabaga,0
+2025-10-22,1,Rutabaga,0
+2025-10-23,1,Rutabaga,0
+2025-10-24,1,Rutabaga,0
+2025-10-25,1,Rutabaga,0
+2025-10-26,1,Rutabaga,0
+2025-10-27,1,Rutabaga,0
+2025-10-28,1,Rutabaga,0
+2025-10-29,1,Rutabaga,0
+2025-10-30,1,Rutabaga,0
+2025-10-31,1,Rutabaga,0
+2025-11-01,1,Rutabaga,0
+2025-11-02,1,Rutabaga,0
+2025-11-03,1,Rutabaga,0
+2025-11-04,1,Rutabaga,0
+2025-11-05,1,Rutabaga,0
+2025-11-06,1,Rutabaga,0
+2025-11-07,1,Rutabaga,0
+2025-11-08,1,Rutabaga,0
+2025-11-09,1,Rutabaga,0
+2025-11-10,1,Rutabaga,0
+2025-11-11,1,Rutabaga,0
+2025-11-12,1,Rutabaga,0
+2025-11-13,1,Rutabaga,0
+2025-11-14,1,Rutabaga,0
+2025-11-15,1,Rutabaga,0
+2025-11-16,1,Rutabaga,0
+2025-11-17,1,Rutabaga,0
+2025-11-18,1,Rutabaga,0
+2025-11-19,1,Rutabaga,0
+2025-11-20,1,Rutabaga,0
+2025-11-21,1,Rutabaga,0
+2025-11-22,1,Rutabaga,0
+2025-11-23,1,Rutabaga,0
+2025-11-24,1,Rutabaga,0
+2025-11-25,1,Rutabaga,0
+2025-11-26,1,Rutabaga,0
+2025-11-27,1,Rutabaga,0
+2025-11-28,1,Rutabaga,0
+2025-11-29,1,Rutabaga,0
+2025-11-30,1,Rutabaga,0
+2025-12-01,1,Rutabaga,0
+2025-12-02,1,Rutabaga,0
+2025-12-03,1,Rutabaga,0
+2025-12-04,1,Rutabaga,0
+2025-12-05,1,Rutabaga,0
+2025-12-06,1,Rutabaga,0
+2025-12-07,1,Rutabaga,0
+2025-12-08,1,Rutabaga,0
+2025-12-09,1,Rutabaga,0
+2025-12-10,1,Rutabaga,0
+2025-12-11,1,Rutabaga,0
+2025-12-12,1,Rutabaga,0
+2025-12-13,1,Rutabaga,0
+2025-12-14,1,Rutabaga,0
+2025-12-15,1,Rutabaga,0
+2025-12-16,1,Rutabaga,0
+2025-12-17,1,Rutabaga,0
+2025-12-18,1,Rutabaga,0
+2025-12-19,1,Rutabaga,0
+2025-12-20,1,Rutabaga,0
+2025-12-21,1,Rutabaga,0
+2025-12-22,1,Rutabaga,0
+2025-12-23,1,Rutabaga,0
+2025-12-24,1,Rutabaga,0
+2025-12-25,1,Rutabaga,0
+2025-12-26,1,Rutabaga,0
+2025-12-27,1,Rutabaga,0
+2025-12-28,1,Rutabaga,0
+2025-12-29,1,Rutabaga,0
+2025-12-30,1,Rutabaga,0
+2025-12-31,1,Rutabaga,0
+2026-01-01,1,Rutabaga,0
+2026-01-02,1,Rutabaga,0
+2026-01-03,1,Rutabaga,0
+2026-01-04,1,Rutabaga,0
+2026-01-05,1,Rutabaga,0
+2026-01-06,1,Rutabaga,0
+2026-01-07,1,Rutabaga,0
+2026-01-08,1,Rutabaga,0
+2026-01-09,1,Rutabaga,0
+2026-01-10,1,Rutabaga,0
+2026-01-11,1,Rutabaga,0
+2026-01-12,1,Rutabaga,0
+2026-01-13,1,Rutabaga,0
+2026-01-14,1,Rutabaga,0
+2026-01-15,1,Rutabaga,0
+2026-01-16,1,Rutabaga,0
+2026-01-17,1,Rutabaga,0
+2026-01-18,1,Rutabaga,0
+2026-01-19,1,Rutabaga,0
+2026-01-20,1,Rutabaga,0
+2026-01-21,1,Rutabaga,0
+2026-01-22,1,Rutabaga,0
+2026-01-23,1,Rutabaga,0
+2026-01-24,1,Rutabaga,0
+2026-01-25,1,Rutabaga,0
+2026-01-26,1,Rutabaga,18506
+2025-10-23,1,Sacs Réutilisables,625
+2025-06-19,1,Salades,2438
+2025-06-20,1,Salades,1091
+2025-06-21,1,Salades,0
+2025-06-22,1,Salades,0
+2025-06-23,1,Salades,0
+2025-06-24,1,Salades,0
+2025-06-25,1,Salades,1091
+2025-12-02,1,Sirop d'érable (540ml),14640
+2025-11-10,1,Snacks,39779
+2025-04-24,1,Soupe déshydratée,9545
+2025-06-25,1,Tetley tea,2888
+2025-07-10,1,Tomates,6000
+2025-07-11,1,Tomates,0
+2025-07-12,1,Tomates,0
+2025-07-13,1,Tomates,0
+2025-07-14,1,Tomates,0
+2025-07-15,1,Tomates,0
+2025-07-16,1,Tomates,7000
+2025-12-04,1,Tomates fraiches,7257
+2025-05-29,1,Tranches de pain,3333
+2025-09-11,1,non-food supplies,8866
+2025-11-05,1,nonfood items,9333
+2025-11-06,1,nonfood items,0
+2025-11-07,1,nonfood items,0
+2025-11-08,1,nonfood items,0
+2025-11-09,1,nonfood items,0
+2025-11-10,1,nonfood items,0
+2025-11-11,1,nonfood items,0
+2025-11-12,1,nonfood items,0
+2025-11-13,1,nonfood items,0
+2025-11-14,1,nonfood items,0
+2025-11-15,1,nonfood items,0
+2025-11-16,1,nonfood items,0
+2025-11-17,1,nonfood items,0
+2025-11-18,1,nonfood items,0
+2025-11-19,1,nonfood items,0
+2025-11-20,1,nonfood items,0
+2025-11-21,1,nonfood items,0
+2025-11-22,1,nonfood items,0
+2025-11-23,1,nonfood items,0
+2025-11-24,1,nonfood items,0
+2025-11-25,1,nonfood items,0
+2025-11-26,1,nonfood items,0
+2025-11-27,1,nonfood items,0
+2025-11-28,1,nonfood items,0
+2025-11-29,1,nonfood items,0
+2025-11-30,1,nonfood items,0
+2025-12-01,1,nonfood items,0
+2025-12-02,1,nonfood items,0
+2025-12-03,1,nonfood items,0
+2025-12-04,1,nonfood items,0
+2025-12-05,1,nonfood items,0
+2025-12-06,1,nonfood items,0
+2025-12-07,1,nonfood items,0
+2025-12-08,1,nonfood items,0
+2025-12-09,1,nonfood items,0
+2025-12-10,1,nonfood items,0
+2025-12-11,1,nonfood items,0
+2025-12-12,1,nonfood items,0
+2025-12-13,1,nonfood items,0
+2025-12-14,1,nonfood items,0
+2025-12-15,1,nonfood items,13891
+2025-10-24,1,Échalotes,1315
+2026-01-27,1,Épinard,226
+2026-01-09,1,Œufs,8239
+2026-01-10,1,Œufs,0
+2026-01-11,1,Œufs,0
+2026-01-12,1,Œufs,0
+2026-01-13,1,Œufs,0
+2026-01-14,1,Œufs,5885
