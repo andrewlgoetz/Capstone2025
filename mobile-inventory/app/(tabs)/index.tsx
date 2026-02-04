@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Button, 
-  Alert, 
-  ActivityIndicator, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  Alert,
+  ActivityIndicator,
   TouchableOpacity,
   Modal,
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios from 'axios';
@@ -19,6 +20,29 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 // !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
 const API_URL = 'http://xxx:8000'; 
+
+// --- OpenFoodFacts API Helper ---
+const fetchOFFProduct = async (barcode: string) => {
+  try {
+    const response = await axios.get(
+      `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`,
+      {
+        params: {
+          fields: 'product_name,categories,brands,image_front_small_url'
+        },
+        timeout: 5000 // 5 second timeout
+      }
+    );
+
+    if (response.data && response.data.status === 1) {
+      return response.data.product;
+    }
+    return null;
+  } catch (error) {
+    console.log("OFF Fetch Error (silent fail):", error);
+    return null;
+  }
+};
 
 interface InventoryItem {
   item_id: number;
@@ -39,6 +63,7 @@ interface NewItemFormData {
   unit: string;
   expirationDate: Date | null;
   locationId: string;
+  imageUrl?: string | null;
 }
 
 interface KnownItemFormData {
@@ -82,6 +107,7 @@ export default function App(): React.ReactElement {
     unit: 'pcs',
     expirationDate: null,
     locationId: '1',
+    imageUrl: null,
   });
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
 
@@ -132,9 +158,9 @@ export default function App(): React.ReactElement {
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult): Promise<void> => {
     if (loading) return;
-    setIsScanning(false); 
+    setIsScanning(false);
     setLoading(true);
-    
+
     const payload = { barcode: result.data };
 
     try {
@@ -148,15 +174,48 @@ export default function App(): React.ReactElement {
           setKnownItemData({ item, quantity: '1' });
           setShowKnownItemForm(true);
         } else if (status === 'NEW') {
-          // new item - show form to create it
+          // --- NEW ITEM FOUND ---
+
+          // 1. Initialize with backend suggestions or defaults
+          let autoName = candidate_info?.name || '';
+          let autoCategory = candidate_info?.category || '';
+          let autoImage = null;
+
+          // 2. Try to fetch data from OpenFoodFacts
+          // This runs while the loading spinner is still active
+          const offProduct = await fetchOFFProduct(result.data);
+
+          if (offProduct) {
+            // Combine Brand + Product Name for a better description
+            if (offProduct.product_name) {
+              autoName = offProduct.product_name;
+              if (offProduct.brands) {
+                autoName = `${offProduct.brands} ${autoName}`;
+              }
+            }
+
+            // Take the first category from the comma-separated list
+            if (offProduct.categories) {
+              const cats = offProduct.categories.split(',');
+              autoCategory = cats[0]?.trim() || autoCategory;
+            }
+
+            // Get the image URL
+            if (offProduct.image_front_small_url) {
+              autoImage = offProduct.image_front_small_url;
+            }
+          }
+
+          // 3. Populate form data
           setNewItemData({
             barcode: candidate_info?.barcode || result.data,
-            name: candidate_info?.name || '',
-            category: candidate_info?.category || '',
+            name: autoName,
+            category: autoCategory,
             quantity: '1',
             unit: 'pcs',
             expirationDate: null,
             locationId: '1',
+            imageUrl: autoImage,
           });
           setShowNewItemForm(true);
         } else {
@@ -217,6 +276,7 @@ export default function App(): React.ReactElement {
         unit: 'pcs',
         expirationDate: null,
         locationId: '1',
+        imageUrl: null,
       });
     } catch (error: any) {
       console.log(error);
@@ -235,7 +295,7 @@ export default function App(): React.ReactElement {
     try {
       setLoading(true);
       const quantity = parseInt(knownItemData.quantity);
-      
+
       await axios.post(
         `${API_URL}/barcode/${knownItemData.item?.item_id}/increase`,
         { amount: quantity }
@@ -294,21 +354,21 @@ export default function App(): React.ReactElement {
     <View style={styles.container}>
       {/* Header / Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity 
-          style={[styles.btn, isScanning && mode === "in" && styles.activeBtn]} 
+        <TouchableOpacity
+          style={[styles.btn, isScanning && mode === "in" && styles.activeBtn]}
           onPress={() => {
             setMode("in");
-            setIsScanning(true); 
+            setIsScanning(true);
           }}>
           <Text style={styles.btnText}>
             {isScanning && mode === "in" ? "🔴 Scanning..." : "Scan IN \n(Add)"}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.btn, isScanning && mode === "out" && styles.activeBtn]} 
+        <TouchableOpacity
+          style={[styles.btn, isScanning && mode === "out" && styles.activeBtn]}
           onPress={() => {
             setMode("out");
-            setIsScanning(true);  
+            setIsScanning(true);
           }}>
           <Text style={styles.btnText}>
             {isScanning && mode === "out" ? "🔴 Scanning..." : "Scan OUT \n(Remove)"}
@@ -349,6 +409,18 @@ export default function App(): React.ReactElement {
                 <Text style={styles.closeBtn}>✕</Text>
               </TouchableOpacity>
             </View>
+
+            {/* IMAGE PREVIEW (If available) */}
+            {newItemData.imageUrl && (
+              <View style={styles.imagePreviewContainer}>
+                <Image
+                  source={{ uri: newItemData.imageUrl }}
+                  style={styles.imagePreview}
+                  resizeMode="contain"
+                />
+                 <Text style={styles.imageLabel}>Image from OpenFoodFacts</Text>
+              </View>
+            )}
 
             {/* Barcode (read-only) */}
             <View style={styles.formGroup}>
@@ -412,12 +484,12 @@ export default function App(): React.ReactElement {
             {/* Expiration Date */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Expiration Date (Optional)</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowDatePicker(true)}
               >
                 <Text style={styles.dateButtonText}>
-                  {newItemData.expirationDate 
+                  {newItemData.expirationDate
                     ? newItemData.expirationDate.toLocaleDateString()
                     : 'Select Date'}
                 </Text>
@@ -447,13 +519,13 @@ export default function App(): React.ReactElement {
 
             {/* Buttons */}
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowNewItemForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleAddNewItem}
                 disabled={loading}
@@ -495,13 +567,13 @@ export default function App(): React.ReactElement {
             </View>
 
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowKnownItemForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleConfirmKnownItem}
                 disabled={loading}
@@ -543,13 +615,13 @@ export default function App(): React.ReactElement {
             </View>
 
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowScanOutForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleConfirmScanOut}
                 disabled={loading}
@@ -567,50 +639,50 @@ export default function App(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#000', 
-    paddingTop: 60 
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    paddingTop: 60
   },
-  cameraContainer: { 
-    flex: 1, 
-    margin: 20, 
-    borderRadius: 20, 
-    overflow: 'hidden', 
-    backgroundColor: '#222' 
+  cameraContainer: {
+    flex: 1,
+    margin: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#222'
   },
-  controls: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    gap: 15, 
-    paddingHorizontal: 20 
+  controls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 15,
+    paddingHorizontal: 20
   },
-  btn: { 
-    padding: 15, 
-    backgroundColor: '#4f46e5', 
-    borderRadius: 8, 
-    flex: 1, 
-    alignItems: 'center' 
+  btn: {
+    padding: 15,
+    backgroundColor: '#4f46e5',
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center'
   },
-  activeBtn: { 
-    backgroundColor: '#999' 
+  activeBtn: {
+    backgroundColor: '#999'
   },
-  btnText: { 
-    color: 'white', 
-    fontWeight: 'bold', 
+  btnText: {
+    color: 'white',
+    fontWeight: 'bold',
     fontSize: 16,
-    textAlign: "center" 
+    textAlign: "center"
   },
-  overlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(0,0,0,0.7)', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  footer: { 
-    color: '#666', 
-    textAlign: 'center', 
-    paddingBottom: 30 
+  footer: {
+    color: '#666',
+    textAlign: 'center',
+    paddingBottom: 30
   },
 
   // Modal styles for new item form
@@ -640,6 +712,24 @@ const styles = StyleSheet.create({
   closeBtn: {
     fontSize: 24,
     color: '#999',
+  },
+  imagePreviewContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#eee'
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    marginBottom: 8
+  },
+  imageLabel: {
+    fontSize: 12,
+    color: '#999'
   },
   formGroup: {
     marginBottom: 16,
