@@ -15,6 +15,7 @@ import Help from './pages/Help.jsx'
 
 function App() {
   return (
+    // Wrap Routes in an Auth Provider to protect pages when user not logged in
     <AuthProvider>
       <BrowserRouter>
         <Routes>
