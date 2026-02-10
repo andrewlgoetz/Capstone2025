@@ -1,4 +1,10 @@
-"""Seed script to create an admin user for testing the authentication system."""
+"""Seed script to create an admin user for testing the authentication system.
+
+For Development purposes only, run this to create an admin user in your environment.
+
+Credentials: admin@hamfoodbank.ca / admin123
+
+"""
 
 import bcrypt
 from app.db.session import SessionLocal
