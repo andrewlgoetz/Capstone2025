@@ -168,11 +168,33 @@ export default function UserManagementModal({ user, open, onClose }) {
     }
   });
 
+  // Permissions that require a prerequisite to be enabled first
+  const PREREQUISITE_MAP = {
+    'inventory:create': 'inventory:view',
+    'inventory:edit': 'inventory:view',
+    'inventory:delete': 'inventory:view',
+  };
+
+  // Reverse: which permissions depend on a given prerequisite
+  const DEPENDENTS_MAP = {
+    'inventory:view': ['inventory:create', 'inventory:edit', 'inventory:delete'],
+  };
+
   const handlePermissionChange = (permissionKey) => {
     setSelectedPermissions(prev => {
-      const newPermissions = prev.includes(permissionKey)
-        ? prev.filter(p => p !== permissionKey)
-        : [...prev, permissionKey];
+      let newPermissions;
+      if (prev.includes(permissionKey)) {
+        // Unchecking: also remove any permissions that depend on this one
+        const dependents = DEPENDENTS_MAP[permissionKey] || [];
+        newPermissions = prev.filter(p => p !== permissionKey && !dependents.includes(p));
+      } else {
+        // Checking: also add the prerequisite if needed
+        const prerequisite = PREREQUISITE_MAP[permissionKey];
+        newPermissions = [...prev, permissionKey];
+        if (prerequisite && !newPermissions.includes(prerequisite)) {
+          newPermissions.push(prerequisite);
+        }
+      }
       setPermissionsChanged(true);
       return newPermissions;
     });
@@ -410,6 +432,8 @@ export default function UserManagementModal({ user, open, onClose }) {
                     <FormGroup>
                       {groupPermKeys.map(permKey => {
                         const permInfo = allPermissions.permissions.find(p => p.key === permKey);
+                        const prerequisite = PREREQUISITE_MAP[permKey];
+                        const isDisabled = prerequisite && !selectedPermissions.includes(prerequisite);
                         return (
                           <FormControlLabel
                             key={permKey}
@@ -417,16 +441,17 @@ export default function UserManagementModal({ user, open, onClose }) {
                               <Checkbox
                                 checked={selectedPermissions.includes(permKey)}
                                 onChange={() => handlePermissionChange(permKey)}
+                                disabled={isDisabled}
                                 sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
                               />
                             }
                             label={
                               <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500, opacity: isDisabled ? 0.5 : 1 }}>
                                   {permInfo?.name || permKey}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {permInfo?.description}
+                                <Typography variant="caption" color="text.secondary" sx={{ opacity: isDisabled ? 0.5 : 1 }}>
+                                  {permInfo?.description}{isDisabled ? ' (requires View permission)' : ''}
                                 </Typography>
                               </Box>
                             }

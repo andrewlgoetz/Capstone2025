@@ -119,6 +119,11 @@ export async function getAllPermissions() {
   return res.data;
 }
 
+export async function getMyPermissions() {
+  const res = await api.get('/auth/me/permissions');
+  return res.data;
+}
+
 export async function getUserPermissions(userId) {
   const res = await api.get(`/auth/users/${userId}/permissions`);
   return res.data;

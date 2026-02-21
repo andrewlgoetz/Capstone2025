@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { TextField, Button, Alert } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { loginUser } from '../services/api';
@@ -12,9 +12,6 @@ export default function Login() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +28,7 @@ export default function Login() {
       if (data.requires_password_change) {
         navigate('/change-password');
       } else {
-        navigate(from, { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (err) {
       console.error('Login failed:', err);

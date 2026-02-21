@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { getMyPermissions } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +14,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Initialize auth state from localStorage on mount
@@ -52,6 +54,15 @@ export const AuthProvider = ({ children }) => {
         const userData = await response.json();
         console.log('User data received:', userData);
         setUser(userData);
+
+        // Fetch user permissions
+        try {
+          const permData = await getMyPermissions();
+          setPermissions(permData.permissions || []);
+        } catch (err) {
+          console.error('Failed to fetch permissions:', err);
+          setPermissions([]);
+        }
       } else {
         const errorData = await response.text();
         console.error('Auth failed:', response.status, errorData);
@@ -83,13 +94,14 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);
+    setPermissions([]);
     setLoading(false);
   };
 
-  const refreshUser = () => {
+  const refreshUser = async () => {
     const token = localStorage.getItem('access_token');
     if (token) {
-      fetchUserInfo(token);
+      await fetchUserInfo(token);
     }
   };
 
@@ -97,13 +109,21 @@ export const AuthProvider = ({ children }) => {
     return user && user.role_name && user.role_name.toLowerCase() === 'admin';
   };
 
+  const hasPermission = (permission) => {
+    // Admins have all permissions
+    if (isAdmin()) return true;
+    return permissions.includes(permission);
+  };
+
   const value = {
     user,
+    permissions,
     loading,
     login,
     logout,
     refreshUser,
     isAdmin,
+    hasPermission,
     isAuthenticated: !!user,
   };
 
