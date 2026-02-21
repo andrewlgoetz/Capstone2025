@@ -488,13 +488,11 @@ export default function UserManagementModal({ user, open, onClose }) {
               <TableContainer component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
-                  <TableRow>
-                    <TableRow sx={{ backgroundColor: '#f8fafc' }}>
-                      <TableCell><strong>Action</strong></TableCell>
-                      <TableCell><strong>Item</strong></TableCell>
-                      <TableCell><strong>Details</strong></TableCell>
-                      <TableCell><strong>Timestamp</strong></TableCell>
-                    </TableRow>
+                  <TableRow sx={{ backgroundColor: '#f8fafc' }}>
+                    <TableCell><strong>Action</strong></TableCell>
+                    <TableCell><strong>Item</strong></TableCell>
+                    <TableCell><strong>Details</strong></TableCell>
+                    <TableCell><strong>Timestamp</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -507,7 +505,9 @@ export default function UserManagementModal({ user, open, onClose }) {
                           color={
                             log.action === 'CREATE' ? 'success' :
                             log.action === 'UPDATE' ? 'primary' :
-                            log.action === 'DELETE' ? 'error' : 'default'
+                            log.action === 'DELETE' ? 'error' :
+                            log.action === 'SCAN_IN' ? 'info' :
+                            log.action === 'SCAN_OUT' ? 'warning' : 'default'
                           }
                         />
                       </TableCell>

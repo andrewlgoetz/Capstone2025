@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType
+from app.models.activity_log import ActivityLog, ActivityAction
 from app.models.user import User
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 import app.services.barcode_service as barcode_service
@@ -14,6 +15,21 @@ from app.services.permission_service import Permission, require_permission, requ
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
+
+def log_activity(db: Session, user_id: int, action: ActivityAction, entity_id: int, item_name: str, details: str = None):
+    """Record an inventory action in the activity log."""
+    entry = ActivityLog(
+        user_id=user_id,
+        action=action,
+        entity_type="inventory",
+        entity_id=entity_id,
+        item_name=item_name,
+        details=details,
+    )
+    db.add(entry)
+    db.commit()
+
+
 # add a new item
 @router.post("/add", response_model=InventoryRead)
 def add_item(
@@ -21,8 +37,9 @@ def add_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_CREATE))
 ):
-    # encapsulate this logic b/c its reused
     new_item = inventory_service.add_item(item, db)
+    log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
+                 f"Added with qty {new_item.quantity}")
     return new_item
 
 @router.put("/{item_id}", response_model=InventoryRead)
@@ -32,7 +49,11 @@ def update_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_EDIT))
 ):
-    return inventory_service.update_item(item_id, item, db)
+    updated = inventory_service.update_item(item_id, item, db)
+    changes = item.model_dump(exclude_unset=True, exclude={"movement_type", "movement_reason"})
+    detail_str = ", ".join(f"{k}={v}" for k, v in changes.items()) if changes else "no field changes"
+    log_activity(db, current_user.user_id, ActivityAction.UPDATE, updated.item_id, updated.name, detail_str)
+    return updated
 
 @router.get("/allwithlocation")
 def get_inventory(
@@ -108,6 +129,11 @@ def delete_item(
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+    item_name = item.name
+    item_id_val = item.item_id
+    item_qty = item.quantity
     db.delete(item)
     db.commit()
+    log_activity(db, current_user.user_id, ActivityAction.DELETE, item_id_val, item_name,
+                 f"Deleted item (qty was {item_qty})")
     return {"message": "Item deleted successfully"}

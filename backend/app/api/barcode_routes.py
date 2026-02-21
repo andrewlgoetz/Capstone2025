@@ -9,10 +9,20 @@ from app.models.user import User
 from app.schemas.inventory_schema import * # InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo, ScanOutResponse
 import app.services.inventory_service as inventory_service
 from app.models.inventory_movement import MovementType
+from app.models.activity_log import ActivityLog, ActivityAction
 from app.dependencies import get_db
 from app.services.permission_service import Permission, require_permission
 
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
+
+
+def log_activity(db: Session, user_id: int, action: ActivityAction, entity_id: int, item_name: str, details: str = None):
+    entry = ActivityLog(
+        user_id=user_id, action=action, entity_type="inventory",
+        entity_id=entity_id, item_name=item_name, details=details,
+    )
+    db.add(entry)
+    db.commit()
 
 @router.get("/{barcode}")
 def get_barcode(
@@ -31,8 +41,9 @@ def add_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.INVENTORY_CREATE))
 ):
-    # encapsulate this logic b/c its reused
     new_item = inventory_service.add_item(item, db)
+    log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
+                 f"Added via barcode scan with qty {new_item.quantity}")
     return new_item
 
 @router.post("/scan-out", response_model=ScanOutResponse)
@@ -70,15 +81,14 @@ def confirm_scan_out(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.SCAN_OUT))
 ):
-    # Debug: log payload
-    print(f"[barcode_routes.confirm_scan_out] item_id={item_id}, payload={payload}")
-    # Use negative delta to subtract
     updated = inventory_service.adjust_item_quantity(
         item_id=item_id,
         delta=-payload.quantity,
         db=db,
         movement_type=MovementType.OUTBOUND
     )
+    log_activity(db, current_user.user_id, ActivityAction.SCAN_OUT, updated.item_id, updated.name,
+                 f"Scanned out qty {payload.quantity}, remaining {updated.quantity}")
     return InventoryRead.model_validate(updated)
 
 @router.post("/scan-in", response_model=ScanResponse)
@@ -125,4 +135,6 @@ def increase_item_quantity(
     current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
     updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
+    log_activity(db, current_user.user_id, ActivityAction.SCAN_IN, updated.item_id, updated.name,
+                 f"Scanned in qty {payload.amount}, new total {updated.quantity}")
     return InventoryRead.model_validate(updated)

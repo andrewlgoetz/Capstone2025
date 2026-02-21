@@ -278,15 +278,32 @@ def get_user_activity(
 ):
     """
     Admin-only: Get activity log for a specific user.
-    Note: Currently returns empty list - requires audit log infrastructure.
+    Returns inventory actions (create, update, delete, scan in/out).
     """
+    from app.models.activity_log import ActivityLog
+
     user = auth_service.get_user_by_id(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Return empty list - we don't have user action tracking yet
-    # A proper implementation would use an audit log table
-    return []
+    logs = (
+        db.query(ActivityLog)
+        .filter(ActivityLog.user_id == user_id)
+        .order_by(ActivityLog.created_at.desc())
+        .limit(200)
+        .all()
+    )
+
+    return [
+        {
+            "action": log.action.value,
+            "item_id": log.entity_id,
+            "item_name": log.item_name,
+            "details": log.details,
+            "timestamp": log.created_at.isoformat(),
+        }
+        for log in logs
+    ]
 
 
 # --------------- Permission Management Endpoints ---------------
