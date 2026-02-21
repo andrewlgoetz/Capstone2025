@@ -49,9 +49,16 @@ def update_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_EDIT))
 ):
+    # snapshot old values for the fields being changed
+    old_item = db.query(InventoryItem).filter(InventoryItem.item_id == item_id).first()
+    sent = item.model_dump(exclude_unset=True, exclude={"movement_type", "movement_reason"})
+    old_vals = {k: getattr(old_item, k, None) for k in sent} if old_item else {}
+
     updated = inventory_service.update_item(item_id, item, db)
-    changes = item.model_dump(exclude_unset=True, exclude={"movement_type", "movement_reason"})
-    detail_str = ", ".join(f"{k}={v}" for k, v in changes.items()) if changes else "no field changes"
+
+    # build readable diff: only fields that actually changed
+    diffs = [f"{k}: {old_vals[k]} → {sent[k]}" for k in sent if old_vals.get(k) != sent[k]]
+    detail_str = ", ".join(diffs) if diffs else "no changes"
     log_activity(db, current_user.user_id, ActivityAction.UPDATE, updated.item_id, updated.name, detail_str)
     return updated
 
