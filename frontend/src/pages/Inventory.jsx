@@ -6,9 +6,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import InventoryTable from '../components/InventoryTable'
 import AddItemModal from '../components/AddItemModal'
 import { createItem, updateItem, deleteItem } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Inventory() {
   const queryClient = useQueryClient()
+  const { hasPermission } = useAuth()
+  const canCreate = hasPermission('inventory:create')
+  const canEdit = hasPermission('inventory:edit')
+  const canDelete = hasPermission('inventory:delete')
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
@@ -125,13 +130,15 @@ return (
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
             Inventory Management
           </h1>
-          <button 
-            className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
-            onClick={handleAddClick}
-          >
-            <AddIcon fontSize="small" />
-            Add Item
-          </button>
+          {canCreate && (
+            <button
+              className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
+              onClick={handleAddClick}
+            >
+              <AddIcon fontSize="small" />
+              Add Item
+            </button>
+          )}
         </header>
 
         {/* Inventory Table */}
@@ -139,8 +146,8 @@ return (
           mode="full"
           lowStockThreshold={25}
           showFilterBar
-          onEditClick={handleEditClick}
-          onDeleteClick={handleDeleteClick}
+          onEditClick={canEdit ? handleEditClick : null}
+          onDeleteClick={canDelete ? handleDeleteClick : null}
           onCategoriesLoaded={(cats) => setCategories(cats)}
         />
 

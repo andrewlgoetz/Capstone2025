@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, hasPermission } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleMenuOpen = (event) => {
@@ -26,8 +26,8 @@ export default function Navbar() {
 
   const navLinks = [
     { to: "/", label: "Home" },
-    { to: "/inventory", label: "Inventory" },
-    { to: "/dashboard", label: "Dashboard" },
+    ...(hasPermission('inventory:view') ? [{ to: "/inventory", label: "Inventory" }] : []),
+    ...(hasPermission('dashboard:view') ? [{ to: "/dashboard", label: "Dashboard" }] : []),
     ...(isAdmin() ? [{ to: "/admin", label: "Admin" }] : []),
   ];
 

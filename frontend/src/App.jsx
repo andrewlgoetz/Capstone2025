@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import RequirePermission from './components/RequirePermission'
 import Navbar from './components/Navbar.jsx'
 
 // Pages
@@ -13,16 +14,25 @@ import Dashboard from './pages/Dashboard.jsx'
 import Home from './pages/Home.jsx'
 import Help from './pages/Help.jsx'
 
+// Persistent layout: Navbar stays mounted across all page navigations
+function AppLayout() {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+    </>
+  )
+}
+
 function App() {
   return (
-    // Wrap Routes in an Auth Provider to protect pages when user not logged in
     <AuthProvider>
       <BrowserRouter>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected routes - require auth but allow password change */}
+          {/* Protected route without navbar (password change) */}
           <Route
             path="/change-password"
             element={
@@ -32,67 +42,27 @@ function App() {
             }
           />
 
-          {/* Protected routes - require active user (no password change pending) */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Navbar />
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/inventory"
-            element={
-              <ProtectedRoute>
-                <Navbar />
+          {/* Protected routes with persistent navbar */}
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/" element={<Home />} />
+            <Route path="/inventory" element={
+              <RequirePermission permission="inventory:view">
                 <Inventory />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Navbar />
+              </RequirePermission>
+            } />
+            <Route path="/dashboard" element={
+              <RequirePermission permission="dashboard:view">
                 <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/help"
-            element={
-              <ProtectedRoute>
-                <Navbar />
-                <Help />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Navbar />
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Admin-only routes */}
-          <Route
-            path="/admin"
-            element={
+              </RequirePermission>
+            } />
+            <Route path="/help" element={<Help />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={
               <ProtectedRoute adminOnly>
-                <Navbar />
                 <Admin />
               </ProtectedRoute>
-            }
-          />
+            } />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
