@@ -95,6 +95,17 @@ def refresh_token(current_user: User = Depends(get_current_user)):
     )
 
 
+@router.get("/me/permissions", response_model=UserPermissionsResponse)
+def get_my_permissions(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's own permissions."""
+    from app.services import permission_service
+    permissions = permission_service.get_user_permissions(current_user.user_id, db)
+    return UserPermissionsResponse(user_id=current_user.user_id, permissions=permissions)
+
+
 @router.post("/change-password")
 def change_password(
     request: ChangePasswordRequest,
@@ -333,6 +344,19 @@ def update_user_permissions(
                 status_code=400,
                 detail="Cannot remove your own permission management access"
             )
+
+    # Inventory create/edit/delete require inventory:view
+    inventory_view = permission_service.Permission.INVENTORY_VIEW.value
+    inventory_dependents = [
+        permission_service.Permission.INVENTORY_CREATE.value,
+        permission_service.Permission.INVENTORY_EDIT.value,
+        permission_service.Permission.INVENTORY_DELETE.value,
+    ]
+    if any(p in data.permissions for p in inventory_dependents) and inventory_view not in data.permissions:
+        raise HTTPException(
+            status_code=400,
+            detail="Inventory create/edit/delete permissions require inventory:view"
+        )
 
     permission_service.set_user_permissions(user_id, data.permissions, db)
     permissions = permission_service.get_user_permissions(user_id, db)

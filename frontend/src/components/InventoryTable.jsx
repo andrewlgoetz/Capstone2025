@@ -13,6 +13,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SortIcon from "@mui/icons-material/Sort";
 import api from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 const formatDate = (dateString) => {
   if (!dateString) return "—";
@@ -72,6 +73,8 @@ export default function InventoryTable({
     pageSize: mode === "widget" ? limit : 10,
   });
 
+  const { hasPermission } = useAuth();
+
   const query = useQuery({
     queryKey: ["inventory", { mode }],
     queryFn: async () => {
@@ -79,6 +82,7 @@ export default function InventoryTable({
       console.log(res.data)
       return res.data;
     },
+    enabled: hasPermission('inventory:view'),
   });
 
   const rawItems = query.data ?? [];

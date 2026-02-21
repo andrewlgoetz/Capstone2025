@@ -17,6 +17,7 @@ import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
@@ -97,9 +98,13 @@ const Home = () => {
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
 
+  const { hasPermission } = useAuth();
+  const canViewInventory = hasPermission('inventory:view');
+
   const { data: inventoryItems = [], isLoading: isDataLoading, isError } = useQuery({
     queryKey: ["inventoryItems"],
     queryFn: getItems,
+    enabled: canViewInventory,
   });
 
   const queryClient = useQueryClient();
