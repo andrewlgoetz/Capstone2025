@@ -43,6 +43,12 @@ class UserCreate(UserBase):
     pass
 
 
+class UserLocationRead(BaseModel):
+    """Minimal location info returned with user data."""
+    location_id: int
+    name: str
+
+
 class UserRead(UserBase):
     """Schema for reading user data - returned to frontend."""
     model_config = ConfigDict(from_attributes=True)
@@ -50,6 +56,12 @@ class UserRead(UserBase):
     user_id: int
     requires_password_change: bool
     role_name: Optional[str] = None  # Joined from Role table
+    locations: list[UserLocationRead] = []  # User's assigned locations
+
+
+class UserLocationsUpdate(BaseModel):
+    """Schema for updating a user's location assignments."""
+    location_ids: list[int]
 
 
 class UserUpdate(BaseModel):
