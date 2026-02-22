@@ -118,10 +118,22 @@ export const AuthProvider = ({ children }) => {
   // User's assigned locations come from /auth/me response
   const userLocations = user?.locations || [];
 
+  // Global location filter state (shared across all pages)
+  const [selectedLocationIds, setSelectedLocationIds] = useState([]);
+
+  // Initialize selected locations when userLocations loads
+  useEffect(() => {
+    if (userLocations.length > 0 && selectedLocationIds.length === 0) {
+      setSelectedLocationIds(userLocations.map((l) => l.location_id));
+    }
+  }, [userLocations]);
+
   const value = {
     user,
     permissions,
     userLocations,
+    selectedLocationIds,
+    setSelectedLocationIds,
     loading,
     login,
     logout,

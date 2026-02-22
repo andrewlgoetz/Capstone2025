@@ -11,14 +11,10 @@ import LocationFilter from '../components/LocationFilter'
 
 export default function Inventory() {
   const queryClient = useQueryClient()
-  const { hasPermission, userLocations } = useAuth()
+  const { hasPermission, userLocations, selectedLocationIds, setSelectedLocationIds } = useAuth()
   const canCreate = hasPermission('inventory:create')
   const canEdit = hasPermission('inventory:edit')
   const canDelete = hasPermission('inventory:delete')
-
-  const [selectedLocationIds, setSelectedLocationIds] = useState(
-    () => userLocations.map((l) => l.location_id)
-  );
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
