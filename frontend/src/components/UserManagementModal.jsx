@@ -410,10 +410,10 @@ export default function UserManagementModal({ user, open, onClose }) {
             <TextField
               label="Bank ID"
               type="number"
-              value={formData.bank_id}
-              onChange={(e) => setFormData({ ...formData, bank_id: parseInt(e.target.value) })}
-              required
+              value={1}
+              disabled
               fullWidth
+              helperText="Bank ID is managed automatically"
             />
             <TextField
               label="Role"
