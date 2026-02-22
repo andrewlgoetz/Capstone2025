@@ -5,15 +5,16 @@ import { createItem, fetchInventoryByBarcode, increaseInventory } from '../../se
 // A small, extendable confirm modal for inventory items.
 // Props: open, onClose, initial (object), imageUrl, onConfirm
 
-const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null }) => {
+const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null, locations = [] }) => {
   const [form, setForm] = useState({
     barcode: '',
     quantity: '',
     name: '',
-  category: '',
-  expiry_date: '',
-  unit: 'units',
-  custom_unit: '',
+    category: '',
+    expiry_date: '',
+    unit: 'units',
+    custom_unit: '',
+    location_id: '',
   })
 
   const CATEGORY_OPTIONS = React.useMemo(() => ['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other','CUSTOM'], [])
@@ -26,18 +27,21 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
       const initialQuantity = initial.quantity ?? 1
       const initialCategory = initial.category || null
       const initialCustomCategory = initialCategory && !CATEGORY_OPTIONS.includes(initialCategory) ? initialCategory : ''
+      // Auto-select location if user has exactly one
+      const autoLocation = locations.length === 1 ? String(locations[0].location_id) : ''
       setForm({
         barcode: initial.barcode || '',
         quantity: initialQuantity,
         name: initialName,
-  category: initialCategory || '',
-  expiry_date: initial.expiry_date || '',
-  unit: initial.unit || 'units',
-  custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
-  custom_category: initialCustomCategory,
+        category: initialCategory || '',
+        expiry_date: initial.expiry_date || '',
+        unit: initial.unit || 'units',
+        custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
+        custom_category: initialCustomCategory,
+        location_id: autoLocation,
       })
     }
-  }, [initial, product, CATEGORY_OPTIONS])
+  }, [initial, product, locations, CATEGORY_OPTIONS])
 
   // when product changes, compute category options so product categories appear at top
   useEffect(() => {
@@ -78,7 +82,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
           category: categoryToSend,
           unit: unitToSend,
           expiration_date: form.expiry_date || null,
-          location_id: 1,
+          location_id: form.location_id ? Number(form.location_id) : null,
         }
         const created = await createItem(payload)
         onConfirm?.(created)
@@ -178,6 +182,22 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
               <TextField label="Custom category" value={form.custom_category || ''} onChange={(e) => setForm(f => ({ ...f, custom_category: e.target.value }))} fullWidth />
             )}
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
+
+            {locations.length > 1 && (
+              <FormControl fullWidth>
+                <InputLabel id="location-select-label">Location</InputLabel>
+                <Select
+                  labelId="location-select-label"
+                  value={form.location_id}
+                  label="Location"
+                  onChange={(e) => setForm(f => ({ ...f, location_id: e.target.value }))}
+                >
+                  {locations.map((loc) => (
+                    <MenuItem key={loc.location_id} value={String(loc.location_id)}>{loc.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <Typography variant="caption" color="textSecondary">You can edit fields before confirming.</Typography>
             {error && <Typography variant="body2" color="error">{error}</Typography>}

@@ -7,13 +7,18 @@ import InventoryTable from '../components/InventoryTable'
 import AddItemModal from '../components/AddItemModal'
 import { createItem, updateItem, deleteItem } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import LocationFilter from '../components/LocationFilter'
 
 export default function Inventory() {
   const queryClient = useQueryClient()
-  const { hasPermission } = useAuth()
+  const { hasPermission, userLocations } = useAuth()
   const canCreate = hasPermission('inventory:create')
   const canEdit = hasPermission('inventory:edit')
   const canDelete = hasPermission('inventory:delete')
+
+  const [selectedLocationIds, setSelectedLocationIds] = useState(
+    () => userLocations.map((l) => l.location_id)
+  );
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
@@ -126,10 +131,13 @@ export default function Inventory() {
 return (
   <div className="min-h-screen bg-gray-50 pb-16">
     <div className="max-w-7xl mx-auto p-4 md:p-6">
-        <header className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Inventory Management
-          </h1>
+        <header className="flex flex-wrap justify-between items-center gap-3 mb-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              Inventory Management
+            </h1>
+            <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
+          </div>
           {canCreate && (
             <button
               className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
@@ -146,6 +154,7 @@ return (
           mode="full"
           lowStockThreshold={25}
           showFilterBar
+          locationIds={selectedLocationIds}
           onEditClick={canEdit ? handleEditClick : null}
           onDeleteClick={canDelete ? handleDeleteClick : null}
           onCategoriesLoaded={(cats) => setCategories(cats)}
@@ -160,6 +169,7 @@ return (
           mode={editItem ? 'edit' : 'add'}
           defaultValues={editItem}
           categories={categories}
+          locations={userLocations}
         />
         {snack.open && (
           <div 

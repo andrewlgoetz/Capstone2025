@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 
 from app.db.session import engine, Base
-from app.models import inventory, location, user, role, food_banks, activity_log
+from app.models import inventory, location, user, role, food_banks, activity_log, user_location
 
 target_metadata = Base.metadata
 

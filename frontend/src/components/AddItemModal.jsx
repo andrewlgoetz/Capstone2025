@@ -7,7 +7,8 @@ export default function AddItemModal({
   defaultValues,
   isSaving,
   mode = "add",
-  categories
+  categories,
+  locations = [],
 }) {
   const [values, setValues] = React.useState({
     item_id: null,
@@ -307,16 +308,27 @@ export default function AddItemModal({
               </div>
 
               <div>
-                <label htmlFor="location_id" className={labelClass}>Location ID <span className="text-red-500">*</span></label>
-                <input
-                  id="location_id"
-                  name="location_id"
-                  type="number"
-                  required
-                  value={values.location_id}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
+                <label htmlFor="location_id" className={labelClass}>Location <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <select
+                    id="location_id"
+                    name="location_id"
+                    required
+                    value={values.location_id}
+                    onChange={handleChange}
+                    className={selectClass}
+                  >
+                    <option value="" disabled>Select location</option>
+                    {locations.map((loc) => (
+                      <option key={loc.location_id} value={String(loc.location_id)}>
+                        {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
               </div>
 
               {isEditMode && movementNeeded && (

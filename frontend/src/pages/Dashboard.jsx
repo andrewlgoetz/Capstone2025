@@ -9,24 +9,32 @@ import StockTrend from "../components/dashboard_widgets/StockTrend";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useAuth } from "../contexts/AuthContext";
+import LocationFilter from "../components/LocationFilter";
 
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
   const dashboardRef = useRef(null);
-  const { hasPermission } = useAuth();
+  const { hasPermission, userLocations } = useAuth();
   const canDownload = hasPermission('reports:download');
+
+  const [selectedLocationIds, setSelectedLocationIds] = useState(
+    () => userLocations.map((l) => l.location_id)
+  );
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get("/inventory/allwithlocation");
+        const params = selectedLocationIds?.length
+          ? { location_ids: selectedLocationIds.join(',') }
+          : {};
+        const res = await api.get("/inventory/allwithlocation", { params });
         setInventoryData(res.data);
       } catch (error) {
         console.error("Failed to fetch inventory:", error);
       }
     };
     fetchData();
-  }, []);
+  }, [selectedLocationIds]);
 
   const handleDownloadPdf = async () => {
     if (!dashboardRef.current) return;
@@ -52,9 +60,12 @@ const Dashboard = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-slate-500 mt-1">Overview of your inventory health and metrics.</p>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
+            <p className="text-slate-500 mt-1">Overview of your inventory health and metrics.</p>
+          </div>
+          <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
         </div>
         {canDownload && (
           <button

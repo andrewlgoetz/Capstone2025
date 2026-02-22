@@ -115,9 +115,13 @@ export const AuthProvider = ({ children }) => {
     return permissions.includes(permission);
   };
 
+  // User's assigned locations come from /auth/me response
+  const userLocations = user?.locations || [];
+
   const value = {
     user,
     permissions,
+    userLocations,
     loading,
     login,
     logout,

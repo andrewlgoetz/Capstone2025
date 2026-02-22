@@ -4,7 +4,6 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import WarningIcon from '@mui/icons-material/Warning';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CloseIcon from '@mui/icons-material/Close';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import RedeemIcon from '@mui/icons-material/Redeem'; 
@@ -18,6 +17,7 @@ import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 import { fetchProductByBarcode } from '../services/off';
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import LocationFilter from '../components/LocationFilter'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
@@ -98,16 +98,20 @@ const Home = () => {
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
 
-  const { hasPermission } = useAuth();
+  const { hasPermission, userLocations } = useAuth();
   const canViewInventory = hasPermission('inventory:view');
   const canScanIn = hasPermission('barcode:scan_in');
   const canScanOut = hasPermission('barcode:scan_out');
   const canCreate = hasPermission('inventory:create');
   const showFab = canScanIn || canScanOut || canCreate;
 
+  const [selectedLocationIds, setSelectedLocationIds] = useState(
+    () => userLocations.map((l) => l.location_id)
+  );
+
   const { data: inventoryItems = [], isLoading: isDataLoading, isError } = useQuery({
-    queryKey: ["inventoryItems"],
-    queryFn: getItems,
+    queryKey: ["inventoryItems", selectedLocationIds],
+    queryFn: () => getItems(selectedLocationIds),
     enabled: canViewInventory,
   });
 
@@ -217,9 +221,8 @@ const Home = () => {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               Home
             </h1>
-            <div className="inline-flex gap-2 items-center rounded-full px-3 py-1 text-sm bg-gray-100 text-slate-600 font-medium border border-gray-200 hidden sm:flex">
-              <LocationOnIcon className="w-4 h-4 text-slate-500" />
-              <span>Main Warehouse</span>
+            <div className="hidden sm:block">
+              <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
             </div>
           </div>
         </div>
@@ -281,7 +284,7 @@ const Home = () => {
                       /> */}
                     </div>
                   </div>
-                  <InventoryTable mode="widget" limit={5} showFilterBar={false} />
+                  <InventoryTable mode="widget" limit={5} showFilterBar={false} locationIds={selectedLocationIds} />
                 </div>
               </div>
             </div>
@@ -416,6 +419,7 @@ const Home = () => {
           initial={productDialog.inventory || { barcode: productDialog.product?.code || '' }}
           imageUrl={productDialog.product?.image_front_small_url}
           product={productDialog.product}
+          locations={userLocations}
           onConfirm={(created) => {
             // created is the object returned from the backend createItem
             console.log('Confirmed inventory', created)

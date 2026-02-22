@@ -134,6 +134,43 @@ export async function updateUserPermissions(userId, permissions) {
   return res.data;
 }
 
+// --------------- Location API Functions ---------------
+
+export async function getMyLocations() {
+  const res = await api.get('/locations');
+  return res.data;
+}
+
+export async function getAllBankLocations() {
+  const res = await api.get('/locations/all');
+  return res.data;
+}
+
+export async function createLocation(data) {
+  const res = await api.post('/locations', data);
+  return res.data;
+}
+
+export async function updateLocation(locationId, data) {
+  const res = await api.put(`/locations/${locationId}`, data);
+  return res.data;
+}
+
+export async function deleteLocation(locationId) {
+  const res = await api.delete(`/locations/${locationId}`);
+  return res.data;
+}
+
+export async function getUserLocations(userId) {
+  const res = await api.get(`/auth/users/${userId}/locations`);
+  return res.data;
+}
+
+export async function updateUserLocations(userId, locationIds) {
+  const res = await api.put(`/auth/users/${userId}/locations`, { location_ids: locationIds });
+  return res.data;
+}
+
 // --------------- Inventory API Functions ---------------
 
 // Create a new item
@@ -142,9 +179,10 @@ export async function createItem(item) {
   return res.data;
 }
 
-// Get all items
-export async function getItems() {
-  const res = await api.get("/inventory/all");
+// Get all items (optionally filtered by location IDs)
+export async function getItems(locationIds) {
+  const params = locationIds?.length ? { location_ids: locationIds.join(',') } : {};
+  const res = await api.get("/inventory/all", { params });
   return res.data;
 }
 
