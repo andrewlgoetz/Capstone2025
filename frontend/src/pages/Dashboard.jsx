@@ -14,12 +14,8 @@ import LocationFilter from "../components/LocationFilter";
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
   const dashboardRef = useRef(null);
-  const { hasPermission, userLocations } = useAuth();
+  const { hasPermission, selectedLocationIds, setSelectedLocationIds } = useAuth();
   const canDownload = hasPermission('reports:download');
-
-  const [selectedLocationIds, setSelectedLocationIds] = useState(
-    () => userLocations.map((l) => l.location_id)
-  );
 
   useEffect(() => {
     const fetchData = async () => {

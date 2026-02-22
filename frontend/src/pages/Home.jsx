@@ -98,16 +98,12 @@ const Home = () => {
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
 
-  const { hasPermission, userLocations } = useAuth();
+  const { hasPermission, userLocations, selectedLocationIds, setSelectedLocationIds } = useAuth();
   const canViewInventory = hasPermission('inventory:view');
   const canScanIn = hasPermission('barcode:scan_in');
   const canScanOut = hasPermission('barcode:scan_out');
   const canCreate = hasPermission('inventory:create');
   const showFab = canScanIn || canScanOut || canCreate;
-
-  const [selectedLocationIds, setSelectedLocationIds] = useState(
-    () => userLocations.map((l) => l.location_id)
-  );
 
   const { data: inventoryItems = [], isLoading: isDataLoading, isError } = useQuery({
     queryKey: ["inventoryItems", selectedLocationIds],
