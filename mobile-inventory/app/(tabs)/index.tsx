@@ -14,11 +14,9 @@ import {
   Platform
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
-// !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
-const API_URL = 'http://xxx:8000'; 
+import api, { API_URL } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface InventoryItem {
   item_id: number;
@@ -67,10 +65,17 @@ interface ScanOutResponse {
 }
 
 export default function App(): React.ReactElement {
+  const { user, userLocations, hasPermission, logout } = useAuth();
+  const canScanIn = hasPermission('barcode:scan_in');
+  const canScanOut = hasPermission('barcode:scan_out');
+
   const [permission, requestPermission] = useCameraPermissions();
   const [mode, setMode] = useState<'in' | 'out'>('in');
   const [loading, setLoading] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+
+  // Default location: auto-select if user has exactly one
+  const defaultLocationId = userLocations.length === 1 ? String(userLocations[0].location_id) : '';
 
   // form state for new items
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
@@ -81,7 +86,7 @@ export default function App(): React.ReactElement {
     quantity: '1',
     unit: 'pcs',
     expirationDate: null,
-    locationId: '1',
+    locationId: defaultLocationId,
   });
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
 
@@ -132,23 +137,20 @@ export default function App(): React.ReactElement {
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult): Promise<void> => {
     if (loading) return;
-    setIsScanning(false); 
+    setIsScanning(false);
     setLoading(true);
-    
+
     const payload = { barcode: result.data };
 
     try {
       if (mode === 'in') {
-        // --- SCAN IN LOGIC ---
-        const response = await axios.post<ScanInResponse>(`${API_URL}/barcode/scan-in`, payload);
+        const response = await api.post<ScanInResponse>('/barcode/scan-in', payload);
         const { status, item, candidate_info } = response.data;
 
         if (status === 'KNOWN' && item) {
-          // item exists - show form to enter quantity
           setKnownItemData({ item, quantity: '1' });
           setShowKnownItemForm(true);
         } else if (status === 'NEW') {
-          // new item - show form to create it
           setNewItemData({
             barcode: candidate_info?.barcode || result.data,
             name: candidate_info?.name || '',
@@ -156,28 +158,31 @@ export default function App(): React.ReactElement {
             quantity: '1',
             unit: 'pcs',
             expirationDate: null,
-            locationId: '1',
+            locationId: defaultLocationId,
           });
           setShowNewItemForm(true);
         } else {
           Alert.alert("Error", "Unknown response from server");
         }
       } else {
-        // --- SCAN OUT LOGIC ---
-        const response = await axios.post<ScanOutResponse>(`${API_URL}/barcode/scan-out`, payload);
+        const response = await api.post<ScanOutResponse>('/barcode/scan-out', payload);
         const { status, item } = response.data;
 
         if (status === 'FOUND' && item) {
-          // show form to enter quantity to remove
           setScanOutData({ item, quantity: '1' });
           setShowScanOutForm(true);
         } else {
           Alert.alert("Error", "Item not found in inventory.");
         }
       }
-    } catch (error) {
-      console.log(error);
-      Alert.alert("Connection Error", `Could not connect to ${API_URL}.\nEnsure backend is running and IP is correct.`);
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        Alert.alert("Session Expired", "Please sign in again.");
+        logout();
+      } else {
+        console.log(error);
+        Alert.alert("Connection Error", `Could not connect to server.\nEnsure backend is running and IP is correct.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -203,10 +208,10 @@ export default function App(): React.ReactElement {
         quantity: parseInt(newItemData.quantity),
         unit: newItemData.unit,
         expiration_date: newItemData.expirationDate ? newItemData.expirationDate.toISOString().split('T')[0] : null,
-        location_id: parseInt(newItemData.locationId),
+        location_id: parseInt(newItemData.locationId) || null,
       };
 
-      await axios.post(`${API_URL}/inventory/add`, payload);
+      await api.post('/inventory/add', payload);
       Alert.alert("Success", `Added ${newItemData.name} to inventory`);
       setShowNewItemForm(false);
       setNewItemData({
@@ -216,7 +221,7 @@ export default function App(): React.ReactElement {
         quantity: '1',
         unit: 'pcs',
         expirationDate: null,
-        locationId: '1',
+        locationId: defaultLocationId,
       });
     } catch (error: any) {
       console.log(error);
@@ -235,9 +240,9 @@ export default function App(): React.ReactElement {
     try {
       setLoading(true);
       const quantity = parseInt(knownItemData.quantity);
-      
-      await axios.post(
-        `${API_URL}/barcode/${knownItemData.item?.item_id}/increase`,
+
+      await api.post(
+        `/barcode/${knownItemData.item?.item_id}/increase`,
         { amount: quantity }
       );
 
@@ -267,8 +272,8 @@ export default function App(): React.ReactElement {
       setLoading(true);
       const quantity = parseInt(scanOutData.quantity);
 
-      await axios.post(
-        `${API_URL}/barcode/scan-out/${scanOutData.item?.item_id}/confirm`,
+      await api.post(
+        `/barcode/scan-out/${scanOutData.item?.item_id}/confirm`,
         { quantity }
       );
 
@@ -290,30 +295,52 @@ export default function App(): React.ReactElement {
     setShowDatePicker(false);
   };
 
+  const handleLogout = () => {
+    Alert.alert("Sign Out", "Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign Out", style: "destructive", onPress: () => logout() },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
+      {/* User info bar */}
+      <View style={styles.userBar}>
+        <Text style={styles.userName}>{user?.name || 'User'}</Text>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Header / Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity 
-          style={[styles.btn, isScanning && mode === "in" && styles.activeBtn]} 
-          onPress={() => {
-            setMode("in");
-            setIsScanning(true); 
-          }}>
-          <Text style={styles.btnText}>
-            {isScanning && mode === "in" ? "🔴 Scanning..." : "Scan IN \n(Add)"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.btn, isScanning && mode === "out" && styles.activeBtn]} 
-          onPress={() => {
-            setMode("out");
-            setIsScanning(true);  
-          }}>
-          <Text style={styles.btnText}>
-            {isScanning && mode === "out" ? "🔴 Scanning..." : "Scan OUT \n(Remove)"}
-          </Text>
-        </TouchableOpacity>
+        {canScanIn && (
+          <TouchableOpacity
+            style={[styles.btn, isScanning && mode === "in" && styles.activeBtn]}
+            onPress={() => {
+              setMode("in");
+              setIsScanning(true);
+            }}>
+            <Text style={styles.btnText}>
+              {isScanning && mode === "in" ? "Scanning..." : "Scan IN \n(Add)"}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {canScanOut && (
+          <TouchableOpacity
+            style={[styles.btn, isScanning && mode === "out" && styles.activeBtn]}
+            onPress={() => {
+              setMode("out");
+              setIsScanning(true);
+            }}>
+            <Text style={styles.btnText}>
+              {isScanning && mode === "out" ? "Scanning..." : "Scan OUT \n(Remove)"}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {!canScanIn && !canScanOut && (
+          <Text style={styles.noPermText}>You don't have scanning permissions. Contact your admin.</Text>
+        )}
       </View>
 
       {/* Camera View */}
@@ -432,17 +459,36 @@ export default function App(): React.ReactElement {
               )}
             </View>
 
-            {/* Location ID */}
+            {/* Location */}
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Location ID</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 1"
-                value={newItemData.locationId}
-                onChangeText={(text) => setNewItemData({ ...newItemData, locationId: text })}
-                keyboardType="number-pad"
-                placeholderTextColor="#999"
-              />
+              <Text style={styles.label}>Location</Text>
+              {userLocations.length <= 1 ? (
+                <TextInput
+                  style={[styles.input, styles.readOnlyInput]}
+                  value={userLocations[0]?.name || 'No location assigned'}
+                  editable={false}
+                />
+              ) : (
+                <ScrollView horizontal={false} style={styles.locationPicker}>
+                  {userLocations.map((loc) => (
+                    <TouchableOpacity
+                      key={loc.location_id}
+                      style={[
+                        styles.locationOption,
+                        newItemData.locationId === String(loc.location_id) && styles.locationOptionSelected,
+                      ]}
+                      onPress={() => setNewItemData({ ...newItemData, locationId: String(loc.location_id) })}
+                    >
+                      <Text style={[
+                        styles.locationOptionText,
+                        newItemData.locationId === String(loc.location_id) && styles.locationOptionTextSelected,
+                      ]}>
+                        {loc.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             {/* Buttons */}
@@ -567,50 +613,73 @@ export default function App(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#000', 
-    paddingTop: 60 
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    paddingTop: 60
   },
-  cameraContainer: { 
-    flex: 1, 
-    margin: 20, 
-    borderRadius: 20, 
-    overflow: 'hidden', 
-    backgroundColor: '#222' 
+  userBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
-  controls: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    gap: 15, 
-    paddingHorizontal: 20 
-  },
-  btn: { 
-    padding: 15, 
-    backgroundColor: '#4f46e5', 
-    borderRadius: 8, 
-    flex: 1, 
-    alignItems: 'center' 
-  },
-  activeBtn: { 
-    backgroundColor: '#999' 
-  },
-  btnText: { 
-    color: 'white', 
-    fontWeight: 'bold', 
+  userName: {
+    color: '#fff',
     fontSize: 16,
-    textAlign: "center" 
+    fontWeight: '600',
   },
-  overlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(0,0,0,0.7)', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  logoutText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500',
   },
-  footer: { 
-    color: '#666', 
-    textAlign: 'center', 
-    paddingBottom: 30 
+  cameraContainer: {
+    flex: 1,
+    margin: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#222'
+  },
+  controls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 15,
+    paddingHorizontal: 20
+  },
+  btn: {
+    padding: 15,
+    backgroundColor: '#4f46e5',
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center'
+  },
+  activeBtn: {
+    backgroundColor: '#999'
+  },
+  btnText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: "center"
+  },
+  noPermText: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  footer: {
+    color: '#666',
+    textAlign: 'center',
+    paddingBottom: 30
   },
 
   // Modal styles for new item form
@@ -674,6 +743,29 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 16,
     color: '#000',
+  },
+  locationPicker: {
+    maxHeight: 150,
+  },
+  locationOption: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 6,
+    backgroundColor: '#f9f9f9',
+  },
+  locationOptionSelected: {
+    borderColor: '#4f46e5',
+    backgroundColor: '#eef2ff',
+  },
+  locationOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  locationOptionTextSelected: {
+    color: '#4f46e5',
+    fontWeight: '600',
   },
   formButtons: {
     flexDirection: 'row',
