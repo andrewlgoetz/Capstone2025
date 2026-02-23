@@ -24,7 +24,7 @@ api.interceptors.request.use(async (config) => {
 
 // Auto-refresh: on 401, try POST /auth/refresh with current token, retry original request
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+let refreshQueue: ((token: string) => void)[] = [];
 
 api.interceptors.response.use(
   (response) => response,
@@ -75,7 +75,6 @@ api.interceptors.response.use(
     }
   }
 );
-
 // --- Token helpers ---
 
 export async function getStoredToken(): Promise<string | null> {
