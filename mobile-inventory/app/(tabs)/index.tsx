@@ -104,8 +104,6 @@ export default function App(): React.ReactElement {
     quantity: '1',
   });
 
-  const anyModalOpen = showNewItemForm || showKnownItemForm || showScanOutForm;
-
   useEffect(() => {
     let scanTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -337,7 +335,7 @@ export default function App(): React.ReactElement {
           </TouchableOpacity>
         )}
         {!canScanIn && !canScanOut && (
-          <Text style={styles.noPermText}>You don't have scanning permissions. Contact your admin.</Text>
+          <Text style={styles.noPermText}>You don&apos;t have scanning permissions. Contact your admin.</Text>
         )}
       </View>
 
