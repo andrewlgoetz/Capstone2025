@@ -22,6 +22,60 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Auto-refresh: on 401, try POST /auth/refresh with current token, retry original request
+let isRefreshing = false;
+let refreshQueue: Array<(token: string) => void> = [];
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Only attempt refresh on 401, and not on login/refresh endpoints themselves
+    if (
+      error.response?.status !== 401 ||
+      originalRequest._retried ||
+      originalRequest.url === '/auth/login' ||
+      originalRequest.url === '/auth/refresh'
+    ) {
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      // Another refresh is in progress — queue this request
+      return new Promise((resolve) => {
+        refreshQueue.push((newToken: string) => {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          resolve(api(originalRequest));
+        });
+      });
+    }
+
+    originalRequest._retried = true;
+    isRefreshing = true;
+
+    try {
+      const res = await api.post<TokenResponse>('/auth/refresh');
+      const newToken = res.data.access_token;
+      await SecureStore.setItemAsync(TOKEN_KEY, newToken);
+
+      // Retry queued requests
+      refreshQueue.forEach((cb) => cb(newToken));
+      refreshQueue = [];
+
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      return api(originalRequest);
+    } catch {
+      // Refresh failed — token is truly expired, clear and let AuthContext handle logout
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      refreshQueue = [];
+      return Promise.reject(error);
+    } finally {
+      isRefreshing = false;
+    }
+  }
+);
+
 // --- Token helpers ---
 
 export async function getStoredToken(): Promise<string | null> {

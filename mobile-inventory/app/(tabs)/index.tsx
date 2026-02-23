@@ -199,18 +199,18 @@ export default function App(): React.ReactElement {
       return;
     }
 
+    const payload = {
+      barcode: newItemData.barcode,
+      name: newItemData.name,
+      category: newItemData.category,
+      quantity: parseInt(newItemData.quantity),
+      unit: newItemData.unit,
+      expiration_date: newItemData.expirationDate ? newItemData.expirationDate.toISOString().split('T')[0] : null,
+      location_id: parseInt(newItemData.locationId) || null,
+    };
+
     try {
       setLoading(true);
-      const payload = {
-        barcode: newItemData.barcode,
-        name: newItemData.name,
-        category: newItemData.category,
-        quantity: parseInt(newItemData.quantity),
-        unit: newItemData.unit,
-        expiration_date: newItemData.expirationDate ? newItemData.expirationDate.toISOString().split('T')[0] : null,
-        location_id: parseInt(newItemData.locationId) || null,
-      };
-
       await api.post('/inventory/add', payload);
       Alert.alert("Success", `Added ${newItemData.name} to inventory`);
       setShowNewItemForm(false);
@@ -237,16 +237,15 @@ export default function App(): React.ReactElement {
       return;
     }
 
+    const quantity = parseInt(knownItemData.quantity);
+    const url = `/barcode/${knownItemData.item?.item_id}/increase`;
+    const data = { amount: quantity };
+    const itemName = knownItemData.item?.name || 'item';
+
     try {
       setLoading(true);
-      const quantity = parseInt(knownItemData.quantity);
-
-      await api.post(
-        `/barcode/${knownItemData.item?.item_id}/increase`,
-        { amount: quantity }
-      );
-
-      Alert.alert("Success", `Added ${quantity} unit(s) of ${knownItemData.item?.name}`);
+      await api.post(url, data);
+      Alert.alert("Success", `Added ${quantity} unit(s) of ${itemName}`);
       setShowKnownItemForm(false);
       setKnownItemData({ item: null, quantity: '1' });
     } catch (error: any) {
@@ -268,16 +267,15 @@ export default function App(): React.ReactElement {
       return;
     }
 
+    const quantity = parseInt(scanOutData.quantity);
+    const url = `/barcode/scan-out/${scanOutData.item?.item_id}/confirm`;
+    const data = { quantity };
+    const itemName = scanOutData.item?.name || 'item';
+
     try {
       setLoading(true);
-      const quantity = parseInt(scanOutData.quantity);
-
-      await api.post(
-        `/barcode/scan-out/${scanOutData.item?.item_id}/confirm`,
-        { quantity }
-      );
-
-      Alert.alert("Success", `Removed ${quantity} unit(s) of ${scanOutData.item?.name}`);
+      await api.post(url, data);
+      Alert.alert("Success", `Removed ${quantity} unit(s) of ${itemName}`);
       setShowScanOutForm(false);
       setScanOutData({ item: null, quantity: '1' });
     } catch (error: any) {
@@ -439,12 +437,12 @@ export default function App(): React.ReactElement {
             {/* Expiration Date */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Expiration Date (Optional)</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowDatePicker(true)}
               >
                 <Text style={styles.dateButtonText}>
-                  {newItemData.expirationDate 
+                  {newItemData.expirationDate
                     ? newItemData.expirationDate.toLocaleDateString()
                     : 'Select Date'}
                 </Text>
@@ -493,13 +491,13 @@ export default function App(): React.ReactElement {
 
             {/* Buttons */}
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowNewItemForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleAddNewItem}
                 disabled={loading}
@@ -541,13 +539,13 @@ export default function App(): React.ReactElement {
             </View>
 
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowKnownItemForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleConfirmKnownItem}
                 disabled={loading}
@@ -589,13 +587,13 @@ export default function App(): React.ReactElement {
             </View>
 
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowScanOutForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleConfirmScanOut}
                 disabled={loading}
@@ -608,6 +606,7 @@ export default function App(): React.ReactElement {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
@@ -823,4 +822,5 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
   },
+
 });
