@@ -6,6 +6,7 @@ from app.models.inventory_movement import MovementType
 class InventoryCreate(BaseModel):
     name: str
     category: Optional[str] = None
+    category_notes: Optional[str] = None
     barcode: Optional[str] = None
     quantity: int
     unit: Optional[str] = None
@@ -26,13 +27,14 @@ class InventoryRead(InventoryCreate):
 class InventoryUpdate(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
+    category_notes: Optional[str] = None
     barcode: Optional[str] = None
     quantity: Optional[int] = None
     unit: Optional[str] = None
     expiration_date: Optional[date] = None
     location_id: Optional[int] = None
     last_modified: Optional[datetime] = None
-    
+
     # used ONLY for InventoryMovement, not stored on InventoryItem
     movement_type: Optional[MovementType] = None   # OUTBOUND / TRANSFER / WASTE
     movement_reason: Optional[str] = None

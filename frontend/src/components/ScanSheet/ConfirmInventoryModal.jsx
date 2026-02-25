@@ -1,63 +1,52 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
-import { createItem, fetchInventoryByBarcode, increaseInventory } from '../../services/api'
+import { useQuery } from '@tanstack/react-query'
+import { createItem, fetchInventoryByBarcode, increaseInventory, getCategories } from '../../services/api'
 
-// A small, extendable confirm modal for inventory items.
-// Props: open, onClose, initial (object), imageUrl, onConfirm
 
 const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null }) => {
+  // Fetch categories from API
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
+
+  const categories = useMemo(() => {
+    return (categoriesQuery.data || [])
+      .filter(cat => cat.is_active)
+      .map(cat => cat.name);
+  }, [categoriesQuery.data]);
+
   const [form, setForm] = useState({
     barcode: '',
     quantity: '',
     name: '',
-  category: '',
-  expiry_date: '',
-  unit: 'units',
-  custom_unit: '',
+    category: '',
+    category_notes: '',
+    expiry_date: '',
+    unit: 'units',
+    custom_unit: '',
   })
-
-  const CATEGORY_OPTIONS = React.useMemo(() => ['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other','CUSTOM'], [])
-  const [categoryOptions, setCategoryOptions] = useState(CATEGORY_OPTIONS)
 
   useEffect(() => {
     if (initial) {
       // build initial form values, preferring provided initial values but falling back to product info
-      const initialName = initial.name || (product?.product_name) || ''
+      const initialName = initial.name || (product?.name) || ''
       const initialQuantity = initial.quantity ?? 1
-      const initialCategory = initial.category || null
-      const initialCustomCategory = initialCategory && !CATEGORY_OPTIONS.includes(initialCategory) ? initialCategory : ''
+      // Use the mapped category from product (backend already mapped it) or from initial
+      const initialCategory = initial.category || product?.category || ''
       setForm({
         barcode: initial.barcode || '',
         quantity: initialQuantity,
         name: initialName,
-  category: initialCategory || '',
-  expiry_date: initial.expiry_date || '',
-  unit: initial.unit || 'units',
-  custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
-  custom_category: initialCustomCategory,
+        category: initialCategory,
+        category_notes: initial.category_notes || '',
+        expiry_date: initial.expiry_date || '',
+        unit: initial.unit || 'units',
+        custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
       })
     }
-  }, [initial, product, CATEGORY_OPTIONS])
-
-  // when product changes, compute category options so product categories appear at top
-  useEffect(() => {
-    if (!product) return
-    // prefer categories string, fallback to categories_tags
-    let prodCats = []
-    if (product.categories) {
-      prodCats = product.categories.split(',').map(s => s.trim()).filter(Boolean)
-    } else if (product.categories_tags) {
-      prodCats = product.categories_tags.map(t => t.split(':').pop().replace(/-/g, ' '))
-    }
-
-    if (prodCats.length) {
-      // merge with existing options, keeping order and uniqueness
-      const merged = [...prodCats, ...CATEGORY_OPTIONS.filter(c => !prodCats.includes(c))]
-      setCategoryOptions(merged)
-      // if form has no category, prefill with top product category
-      setForm(f => ({ ...f, category: f.category || prodCats[0] || '' }))
-    }
-  }, [product, CATEGORY_OPTIONS])
+  }, [initial, product])
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
@@ -70,12 +59,14 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
     const doCreate = async () => {
       try {
         const unitToSend = form.unit === 'CUSTOM' ? (form.custom_unit || null) : form.unit
-        const categoryToSend = form.category === 'CUSTOM' ? (form.custom_category || null) : (form.category || null)
+        const categoryToSend = form.category || null
+        const categoryNotesToSend = (form.category === 'Other' && form.category_notes) ? form.category_notes : null
         const payload = {
           barcode: form.barcode,
           quantity: Number(form.quantity) || 0,
           name: form.name || '',
           category: categoryToSend,
+          category_notes: categoryNotesToSend,
           unit: unitToSend,
           expiration_date: form.expiry_date || null,
           location_id: 1,
@@ -168,15 +159,23 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
                 label="Category"
                 onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
               >
-                {categoryOptions.map((c) => (
+                {categories.map((c) => (
                   <MenuItem key={c} value={c}>{c}</MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            {form.category === 'CUSTOM' && (
-              <TextField label="Custom category" value={form.custom_category || ''} onChange={(e) => setForm(f => ({ ...f, custom_category: e.target.value }))} fullWidth />
+            {form.category === 'Other' && (
+              <TextField
+                label="Category notes (optional)"
+                value={form.category_notes}
+                onChange={handleChange('category_notes')}
+                placeholder="e.g., Pet supplies, cleaning products..."
+                fullWidth
+                helperText="Specify what type of item this is"
+              />
             )}
+
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
 
             <Typography variant="caption" color="textSecondary">You can edit fields before confirming.</Typography>

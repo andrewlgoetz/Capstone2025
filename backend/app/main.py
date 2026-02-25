@@ -1,7 +1,7 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import inventory_routes, barcode_routes
+from app.api import inventory_routes, barcode_routes, category_routes
 from app.models import *
 
 app = FastAPI(title="Inventory Management API")
@@ -28,6 +28,7 @@ app.add_middleware(
 # Routers
 app.include_router(inventory_routes.router, tags=["Inventory"])
 app.include_router(barcode_routes.router)
+app.include_router(category_routes.router)
 
 @app.get("/")
 def root():

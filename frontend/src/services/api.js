@@ -105,6 +105,12 @@ export async function increaseInventory(item_id, amount = 1) {
   return res.data
 }
 
+// Get all categories
+export async function getCategories() {
+  const res = await api.get("/categories/");
+  return res.data;
+}
+
 /*
   Dummy helpers (kept for local testing). Uncomment if you need the old behavior.
 

@@ -10,6 +10,7 @@ class InventoryItem(Base):
 
     name = Column(String, nullable=False)
     category = Column(String)
+    category_notes = Column(String, nullable=True)
     barcode = Column(String, unique=True, index=True)
     quantity = Column(Integer, default=0)
     unit = Column(String)

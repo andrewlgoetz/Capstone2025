@@ -12,7 +12,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SortIcon from "@mui/icons-material/Sort";
-import api from "../services/api";
+import api, { getCategories } from "../services/api";
 
 const formatDate = (dateString) => {
   if (!dateString) return "—";
@@ -187,17 +187,23 @@ export default function InventoryTable({
   }, [mode, items, limit]);
 
   // ---------------------------Client-side Filtering -------------------------------------
+  // Fetch categories from API
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
+
   const categories = useMemo(() => {
-    return Array.from(
-      new Set(items.map((r) => r.category).filter(Boolean))
-    ).sort();
-  }, [items]);
+    return (categoriesQuery.data || [])
+      .filter(cat => cat.is_active)
+      .map(cat => cat.name);
+  }, [categoriesQuery.data]);
 
   useEffect(() => {
-    if (onCategoriesLoaded) {
+    if (onCategoriesLoaded && categories.length > 0) {
       onCategoriesLoaded(categories);
     }
-  }, [categories]);
+  }, [categories, onCategoriesLoaded]);
 
   // Date helpers
   const parseYMD = (s) => (s ? new Date(`${s}T00:00:00`) : null);
@@ -292,7 +298,7 @@ export default function InventoryTable({
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="appearance-none block w-40 px-3 py-1.5 border border-gray-300 bg-white rounded-lg text-sm focus:border-slate-500"
+              className="appearance-none block w-56 px-3 py-1.5 border border-gray-300 bg-white rounded-lg text-sm focus:border-slate-500"
             >
               <option value="">All Categories</option>
               {categories.map((c) => (

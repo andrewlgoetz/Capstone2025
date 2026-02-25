@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Button, 
-  Alert, 
-  ActivityIndicator, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  Alert,
+  ActivityIndicator,
   TouchableOpacity,
   Modal,
   TextInput,
@@ -16,9 +16,11 @@ import {
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { getFavorites, addFavorite, FavoriteItem } from '../../utils/favorites';
+import { styles } from './_index.styles';
 
 // !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
-const API_URL = 'http://xxx:8000'; 
+const API_URL = 'http://192.168.1.154:8000';
 
 interface InventoryItem {
   item_id: number;
@@ -35,6 +37,7 @@ interface NewItemFormData {
   barcode: string;
   name: string;
   category: string;
+  categoryNotes: string;
   quantity: string;
   unit: string;
   expirationDate: Date | null;
@@ -71,6 +74,7 @@ export default function App(): React.ReactElement {
   const [mode, setMode] = useState<'in' | 'out'>('in');
   const [loading, setLoading] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [categories, setCategories] = useState<string[]>([]);
 
   // form state for new items
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
@@ -78,12 +82,14 @@ export default function App(): React.ReactElement {
     barcode: '',
     name: '',
     category: '',
+    categoryNotes: '',
     quantity: '1',
     unit: 'pcs',
     expirationDate: null,
     locationId: '1',
   });
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState<boolean>(false);
 
   // form state for known items (quantity)
   const [showKnownItemForm, setShowKnownItemForm] = useState<boolean>(false);
@@ -99,7 +105,49 @@ export default function App(): React.ReactElement {
     quantity: '1',
   });
 
+  // favorites state
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const anyModalOpen = showNewItemForm || showKnownItemForm || showScanOutForm;
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/categories/`);
+        const activeCategories = response.data
+          .filter((cat: any) => cat.is_active)
+          .map((cat: any) => cat.name);
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        // Fallback to default categories if fetch fails
+        setCategories([
+          "Canned & Packaged",
+          "Fresh Produce",
+          "Dairy & Eggs",
+          "Proteins & Meat",
+          "Grains & Pasta",
+          "Condiments & Oils",
+          "Beverages",
+          "Other"
+        ]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Load favorites on mount
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const favs = await getFavorites();
+        setFavorites(favs);
+      } catch (error) {
+        console.error('Failed to load favorites:', error);
+      }
+    };
+    loadFavorites();
+  }, []);
 
   useEffect(() => {
     let scanTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -153,6 +201,7 @@ export default function App(): React.ReactElement {
             barcode: candidate_info?.barcode || result.data,
             name: candidate_info?.name || '',
             category: candidate_info?.category || '',
+            categoryNotes: '',
             quantity: '1',
             unit: 'pcs',
             expirationDate: null,
@@ -200,19 +249,50 @@ export default function App(): React.ReactElement {
         barcode: newItemData.barcode,
         name: newItemData.name,
         category: newItemData.category,
+        category_notes: (newItemData.category === 'Other' && newItemData.categoryNotes) ? newItemData.categoryNotes : null,
         quantity: parseInt(newItemData.quantity),
         unit: newItemData.unit,
         expiration_date: newItemData.expirationDate ? newItemData.expirationDate.toISOString().split('T')[0] : null,
         location_id: parseInt(newItemData.locationId),
       };
 
-      await axios.post(`${API_URL}/inventory/add`, payload);
-      Alert.alert("Success", `Added ${newItemData.name} to inventory`);
+      const response = await axios.post(`${API_URL}/inventory/add`, payload);
+      const createdItem = response.data;
+
+      // Success - offer to add to favorites
+      Alert.alert(
+        "Success",
+        `Added ${newItemData.name} to inventory`,
+        [
+          {
+            text: "Add to Quick Items ⭐",
+            onPress: () => {
+              const favoriteItem: InventoryItem = {
+                item_id: createdItem.item_id,
+                name: createdItem.name,
+                category: createdItem.category,
+                unit: createdItem.unit,
+                barcode: createdItem.barcode,
+                quantity: createdItem.quantity,
+                expiration_date: createdItem.expiration_date,
+                location_id: createdItem.location_id,
+              };
+              handleAddToFavorites(favoriteItem);
+            }
+          },
+          {
+            text: "Done",
+            style: "default"
+          }
+        ]
+      );
+
       setShowNewItemForm(false);
       setNewItemData({
         barcode: '',
         name: '',
         category: '',
+        categoryNotes: '',
         quantity: '1',
         unit: 'pcs',
         expirationDate: null,
@@ -241,7 +321,25 @@ export default function App(): React.ReactElement {
         { amount: quantity }
       );
 
-      Alert.alert("Success", `Added ${quantity} unit(s) of ${knownItemData.item?.name}`);
+      // Success - offer to add to favorites
+      const addedItem = knownItemData.item;
+      Alert.alert(
+        "Success",
+        `Added ${quantity} unit(s) of ${addedItem?.name}`,
+        [
+          {
+            text: "Add to Quick Items ⭐",
+            onPress: () => {
+              if (addedItem) handleAddToFavorites(addedItem);
+            }
+          },
+          {
+            text: "Done",
+            style: "default"
+          }
+        ]
+      );
+
       setShowKnownItemForm(false);
       setKnownItemData({ item: null, quantity: '1' });
     } catch (error: any) {
@@ -289,6 +387,30 @@ export default function App(): React.ReactElement {
     }
     setShowDatePicker(false);
   };
+
+  // Handler: Add to favorites
+  const handleAddToFavorites = async (item: InventoryItem): Promise<void> => {
+    try {
+      const favoriteItem: FavoriteItem = {
+        item_id: item.item_id,
+        name: item.name,
+        category: item.category,
+        unit: item.unit,
+        barcode: item.barcode,
+      };
+
+      const added = await addFavorite(favoriteItem);
+      if (added) {
+        setFavorites(await getFavorites());
+        Alert.alert("Success", `${item.name} added to Quick Items`);
+      } else {
+        Alert.alert("Already saved", "Item is already in Quick Items");
+      }
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to add favorite");
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -375,14 +497,34 @@ export default function App(): React.ReactElement {
             {/* Category */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Category</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Food, Clothing, Hygiene"
-                value={newItemData.category}
-                onChangeText={(text) => setNewItemData({ ...newItemData, category: text })}
-                placeholderTextColor="#999"
-              />
+              <TouchableOpacity
+                style={styles.categoryInput}
+                onPress={() => setShowCategoryPicker(true)}
+              >
+                <Text style={[
+                  styles.categoryInputText,
+                  !newItemData.category && styles.placeholderText
+                ]}>
+                  {newItemData.category || 'Select a category...'}
+                </Text>
+                <Text style={styles.dropdownArrow}>▼</Text>
+              </TouchableOpacity>
             </View>
+
+            {/* Category Notes (shown only when "Other" is selected) */}
+            {newItemData.category === 'Other' && (
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Category Notes (Optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Pet supplies, cleaning products..."
+                  value={newItemData.categoryNotes}
+                  onChangeText={(text) => setNewItemData({ ...newItemData, categoryNotes: text })}
+                  placeholderTextColor="#999"
+                />
+                <Text style={styles.helperText}>Specify what type of item this is</Text>
+              </View>
+            )}
 
             {/* Quantity */}
             <View style={styles.formGroup}>
@@ -412,12 +554,12 @@ export default function App(): React.ReactElement {
             {/* Expiration Date */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Expiration Date (Optional)</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowDatePicker(true)}
               >
                 <Text style={styles.dateButtonText}>
-                  {newItemData.expirationDate 
+                  {newItemData.expirationDate
                     ? newItemData.expirationDate.toLocaleDateString()
                     : 'Select Date'}
                 </Text>
@@ -431,6 +573,55 @@ export default function App(): React.ReactElement {
                 />
               )}
             </View>
+
+            {/* Category Picker Modal */}
+            <Modal
+              transparent
+              animationType="slide"
+              visible={showCategoryPicker}
+              onRequestClose={() => setShowCategoryPicker(false)}
+            >
+              <View style={styles.categoryPickerModal}>
+                <TouchableOpacity
+                  style={styles.categoryPickerBackdrop}
+                  activeOpacity={1}
+                  onPress={() => setShowCategoryPicker(false)}
+                />
+                <View style={styles.categoryPickerContent}>
+                  <View style={styles.categoryPickerHeader}>
+                    <Text style={styles.categoryPickerTitle}>Select Category</Text>
+                    <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
+                      <Text style={styles.categoryPickerClose}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={styles.categoryPickerScroll}>
+                    {categories.map((cat) => (
+                      <TouchableOpacity
+                        key={cat}
+                        style={[
+                          styles.categoryPickerOption,
+                          newItemData.category === cat && styles.categoryPickerOptionActive
+                        ]}
+                        onPress={() => {
+                          setNewItemData({ ...newItemData, category: cat });
+                          setShowCategoryPicker(false);
+                        }}
+                      >
+                        <Text style={[
+                          styles.categoryPickerOptionText,
+                          newItemData.category === cat && styles.categoryPickerOptionTextActive
+                        ]}>
+                          {cat}
+                        </Text>
+                        {newItemData.category === cat && (
+                          <Text style={styles.categoryPickerCheck}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
 
             {/* Location ID */}
             <View style={styles.formGroup}>
@@ -562,173 +753,8 @@ export default function App(): React.ReactElement {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#000', 
-    paddingTop: 60 
-  },
-  cameraContainer: { 
-    flex: 1, 
-    margin: 20, 
-    borderRadius: 20, 
-    overflow: 'hidden', 
-    backgroundColor: '#222' 
-  },
-  controls: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    gap: 15, 
-    paddingHorizontal: 20 
-  },
-  btn: { 
-    padding: 15, 
-    backgroundColor: '#4f46e5', 
-    borderRadius: 8, 
-    flex: 1, 
-    alignItems: 'center' 
-  },
-  activeBtn: { 
-    backgroundColor: '#999' 
-  },
-  btnText: { 
-    color: 'white', 
-    fontWeight: 'bold', 
-    fontSize: 16,
-    textAlign: "center" 
-  },
-  overlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(0,0,0,0.7)', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  footer: { 
-    color: '#666', 
-    textAlign: 'center', 
-    paddingBottom: 30 
-  },
-
-  // Modal styles for new item form
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  formContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    marginTop: 60,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  formHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  closeBtn: {
-    fontSize: 24,
-    color: '#999',
-  },
-  formGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#000',
-    backgroundColor: '#f9f9f9',
-  },
-  readOnlyInput: {
-    backgroundColor: '#f0f0f0',
-    color: '#999',
-  },
-  dateButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    justifyContent: 'center',
-    backgroundColor: '#f9f9f9',
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  formButtons: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#ddd',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  submitButton: {
-    flex: 1,
-    backgroundColor: '#4f46e5',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-
-  // Centered modal styles
-  centeredModal: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  quickFormContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '85%',
-    maxWidth: 350,
-  },
-  quickFormTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 6,
-  },
-  quickFormSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-});
