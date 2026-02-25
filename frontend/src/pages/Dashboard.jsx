@@ -8,10 +8,13 @@ import DemandLineChart from "../components/dashboard_widgets/DemandLineChart";
 import StockTrend from "../components/dashboard_widgets/StockTrend";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { useAuth } from "../contexts/AuthContext";
 
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
   const dashboardRef = useRef(null);
+  const { hasPermission } = useAuth();
+  const canDownload = hasPermission('reports:download');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,13 +56,15 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
           <p className="text-slate-500 mt-1">Overview of your inventory health and metrics.</p>
         </div>
-        <button
-          type="button"
-          onClick={handleDownloadPdf}
-          className="inline-flex items-center justify-center rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
-        >
-          Download PDF
-        </button>
+        {canDownload && (
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            className="inline-flex items-center justify-center rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+          >
+            Download PDF
+          </button>
+        )}
       </div>
 
       <div ref={dashboardRef}>

@@ -17,6 +17,7 @@ import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
@@ -97,9 +98,17 @@ const Home = () => {
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
 
+  const { hasPermission } = useAuth();
+  const canViewInventory = hasPermission('inventory:view');
+  const canScanIn = hasPermission('barcode:scan_in');
+  const canScanOut = hasPermission('barcode:scan_out');
+  const canCreate = hasPermission('inventory:create');
+  const showFab = canScanIn || canScanOut || canCreate;
+
   const { data: inventoryItems = [], isLoading: isDataLoading, isError } = useQuery({
     queryKey: ["inventoryItems"],
     queryFn: getItems,
+    enabled: canViewInventory,
   });
 
   const queryClient = useQueryClient();
@@ -299,42 +308,50 @@ const Home = () => {
           </main>
         </div>
 
-      {/* FAB (Floating Action Button) */}
-      <div className="fixed bottom-8 right-8 z-30">
-        <div className="relative">
+      {/* FAB (Floating Action Button) - only shown if user has any scan/create permissions */}
+      {showFab && (
+        <div className="fixed bottom-8 right-8 z-30">
+          <div className="relative">
 
-          {showFabMenu && (
-            <div className="absolute right-0 bottom-16 grid gap-2 p-2 bg-white border border-gray-200 rounded-xl shadow-xl">
-              <button 
-                className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                onClick={() => { setScanMode('in'); setShowScan(true); setShowFabMenu(false); }}
-              >
-                Scan In (Add/Update)
-              </button>
-              <button 
-                className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                onClick={() => { setScanMode('out'); setShowScan(true); setShowFabMenu(false); }}
-              >
-                Scan Out
-              </button>
-              <button 
-                className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                onClick={() => { setShowFabMenu(false); /* Edit logic */ }}
-              >
-               Bulk Import
-              </button>
-            </div>
-          )}
-          
-          {/* FAB Button */}
-          <button
-            className="w-16 h-16 rounded-full bg-slate-800 text-white grid place-items-center shadow-xl transition hover:bg-slate-700"
-            onClick={() => setShowFabMenu(!showFabMenu)}
-          >
-            <AddIcon className="w-8 h-8" />
-          </button>
+            {showFabMenu && (
+              <div className="absolute right-0 bottom-16 grid gap-2 p-2 bg-white border border-gray-200 rounded-xl shadow-xl">
+                {canScanIn && (
+                  <button
+                    className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
+                    onClick={() => { setScanMode('in'); setShowScan(true); setShowFabMenu(false); }}
+                  >
+                    Scan In (Add/Update)
+                  </button>
+                )}
+                {canScanOut && (
+                  <button
+                    className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
+                    onClick={() => { setScanMode('out'); setShowScan(true); setShowFabMenu(false); }}
+                  >
+                    Scan Out
+                  </button>
+                )}
+                {canCreate && (
+                  <button
+                    className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
+                    onClick={() => { setShowFabMenu(false); /* Edit logic */ }}
+                  >
+                   Bulk Import
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* FAB Button */}
+            <button
+              className="w-16 h-16 rounded-full bg-slate-800 text-white grid place-items-center shadow-xl transition hover:bg-slate-700"
+              onClick={() => setShowFabMenu(!showFabMenu)}
+            >
+              <AddIcon className="w-8 h-8" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Scan Sheet Modal */}
       {showScan && (

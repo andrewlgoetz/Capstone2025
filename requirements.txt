@@ -7,3 +7,6 @@ alembic
 pydantic
 papa
 pytest
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart

@@ -13,6 +13,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SortIcon from "@mui/icons-material/Sort";
 import api, { getCategories } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+
 
 const formatDate = (dateString) => {
   if (!dateString) return "—";
@@ -72,6 +74,8 @@ export default function InventoryTable({
     pageSize: mode === "widget" ? limit : 10,
   });
 
+  const { hasPermission } = useAuth();
+
   const query = useQuery({
     queryKey: ["inventory", { mode }],
     queryFn: async () => {
@@ -79,6 +83,7 @@ export default function InventoryTable({
       console.log(res.data)
       return res.data;
     },
+    enabled: hasPermission('inventory:view'),
   });
 
   const rawItems = query.data ?? [];
@@ -143,33 +148,37 @@ export default function InventoryTable({
       cols = cols.filter((c) => showColumns.includes(c.accessorKey));
     }
 
+    const hasActions = onEditClick || onDeleteClick;
     const actionsCol = {
       id: "actions",
       header: "Actions",
       enableSorting: false,
       cell: ({ row }) => (
         <div className="flex gap-1">
-          <button
-            title="Edit item"
-            className="p-1 rounded-full text-slate-600 hover:bg-gray-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onEditClick) onEditClick(row.original);
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </button>
-
-          <button
-            title="Delete item"
-            className="p-1 rounded-full text-red-600 hover:bg-red-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onDeleteClick) onDeleteClick(row.original);
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </button>
+          {onEditClick && (
+            <button
+              title="Edit item"
+              className="p-1 rounded-full text-slate-600 hover:bg-gray-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditClick(row.original);
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </button>
+          )}
+          {onDeleteClick && (
+            <button
+              title="Delete item"
+              className="p-1 rounded-full text-red-600 hover:bg-red-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(row.original);
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </button>
+          )}
         </div>
       ),
     };
@@ -179,7 +188,7 @@ export default function InventoryTable({
       cell: c.cell || ((info) => info.getValue()),
     }));
 
-    return mode === "full" ? [...baseCols, actionsCol] : baseCols;
+    return mode === "full" && hasActions ? [...baseCols, actionsCol] : baseCols;
   }, [mode, showColumns, serialMap, onEditClick, onDeleteClick]);
 
   const displayed = useMemo(() => {
