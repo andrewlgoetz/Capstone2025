@@ -1,7 +1,7 @@
 """add user_locations table for multi-location user assignment
 
-Revision ID: e5f6g7h8i9j0
-Revises: d4e5f6g7h8i9
+Revision ID: g7h8i9j0k1l2
+Revises: 5155110ac501
 Create Date: 2026-02-21 12:00:00.000000
 
 """
@@ -11,8 +11,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = 'e5f6g7h8i9j0'
-down_revision: Union[str, Sequence[str], None] = 'd4e5f6g7h8i9'
+revision: str = 'g7h8i9j0k1l2'
+down_revision: Union[str, Sequence[str], None] = '5155110ac501'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
