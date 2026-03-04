@@ -38,8 +38,11 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      setError(detail || 'Invalid email or password');
+      if (!err?.response) {
+        setError('Cannot connect to server. Check your network and API_URL in services/api.ts.');
+      } else {
+        setError(err.response.data?.detail || 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }
