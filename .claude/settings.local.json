@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(alembic stamp e5f6g7h8i9j0)",
+      "Bash(alembic upgrade head)"
+    ]
+  }
+}
