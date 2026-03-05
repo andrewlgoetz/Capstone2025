@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -8,13 +8,19 @@ from app.models.inventory_movement import InventoryMovement, MovementType
 from app.models.activity_log import ActivityLog, ActivityAction
 from app.models.user_location import UserLocation
 from app.models.user import User
-from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
+from app.schemas.inventory_schema import (
+    InventoryCreate, InventoryRead, InventoryUpdate,
+    BulkImportRequest, BulkImportResult, BulkImportItem
+)
 import app.services.barcode_service as barcode_service
 import app.services.inventory_service as inventory_service
 from app.models.location import Location
 from app.dependencies import get_db
 from app.services.permission_service import Permission, require_permission, require_any_permission, require_all_permissions
 from app.services import auth_service
+import csv
+import io
+from datetime import datetime
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -182,3 +188,109 @@ def delete_item(
     log_activity(db, current_user.user_id, ActivityAction.DELETE, item_id_val, item_name,
                  f"Deleted item (qty was {item_qty})")
     return {"message": "Item deleted successfully"}
+
+@router.post("/bulk-import/csv", response_model=BulkImportResult)
+async def bulk_import_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_CREATE))
+):
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="File must be a CSV")
+
+    content = await file.read()
+    csv_text = content.decode('utf-8')
+    csv_reader = csv.DictReader(io.StringIO(csv_text))
+
+    successful = 0
+    failed = 0
+    errors = []
+
+    for idx, row in enumerate(csv_reader, start=2):  # start=2 because row 1 is header
+        try:
+            expiration_date = None
+            if row.get('expiration_date') and row['expiration_date'].strip():
+                try:
+                    expiration_date = datetime.strptime(row['expiration_date'].strip(), '%Y-%m-%d').date()
+                except ValueError:
+                    raise ValueError("Invalid date format for expiration_date. Use YYYY-MM-DD")
+
+            location_id = None
+            if row.get('location_id') and row['location_id'].strip():
+                location_id = int(row['location_id'])
+
+            item_data = InventoryCreate(
+                name=row['name'].strip(),
+                category=row.get('category', '').strip() or None,
+                barcode=row.get('barcode', '').strip() or None,
+                quantity=int(row['quantity']),
+                unit=row.get('unit', '').strip() or None,
+                expiration_date=expiration_date,
+                location_id=location_id
+            )
+
+            new_item = inventory_service.add_item(item_data, db)
+            log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
+                         f"Bulk import (row {idx})")
+            successful += 1
+
+        except KeyError as e:
+            failed += 1
+            errors.append({"row": idx, "error": f"Missing required field: {str(e)}"})
+        except ValueError as e:
+            failed += 1
+            errors.append({"row": idx, "error": f"Invalid value: {str(e)}"})
+        except HTTPException as e:
+            failed += 1
+            errors.append({"row": idx, "error": e.detail})
+        except Exception as e:
+            failed += 1
+            errors.append({"row": idx, "error": f"Unexpected error: {str(e)}"})
+
+    return BulkImportResult(
+        total_items=successful + failed,
+        successful=successful,
+        failed=failed,
+        errors=errors
+    )
+
+@router.post("/bulk-import/json", response_model=BulkImportResult)
+def bulk_import_json(
+    request: BulkImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_CREATE))
+):
+    successful = 0
+    failed = 0
+    errors = []
+
+    for idx, item_data in enumerate(request.items, start=1):
+        try:
+            inventory_item = InventoryCreate(
+                name=item_data.name,
+                category=item_data.category,
+                barcode=item_data.barcode,
+                quantity=item_data.quantity,
+                unit=item_data.unit,
+                expiration_date=item_data.expiration_date,
+                location_id=item_data.location_id
+            )
+
+            new_item = inventory_service.add_item(inventory_item, db)
+            log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
+                         f"Bulk import (item {idx})")
+            successful += 1
+
+        except HTTPException as e:
+            failed += 1
+            errors.append({"item_index": idx, "name": item_data.name, "error": e.detail})
+        except Exception as e:
+            failed += 1
+            errors.append({"item_index": idx, "name": item_data.name, "error": f"Unexpected error: {str(e)}"})
+
+    return BulkImportResult(
+        total_items=len(request.items),
+        successful=successful,
+        failed=failed,
+        errors=errors
+    )

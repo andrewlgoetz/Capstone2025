@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import RedeemIcon from '@mui/icons-material/Redeem'; 
 
-import ScanSheet from '../components/ScanSheet.jsx'; 
+import ScanSheet from '../components/ScanSheet.jsx';
 import InventoryTable from '../components/InventoryTable.jsx';
 import { getItems } from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
@@ -21,6 +21,7 @@ import LocationFilter from '../components/LocationFilter'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
+import BulkImportModal from '../components/BulkImportModal.jsx'
 import { fetchInventoryByBarcode, scanOutInventory, increaseInventory } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
@@ -91,12 +92,12 @@ const CategoryChart = ({ title, data = [] }) => {
 };
 
 const Home = () => {
-  const [query, setQuery] = useState('')
   const [showScan, setShowScan] = useState(false)
   const [scanMode, setScanMode] = useState('in') // 'in' or 'out'
   const [showFabMenu, setShowFabMenu] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
+  const [showBulkImport, setShowBulkImport] = useState(false)
 
   const { hasPermission, userLocations, selectedLocationIds, setSelectedLocationIds } = useAuth();
   const canViewInventory = hasPermission('inventory:view');
@@ -105,7 +106,7 @@ const Home = () => {
   const canCreate = hasPermission('inventory:create');
   const showFab = canScanIn || canScanOut || canCreate;
 
-  const { data: inventoryItems = [], isLoading: isDataLoading, isError } = useQuery({
+  const { data: inventoryItems = [], isLoading: isDataLoading } = useQuery({
     queryKey: ["inventoryItems", selectedLocationIds],
     queryFn: () => getItems(selectedLocationIds),
     enabled: canViewInventory,
@@ -323,9 +324,9 @@ const Home = () => {
                 {canCreate && (
                   <button
                     className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                    onClick={() => { setShowFabMenu(false); /* Edit logic */ }}
+                    onClick={() => { setShowBulkImport(true); setShowFabMenu(false); }}
                   >
-                   Bulk Import
+                    Bulk Import
                   </button>
                 )}
               </div>
@@ -416,14 +417,31 @@ const Home = () => {
         />
       )}
 
+      {/* Bulk Import Modal */}
+      {showBulkImport && (
+        <BulkImportModal
+          open={showBulkImport}
+          onClose={() => setShowBulkImport(false)}
+          onSuccess={(result) => {
+            setSnack({
+              open: true,
+              message: `Imported ${result.successful} items successfully${result.failed > 0 ? `, ${result.failed} failed` : ''}`,
+              severity: result.failed > 0 ? 'warning' : 'success'
+            })
+            // Refresh inventory list
+            queryClient.invalidateQueries(["inventoryItems"])
+          }}
+        />
+      )}
+
       {/* Snackbar/Toast */}
       {snack.open && (
-        <div 
+        <div
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
         >
-          <div 
+          <div
             className={`p-3 text-sm rounded-lg shadow-xl flex items-center justify-between gap-4 ${
-              snack.severity === 'success' ? 'bg-emerald-600 text-white' : 
+              snack.severity === 'success' ? 'bg-emerald-600 text-white' :
               snack.severity === 'warning' ? 'bg-amber-500 text-slate-900' : 'bg-slate-600 text-white'
             }`}
           >
