@@ -279,6 +279,24 @@ export async function increaseInventory(item_id, amount = 1, location_id = null)
   return res.data
 }
 
+// Bulk import from CSV file
+export async function bulkImportCSV(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await api.post('/inventory/bulk-import/csv', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return res.data
+}
+
+// Bulk import from JSON file
+export async function bulkImportJSON(jsonData) {
+  const res = await api.post('/inventory/bulk-import/json', jsonData)
+  return res.data
+}
+
 /*
   Dummy helpers (kept for local testing). Uncomment if you need the old behavior.
 

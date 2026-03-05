@@ -1,0 +1,94 @@
+{
+  "items": [
+    {
+      "name": "Canned Beans",
+      "category": "Canned Goods",
+      "barcode": "012345678901",
+      "quantity": 100,
+      "unit": "cans",
+      "expiration_date": "2025-12-31",
+      "location_id": 1
+    },
+    {
+      "name": "Rice 5lb Bag",
+      "category": "Grains",
+      "barcode": "023456789012",
+      "quantity": 50,
+      "unit": "bags",
+      "expiration_date": "2026-06-30",
+      "location_id": 1
+    },
+    {
+      "name": "Pasta Penne",
+      "category": "Grains",
+      "barcode": "034567890123",
+      "quantity": 75,
+      "unit": "boxes",
+      "expiration_date": null,
+      "location_id": 2
+    },
+    {
+      "name": "Tomato Sauce",
+      "category": "Canned Goods",
+      "barcode": "045678901234",
+      "quantity": 60,
+      "unit": "cans",
+      "expiration_date": "2025-08-15",
+      "location_id": 1
+    },
+    {
+      "name": "Cereal Cheerios",
+      "category": "Breakfast",
+      "barcode": "056789012345",
+      "quantity": 40,
+      "unit": "boxes",
+      "expiration_date": "2025-05-20",
+      "location_id": null
+    },
+    {
+      "name": "Peanut Butter",
+      "category": "Protein",
+      "barcode": "067890123456",
+      "quantity": 30,
+      "unit": "jars",
+      "expiration_date": "2026-01-15",
+      "location_id": 2
+    },
+    {
+      "name": "Canned Corn",
+      "category": "Canned Goods",
+      "barcode": "078901234567",
+      "quantity": 80,
+      "unit": "cans",
+      "expiration_date": "2025-11-30",
+      "location_id": 1
+    },
+    {
+      "name": "Spaghetti",
+      "category": "Grains",
+      "barcode": "089012345678",
+      "quantity": 65,
+      "unit": "boxes",
+      "expiration_date": "2026-03-01",
+      "location_id": 2
+    },
+    {
+      "name": "Apple Juice",
+      "category": "Beverages",
+      "barcode": "090123456789",
+      "quantity": 45,
+      "unit": "bottles",
+      "expiration_date": "2025-04-30",
+      "location_id": 3
+    },
+    {
+      "name": "Crackers",
+      "category": "Snacks",
+      "barcode": "901234567890",
+      "quantity": 55,
+      "unit": "boxes",
+      "expiration_date": "2025-07-15",
+      "location_id": null
+    }
+  ]
+}
