@@ -154,51 +154,41 @@ const Home = () => {
     }
   }, [snack.open]);
 
-  const handleScan = (code) => {
-  // start a loading lookup but don't open the generic product dialog yet
-  // (we may show increase/quantity modals instead)
-  setProductDialog({ open: false, loading: true, product: null, error: null })
+  const handleScan = (code, locationId) => {
+    setProductDialog({ open: false, loading: true, product: null, error: null })
 
-    // run both lookups in parallel
     Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
       .then(([prodRes, invRes]) => {
         const product = prodRes.status === 'fulfilled' ? prodRes.value : null
         const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
 
-        // If inventory is a known item (has item_id), show the increase modal instead of full-edit modal
         if (inventory && inventory.item_id) {
-          // close the generic product dialog and open the scan-in increase modal
           setProductDialog({ open: false, loading: false, product: product, inventory: inventory, error: null })
-          setScanInTarget({ product, inventory })
-          setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+          setScanInTarget({ product, inventory, locationId })
+          setSnack({ open: true, message: `Scanned ${code}`, severity: 'success' })
         } else {
-    setProductDialog({ open: true, loading: false, product: product, inventory: inventory, error: null })
-          setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+          setProductDialog({ open: true, loading: false, product: product, inventory: { ...inventory, location_id: locationId || inventory.location_id }, error: null })
+          setSnack({ open: true, message: `Scanned ${code}`, severity: 'success' })
         }
       })
       .catch(() => {
-  // show generic dialog on lookup failure
-  setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
+        setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
         setSnack({ open: true, message: 'Lookup failed', severity: 'warning' })
       })
   }
 
-  // Scan out flow: expects barcode exists; opens confirm quantity modal and calls dummy scanOutInventory
   const [scanOutTarget, setScanOutTarget] = useState(null)
   const [scanInTarget, setScanInTarget] = useState(null)
 
-  const handleScanOut = (code) => {
-  // fetch product image and inventory info similar to scan-in, then show quantity modal
-  // don't open the generic dialog while loading; we'll show the quantity modal when ready
-  setProductDialog({ open: false, loading: true, product: null, error: null })
+  const handleScanOut = (code, locationId) => {
+    setProductDialog({ open: false, loading: true, product: null, error: null })
     Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
       .then(([prodRes, invRes]) => {
         const product = prodRes.status === 'fulfilled' ? prodRes.value : null
         const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
 
         setProductDialog({ open: false, loading: false, product: product, inventory: inventory, error: null })
-        // show separate modal for quantity confirmation
-        setScanOutTarget({ product, inventory })
+        setScanOutTarget({ product, inventory, locationId })
       })
       .catch(() => {
         setProductDialog({ open: false, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
@@ -356,10 +346,11 @@ const Home = () => {
       {showScan && (
         <ScanSheet
           onClose={() => setShowScan(false)}
-          onScan={(code) => {
+          locations={userLocations}
+          onScan={(code, locationId) => {
             setShowScan(false)
-            if (scanMode === 'out') handleScanOut(code)
-            else handleScan(code)
+            if (scanMode === 'out') handleScanOut(code, locationId)
+            else handleScan(code, locationId)
           }}
         />
       )}
@@ -373,8 +364,7 @@ const Home = () => {
           maxQuantity={scanOutTarget.inventory?.quantity}
           imageUrl={scanOutTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            // call dummy API
-            scanOutInventory(payload.barcode, payload.quantity)
+            scanOutInventory(payload.barcode, payload.quantity, scanOutTarget.locationId)
               .then((res) => {
                 console.log('Scan out result', res)
                 setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
@@ -397,7 +387,7 @@ const Home = () => {
           initial={{ barcode: scanInTarget.inventory?.barcode, item_id: scanInTarget.inventory?.item_id, name: scanInTarget.inventory?.name, category: scanInTarget.inventory?.category }}
           imageUrl={scanInTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            increaseInventory(payload.item_id, payload.quantity)
+            increaseInventory(payload.item_id, payload.quantity, scanInTarget.locationId)
               .then((res) => {
                 setSnack({ open: true, message: `Added ${payload.quantity} — new qty ${res.quantity}`, severity: 'success' })
                 setScanInTarget(null)

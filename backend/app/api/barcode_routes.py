@@ -87,8 +87,12 @@ def confirm_scan_out(
         db=db,
         movement_type=MovementType.OUTBOUND
     )
+    if payload.location_id is not None:
+        updated.location_id = payload.location_id
+        db.commit()
+        db.refresh(updated)
     log_activity(db, current_user.user_id, ActivityAction.SCAN_OUT, updated.item_id, updated.name,
-                 f"Scanned out qty {payload.quantity}, remaining {updated.quantity}")
+                 f"Scanned out qty {payload.quantity}, remaining {updated.quantity}, location {payload.location_id}")
     return InventoryRead.model_validate(updated)
 
 @router.post("/scan-in", response_model=ScanResponse)

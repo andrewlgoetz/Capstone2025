@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, IconButton } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Typography, IconButton } from '@mui/material'
 import RemoveIcon from '@mui/icons-material/Remove'
 import AddIcon from '@mui/icons-material/Add'
 
-// Minimal modal for confirming a quantity to scan out. Props: open, onClose, initial (object with barcode, quantity), imageUrl, onConfirm
+// Minimal modal for confirming a quantity to scan out.
 const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, maxQuantity = null }) => {
   const [quantity, setQuantity] = useState(initial.quantity ?? '')
   const [error, setError] = useState(null)
@@ -31,7 +31,7 @@ const ConfirmQuantityModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
     <Dialog open={Boolean(open)} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle className="text-lg font-semibold text-slate-800 tracking-tight">Confirm Scan Out</DialogTitle>
       <DialogContent className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
-  <Box className="flex flex-col items-center gap-2 pt-1">
+        <Box className="flex flex-col items-center gap-2 pt-1">
           {imageUrl ? (
             <img src={imageUrl} alt={initial.name || 'item image'} style={{ width: 180, height: 180, objectFit: 'cover', borderRadius: 8 }} />
           ) : (

@@ -60,6 +60,7 @@ class ScanOutResponse(BaseModel):
 
 class ScanOutConfirmRequest(BaseModel):
     quantity: int = Field(..., gt=0)
+    location_id: Optional[int] = None  # if provided, records which location the item was taken from
 
 class QuantityDelta(BaseModel):
     amount: int = Field(..., gt=0)  # strictly positive; sign is decided by the endpoint
