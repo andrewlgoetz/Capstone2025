@@ -19,7 +19,7 @@ export default function Inventory() {
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
-  const [categories, setCategories] = useState([]);
+
 
   const closeModal = () => {
     setOpen(false);
@@ -153,7 +153,7 @@ return (
           locationIds={selectedLocationIds}
           onEditClick={canEdit ? handleEditClick : null}
           onDeleteClick={canDelete ? handleDeleteClick : null}
-          onCategoriesLoaded={(cats) => setCategories(cats)}
+          onCategoriesLoaded={() => {}}
         />
 
         {/* Add/Edit Modal (Assumes AddItemModal uses Tailwind) */}
@@ -164,7 +164,6 @@ return (
           isSaving={isSaving}
           mode={editItem ? 'edit' : 'add'}
           defaultValues={editItem}
-          categories={categories}
           locations={userLocations}
         />
         {snack.open && (
