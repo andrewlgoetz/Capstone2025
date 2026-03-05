@@ -237,8 +237,8 @@ export async function fetchInventoryByBarcode(barcode) {
 }
 
 // scanOutInventory: 1) call POST /barcode/scan-out with barcode to find existing item
-// 2) if FOUND, call POST /barcode/scan-out/{item_id}/confirm with { quantity }
-export async function scanOutInventory(barcode, qty = 1) {
+// 2) if FOUND, call POST /barcode/scan-out/{item_id}/confirm with { quantity, location_id? }
+export async function scanOutInventory(barcode, qty = 1, location_id = null) {
   if (!barcode) throw new Error('No barcode provided')
 
   // 1) lookup
@@ -254,7 +254,9 @@ export async function scanOutInventory(barcode, qty = 1) {
   const item_id = item?.item_id
 
   // 2) confirm scan out
-  const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, { quantity: qty })
+  const confirmBody = { quantity: qty }
+  if (location_id != null) confirmBody.location_id = location_id
+  const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, confirmBody)
   const updated = confirmRes.data
 
   return {
@@ -269,9 +271,11 @@ export async function scanOutInventory(barcode, qty = 1) {
 }
 
 // Increase inventory quantity for an existing item (scan-in known item)
-export async function increaseInventory(item_id, amount = 1) {
+export async function increaseInventory(item_id, amount = 1, location_id = null) {
   if (!item_id) throw new Error('item_id required')
-  const res = await api.post(`/barcode/${item_id}/increase`, { amount })
+  const body = { amount }
+  if (location_id != null) body.location_id = location_id
+  const res = await api.post(`/barcode/${item_id}/increase`, body)
   return res.data
 }
 
