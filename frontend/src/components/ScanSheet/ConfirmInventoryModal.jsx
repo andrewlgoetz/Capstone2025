@@ -17,7 +17,13 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
     location_id: '',
   })
 
-  const CATEGORY_OPTIONS = React.useMemo(() => ['Produce','Meat','Dairy','Eggs','Bakery','Frozen','Drinks','Pantry','Canned Goods','Household','Personal Care','Other','CUSTOM'], [])
+  const CATEGORY_OPTIONS = React.useMemo(() => [
+    'Produce','Meat & Seafood','Dairy','Eggs','Bakery & Bread','Frozen Foods',
+    'Beverages','Pantry Staples','Canned Goods','Snacks','Condiments & Sauces',
+    'Grains & Pasta','Breakfast & Cereal','Household','Personal Care',
+    'Cleaning Supplies','Baby Products','Pet Supplies','Health & Medicine',
+    'Other','CUSTOM',
+  ], [])
   const [categoryOptions, setCategoryOptions] = useState(CATEGORY_OPTIONS)
 
   useEffect(() => {
@@ -36,7 +42,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
         category: initialCategory || '',
         expiry_date: initial.expiry_date || '',
         unit: initial.unit || 'units',
-        custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
+        custom_unit: initial.unit && !['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets'].includes(initial.unit) ? initial.unit : '',
         custom_category: initialCustomCategory,
         location_id: autoLocation,
       })
@@ -65,7 +71,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const UNIT_OPTIONS = ['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans','CUSTOM']
+  const UNIT_OPTIONS = ['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets','CUSTOM']
 
   const handleConfirm = () => {
     // perform create on backend, then notify parent
