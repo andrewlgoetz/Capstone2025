@@ -63,3 +63,4 @@ class ScanOutConfirmRequest(BaseModel):
 
 class QuantityDelta(BaseModel):
     amount: int = Field(..., gt=0)  # strictly positive; sign is decided by the endpoint
+    location_id: Optional[int] = None  # if provided, moves the item to this location

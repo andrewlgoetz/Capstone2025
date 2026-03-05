@@ -77,6 +77,19 @@ export default function App(): React.ReactElement {
   // Default location: auto-select if user has exactly one
   const defaultLocationId = userLocations.length === 1 ? String(userLocations[0].location_id) : '';
 
+  // Persistent scan-in location selector
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(defaultLocationId);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
+
+  // Keep location in sync if userLocations loads after mount
+  useEffect(() => {
+    if (userLocations.length === 1 && !selectedLocationId) {
+      setSelectedLocationId(String(userLocations[0].location_id));
+    }
+  }, [userLocations, selectedLocationId]);
+
+  const selectedLocation = userLocations.find(l => String(l.location_id) === selectedLocationId);
+
   // form state for new items
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
   const [newItemData, setNewItemData] = useState<NewItemFormData>({
@@ -135,6 +148,12 @@ export default function App(): React.ReactElement {
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult): Promise<void> => {
     if (loading) return;
+
+    if (mode === 'in' && !selectedLocationId) {
+      Alert.alert("No Location Selected", "Please select a location before scanning in.");
+      return;
+    }
+
     setIsScanning(false);
     setLoading(true);
 
@@ -156,7 +175,7 @@ export default function App(): React.ReactElement {
             quantity: '1',
             unit: 'pcs',
             expirationDate: null,
-            locationId: defaultLocationId,
+            locationId: selectedLocationId,
           });
           setShowNewItemForm(true);
         } else {
@@ -237,7 +256,7 @@ export default function App(): React.ReactElement {
 
     const quantity = parseInt(knownItemData.quantity);
     const url = `/barcode/${knownItemData.item?.item_id}/increase`;
-    const data = { amount: quantity };
+    const data = { amount: quantity, location_id: parseInt(selectedLocationId) || undefined };
     const itemName = knownItemData.item?.name || 'item';
 
     try {
@@ -307,6 +326,23 @@ export default function App(): React.ReactElement {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Location selector (scan-in only) */}
+      {canScanIn && (
+        <View style={styles.locationBar}>
+          <Text style={styles.locationLabel}>Scanning to:</Text>
+          <TouchableOpacity
+            style={[styles.locationSelector, !selectedLocationId && styles.locationSelectorEmpty]}
+            onPress={() => userLocations.length > 1 && setShowLocationPicker(true)}
+            disabled={userLocations.length <= 1}
+          >
+            <Text style={[styles.locationSelectorText, !selectedLocationId && styles.locationSelectorTextEmpty]}>
+              {selectedLocation?.name ?? 'Select location'}
+            </Text>
+            {userLocations.length > 1 && <Text style={styles.locationChevron}>▾</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Header / Controls */}
       <View style={styles.controls}>
@@ -605,6 +641,40 @@ export default function App(): React.ReactElement {
         </View>
       </Modal>
 
+      {/* ===== MODAL: LOCATION PICKER ===== */}
+      <Modal
+        visible={showLocationPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLocationPicker(false)}
+      >
+        <View style={styles.centeredModal}>
+          <View style={styles.quickFormContainer}>
+            <Text style={styles.quickFormTitle}>Select Location</Text>
+            {userLocations.map((loc) => (
+              <TouchableOpacity
+                key={loc.location_id}
+                style={[
+                  styles.locationPickerOption,
+                  selectedLocationId === String(loc.location_id) && styles.locationPickerOptionSelected,
+                ]}
+                onPress={() => {
+                  setSelectedLocationId(String(loc.location_id));
+                  setShowLocationPicker(false);
+                }}
+              >
+                <Text style={[
+                  styles.locationPickerOptionText,
+                  selectedLocationId === String(loc.location_id) && styles.locationPickerOptionTextSelected,
+                ]}>
+                  {loc.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -819,6 +889,68 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 16,
+  },
+
+  // Location selector bar
+  locationBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    gap: 10,
+  },
+  locationLabel: {
+    color: '#aaa',
+    fontSize: 13,
+    flexShrink: 0,
+  },
+  locationSelector: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#4f46e5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  locationSelectorEmpty: {
+    borderColor: '#ef4444',
+  },
+  locationSelectorText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  locationSelectorTextEmpty: {
+    color: '#ef4444',
+  },
+  locationChevron: {
+    color: '#aaa',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+
+  // Location picker modal options
+  locationPickerOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  locationPickerOptionSelected: {
+    backgroundColor: '#eef2ff',
+    borderRadius: 6,
+  },
+  locationPickerOptionText: {
+    fontSize: 15,
+    color: '#333',
+  },
+  locationPickerOptionTextSelected: {
+    color: '#4f46e5',
+    fontWeight: '600',
   },
 
 });

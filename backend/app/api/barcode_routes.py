@@ -135,6 +135,10 @@ def increase_item_quantity(
     current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
     updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
+    if payload.location_id is not None:
+        updated.location_id = payload.location_id
+        db.commit()
+        db.refresh(updated)
     log_activity(db, current_user.user_id, ActivityAction.SCAN_IN, updated.item_id, updated.name,
-                 f"Scanned in qty {payload.amount}, new total {updated.quantity}")
+                 f"Scanned in qty {payload.amount}, new total {updated.quantity}, location {payload.location_id}")
     return InventoryRead.model_validate(updated)
