@@ -150,6 +150,7 @@ export default function App(): React.ReactElement {
     if (loading) return;
 
     if (mode === 'in' && !selectedLocationId) {
+      setIsScanning(false);
       Alert.alert("No Location Selected", "Please select a location before scanning in.");
       return;
     }
