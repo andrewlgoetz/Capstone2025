@@ -85,7 +85,8 @@ def confirm_scan_out(
         item_id=item_id,
         delta=-payload.quantity,
         db=db,
-        movement_type=MovementType.OUTBOUND
+        movement_type=MovementType.OUTBOUND,
+        user_id=current_user.user_id
     )
     if payload.location_id is not None:
         updated.location_id = payload.location_id
@@ -138,7 +139,7 @@ def increase_item_quantity(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
-    updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
+    updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db, user_id=current_user.user_id)
     if payload.location_id is not None:
         updated.location_id = payload.location_id
         db.commit()

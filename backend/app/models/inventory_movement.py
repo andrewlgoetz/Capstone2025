@@ -11,9 +11,11 @@ from sqlalchemy.sql import func
 from app.db.session import Base
 
 class MovementType(str, Enum):
+    INBOUND = "INBOUND"         # Added/Scanned in
     OUTBOUND = "OUTBOUND"       # given to client/org
     WASTE = "WASTE"             # expired, damaged etc.
     TRANSFER = "TRANSFER"       # moved between food banks
+    ADJUSTMENT = "ADJUSTMENT"   # manual update/correction
     
 class InventoryMovement(Base):
     __tablename__ = "inventory_movement"
@@ -25,6 +27,14 @@ class InventoryMovement(Base):
         nullable=False,
         index=True,
     )
+    
+    # --- ADD THIS NEW COLUMN ---
+    user_id = Column(
+        Integer,
+        ForeignKey("users.user_id"),
+        nullable=True, # Nullable for system-generated changes, or older data
+    )
+    
     quantity_change = Column(Integer, nullable=False)
     movement_type = Column(SAEnum(MovementType), nullable=False)
     reason = Column(String, nullable=True)
