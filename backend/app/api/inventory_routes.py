@@ -24,6 +24,49 @@ from datetime import datetime
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
+@router.get("/history")
+def get_inventory_history(
+    limit: int = Query(20, description="Number of recent activities to fetch"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW))
+):
+    from app.models.user import User # Add this import
+    
+    movements = (
+        db.query(
+            InventoryMovement.id,
+            InventoryMovement.quantity_change,
+            InventoryMovement.movement_type,
+            InventoryMovement.created_at,
+            InventoryItem.name.label("item_name"),
+            InventoryItem.category.label("category"),
+            InventoryItem.unit.label("unit"),
+            Location.name.label("location_name"),
+            User.name.label("user_name") # Add this select
+        )
+        .join(InventoryItem, InventoryMovement.item_id == InventoryItem.item_id)
+        .outerjoin(Location, InventoryItem.location_id == Location.location_id)
+        .outerjoin(User, InventoryMovement.user_id == User.user_id) # Add this join
+        .filter(InventoryItem.bank_id == current_user.bank_id)
+        .order_by(InventoryMovement.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "id": m.id,
+            "item_name": m.item_name,
+            "category": m.category,
+            "quantity_change": m.quantity_change,
+            "movement_type": m.movement_type.value if hasattr(m.movement_type, 'value') else str(m.movement_type),
+            "unit": m.unit,
+            "location_name": m.location_name,
+            "user_name": m.user_name or "System", # Pass user name
+            "timestamp": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in movements
+    ]
 
 def get_allowed_location_ids(user: User, db: Session, requested_ids: Optional[List[int]] = None) -> Optional[List[int]]:
     """
@@ -66,7 +109,7 @@ def add_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_CREATE))
 ):
-    new_item = inventory_service.add_item(item, db)
+    new_item = inventory_service.add_item(item, db, current_user.user_id)
     log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
                  f"Added with qty {new_item.quantity}")
     return new_item
@@ -83,7 +126,7 @@ def update_item(
     sent = item.model_dump(exclude_unset=True, exclude={"movement_type", "movement_reason"})
     old_vals = {k: getattr(old_item, k, None) for k in sent} if old_item else {}
 
-    updated = inventory_service.update_item(item_id, item, db)
+    updated = inventory_service.update_item(item_id, item, db, current_user.user_id)
 
     # build readable diff: only fields that actually changed
     diffs = [f"{k}: {old_vals[k]} → {sent[k]}" for k in sent if old_vals.get(k) != sent[k]]
@@ -229,7 +272,7 @@ async def bulk_import_csv(
                 location_id=location_id
             )
 
-            new_item = inventory_service.add_item(item_data, db)
+            new_item = inventory_service.add_item(item_data, db, current_user.user_id)
             log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
                          f"Bulk import (row {idx})")
             successful += 1
@@ -276,7 +319,7 @@ def bulk_import_json(
                 location_id=item_data.location_id
             )
 
-            new_item = inventory_service.add_item(inventory_item, db)
+            new_item = inventory_service.add_item(inventory_item, db, current_user.user_id)
             log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
                          f"Bulk import (item {idx})")
             successful += 1

@@ -1,24 +1,24 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, FlatList, View, Text, ActivityIndicator, RefreshControl, Platform } from 'react-native';
-import axios from 'axios';
 import { useFocusEffect } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import api from '../../services/api';
 
-// !!! REPLACE WITH YOUR IP !!!
-const API_URL = 'http://172.23.32.72:8000';
-
+// Updated interface to match the backend history endpoint
 interface ActivityItem {
   id: number;
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  location: string;
-  expiration: string | null;
+  item_name: string;
+  category: string | null;
+  quantity_change: number;
+  movement_type: string;
+  unit: string | null;
+  location_name: string | null;
+  user_name: string;
+  timestamp: string;
 }
 
 export default function ActivityScreen() {
@@ -29,7 +29,8 @@ export default function ActivityScreen() {
 
   const fetchItems = async () => {
     try {
-      const response = await axios.get<ActivityItem[]>(`${API_URL}/inventory/history?limit=20`);
+      // Using the configured 'api' instance to include auth tokens automatically
+      const response = await api.get<ActivityItem[]>('/inventory/history?limit=30');
       setItems(response.data);
     } catch (error) {
       console.log('Error fetching recent items:', error);
@@ -50,28 +51,54 @@ export default function ActivityScreen() {
     fetchItems();
   };
 
+  // Helper to determine styling based on movement type/quantity
+  const getActionStyles = (item: ActivityItem) => {
+    const isPositive = item.quantity_change > 0;
+    
+    if (isPositive) {
+      return { icon: 'arrow.down.circle.fill', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' }; // Green
+    } else {
+      return { icon: 'arrow.up.circle.fill', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)' }; // Red
+    }
+  };
+
   const renderItem = ({ item }: { item: ActivityItem }) => {
+    const stylesConfig = getActionStyles(item);
+    
+    // Format timestamp: "Oct 24" and "2:30 PM"
+    const date = new Date(item.timestamp);
+    const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+    // Format quantity (add + sign for positive changes)
+    const qtyText = item.quantity_change > 0 ? `+${item.quantity_change}` : `${item.quantity_change}`;
+
     return (
       <View style={[styles.card, { backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#FFFFFF' }]}>
         {/* Icon Box */}
-        <View style={styles.iconBox}>
-          <IconSymbol size={24} name="archivebox.fill" color="#4F46E5" />
+        <View style={[styles.iconBox, { backgroundColor: stylesConfig.bg }]}>
+          <IconSymbol size={24} name={stylesConfig.icon as any} color={stylesConfig.color} />
         </View>
 
         {/* Details Column */}
         <View style={styles.details}>
-          <ThemedText type="defaultSemiBold" style={styles.itemName}>{item.name}</ThemedText>
+          <ThemedText type="defaultSemiBold" style={styles.itemName}>{item.item_name}</ThemedText>
+          
           <ThemedText style={styles.subtext}>
-            {item.category} • {item.location}
+            {item.movement_type} • {item.location_name || 'No Location'} • By {item.user_name}
+          </ThemedText>
+          
+          <ThemedText style={styles.timestamp}>
+             {dateStr} at {timeStr}
           </ThemedText>
         </View>
 
         {/* Quantity Column */}
         <View style={styles.quantityBox}>
-          <Text style={[styles.quantity, { color: colorScheme === 'dark' ? '#FFF' : '#000' }]}>
-            {item.quantity}
+          <Text style={[styles.quantity, { color: stylesConfig.color }]}>
+            {qtyText}
           </Text>
-          <Text style={styles.unit}>{item.unit}</Text>
+          {item.unit && <Text style={styles.unit}>{item.unit}</Text>}
         </View>
       </View>
     );
@@ -80,7 +107,7 @@ export default function ActivityScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title">Recently Added</ThemedText>
+        <ThemedText type="title">Recent Activity</ThemedText>
       </View>
 
       {loading && !refreshing ? (
@@ -96,7 +123,7 @@ export default function ActivityScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
             <View style={styles.center}>
-              <ThemedText>No items found.</ThemedText>
+              <ThemedText>No recent activity found.</ThemedText>
             </View>
           }
         />
@@ -130,14 +157,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: 'rgba(79, 70, 229, 0.1)', // Light Indigo
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   details: { flex: 1 },
-  itemName: { fontSize: 16, marginBottom: 4 },
-  subtext: { fontSize: 12, color: '#8E8E93' },
+  itemName: { fontSize: 16, marginBottom: 2 },
+  subtext: { fontSize: 12, color: '#8E8E93', marginBottom: 2, textTransform: 'capitalize' },
+  timestamp: { fontSize: 11, color: '#C7C7CC' },
   quantityBox: { minWidth: 40, alignItems: 'flex-end' },
   quantity: { fontSize: 18, fontWeight: '700' },
   unit: { fontSize: 12, color: '#8E8E93' },
