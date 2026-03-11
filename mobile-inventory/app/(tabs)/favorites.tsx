@@ -12,10 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFavorites, removeFavorite, FavoriteItem } from '../../utils/favorites';
-import axios from 'axios';
-
-// !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
-const API_URL = 'http://192.168.1.154:8000';
+import api, { API_URL } from '../../services/api';
 
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
@@ -51,7 +48,7 @@ export default function FavoritesScreen() {
     // Fetch current quantity from backend
     try {
       setFetchingQuantity(true);
-      const response = await axios.get(`${API_URL}/inventory/${item.item_id}`);
+      const response = await api.get(`/inventory/${item.item_id}`);
       setCurrentQuantity(response.data.quantity || 0);
     } catch (error) {
       console.error('Failed to fetch current quantity:', error);
@@ -72,7 +69,7 @@ export default function FavoritesScreen() {
 
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/barcode/${selectedItem.item_id}/increase`, {
+      await api.post(`/barcode/${selectedItem.item_id}/increase`, {
         amount: qty,
       });
 
@@ -114,7 +111,7 @@ export default function FavoritesScreen() {
 
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/barcode/scan-out/${selectedItem.item_id}/confirm`, {
+      await api.post(`/barcode/scan-out/${selectedItem.item_id}/confirm`, {
         quantity: qty,
       });
 
@@ -318,12 +315,14 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#000',
   },
   header: {
     backgroundColor: '#4f46e5',
     padding: 20,
     paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
   },
   headerTitle: {
     fontSize: 28,
@@ -333,7 +332,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#e0dfff',
+    color: '#fff',
   },
   list: {
     padding: 16,
@@ -342,21 +341,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1C1C1E',
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#2C2C2E',
   },
   itemContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#2C2C2E',
   },
   itemInfo: {
     flex: 1,
@@ -364,12 +360,12 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   itemDetails: {
     fontSize: 14,
-    color: '#666',
+    color: '#888',
   },
   addIcon: {
     fontSize: 32,
@@ -399,32 +395,34 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
-    color: '#666',
+    color: '#888',
     textAlign: 'center',
     lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1C1C1E',
     borderRadius: 16,
     padding: 24,
     width: '90%',
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: '#2C2C2E',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   modalSubtitle: {
@@ -435,26 +433,26 @@ const styles = StyleSheet.create({
   },
   modalDetails: {
     fontSize: 14,
-    color: '#666',
+    color: '#888',
     marginBottom: 12,
   },
   quantityBadge: {
-    backgroundColor: '#f0f0ff',
+    backgroundColor: '#2C2C2E',
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e0dfff',
+    borderColor: '#3C3C3E',
   },
   quantityLabel: {
     fontSize: 13,
-    color: '#666',
+    color: '#fff',
     marginBottom: 4,
   },
   quantityValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4f46e5',
+    color: '#fff',
   },
   formGroup: {
     marginBottom: 20,
@@ -462,17 +460,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#333',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#f9f9f9',
+    color: '#fff',
+    backgroundColor: '#111',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -480,7 +478,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#e5e5e5',
+    backgroundColor: '#2C2C2E',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
@@ -488,7 +486,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
   },
   addButton: {
     flex: 1,
@@ -513,18 +511,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#e5e5e5',
-    backgroundColor: '#fff',
+    borderColor: '#333',
+    backgroundColor: '#1C1C1E',
     alignItems: 'center',
   },
   toggleButtonActive: {
     borderColor: '#4f46e5',
-    backgroundColor: '#f0f0ff',
+    backgroundColor: '#2C2C3E',
   },
   toggleButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#666',
+    color: '#888',
   },
   toggleButtonTextActive: {
     color: '#4f46e5',

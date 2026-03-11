@@ -52,25 +52,32 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int 
         data["barcode"] = code
 
     new_item = InventoryItem(**data)
-    
+
     try:
         db.add(new_item)
-        db.commit()
-        db.refresh(new_item)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode or PK).")
+        db.flush()  # Flush to get the item_id without committing yet
 
-    if new_item.quantity and new_item.quantity > 0:
+        # Create initial inventory movement if quantity > 0
+        if new_item.quantity and new_item.quantity > 0:
             initial_movement = InventoryMovement(
                 item_id=new_item.item_id,
                 quantity_change=new_item.quantity,
                 movement_type=MovementType.INBOUND,
                 to_location_id=new_item.location_id,
-                user_id=user_id # Add this
+                user_id=user_id
             )
             db.add(initial_movement)
-            db.commit()
+
+        # Commit both item and movement together
+        db.commit()
+        db.refresh(new_item)
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode or PK).")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
+
     return new_item
 
 

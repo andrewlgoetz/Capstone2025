@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, FlatList, View, Text, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { StyleSheet, FlatList, View, Text, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import api from '../../services/api';
@@ -105,9 +104,9 @@ export default function ActivityScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title">Recent Activity</ThemedText>
+        <Text style={styles.headerTitle}>Recent Activity</Text>
       </View>
 
       {loading && !refreshing ? (
@@ -128,18 +127,28 @@ export default function ActivityScreen() {
           }
         />
       )}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 10,
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
   },
-  listContent: { paddingHorizontal: 20, paddingBottom: 20 },
+  header: {
+    backgroundColor: '#4f46e5',
+    padding: 20,
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  listContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
   card: {
     flexDirection: 'row',

@@ -269,6 +269,11 @@ export default function App(): React.ReactElement {
       return;
     }
 
+    if (userLocations.length > 1 && !newItemData.locationId) {
+      Alert.alert("Error", "Please select a location");
+      return;
+    }
+
     try {
       setLoading(true);
       const payload = {
@@ -326,8 +331,21 @@ export default function App(): React.ReactElement {
         locationId: defaultLocationId,
       });
     } catch (error: any) {
-      console.log(error);
-      Alert.alert("Error", error.response?.data?.detail || "Could not add item to inventory");
+      console.log('Full error object:', error);
+      console.log('Error response:', error.response);
+      console.log('Error message:', error.message);
+
+      let errorMessage = "Could not add item to inventory";
+
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = "Request timeout. The item may have been added - please check your inventory before trying again.";
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -433,7 +451,10 @@ export default function App(): React.ReactElement {
         Alert.alert("Already saved", "Item is already in Quick Items");
       }
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to add favorite");
+      // Check if it's a max limit error
+      const isMaxLimitError = error.message && error.message.includes('maximum');
+      const title = isMaxLimitError ? "Quick Items Full" : "Oops!";
+      Alert.alert(title, error.message || "Failed to add favorite");
     }
   };
 

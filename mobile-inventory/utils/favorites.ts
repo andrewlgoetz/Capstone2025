@@ -34,7 +34,7 @@ export const addFavorite = async (item: FavoriteItem): Promise<boolean> => {
 
     // Check max limit
     if (favorites.length >= MAX_FAVORITES) {
-      throw new Error(`Maximum ${MAX_FAVORITES} favorites allowed`);
+      throw new Error(`You've reached the maximum of ${MAX_FAVORITES} Quick Items. Remove one to add a new item.`);
     }
 
     favorites.push(item);
