@@ -34,7 +34,14 @@ const DEFAULT_COLUMNS = [
     header: "Expires",
     cell: ({ cell }) => formatDate(cell.getValue()),
   },
-  { accessorKey: "location_id", header: "Location" },
+  {
+    accessorKey: "location_id",
+    header: "Location",
+    cell: ({ cell, table }) => {
+      const locs = table.options.meta?.locations;
+      return locs?.find((l) => l.location_id === cell.getValue())?.name || cell.getValue();
+    },
+  },
   {
     accessorKey: "date_added",
     header: "Date Added",
@@ -51,8 +58,9 @@ export default function InventoryTable({
   mode = "full", // "full" or "widget"
   limit = 5, // max rows in widget mode
   showColumns = null, // array of accessorKeys to show
-  lowStockThreshold = 10, 
+  lowStockThreshold = 10,
   showFilterBar = true,
+  locationIds = null, // optional location filter
   onEditClick = null,
   onDeleteClick = null,
   onCategoriesLoaded = null,
@@ -74,13 +82,13 @@ export default function InventoryTable({
     pageSize: mode === "widget" ? limit : 10,
   });
 
-  const { hasPermission } = useAuth();
+  const { hasPermission, userLocations } = useAuth();
 
   const query = useQuery({
-    queryKey: ["inventory", { mode }],
+    queryKey: ["inventory", { mode, locationIds }],
     queryFn: async () => {
-      const res = await api.get("/inventory/all");
-      console.log(res.data)
+      const params = locationIds?.length ? { location_ids: locationIds.join(',') } : {};
+      const res = await api.get("/inventory/all", { params });
       return res.data;
     },
     enabled: hasPermission('inventory:view'),
@@ -287,6 +295,7 @@ export default function InventoryTable({
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     defaultColumn: { cell: (info) => String(info.getValue() ?? "—") },
+    meta: { locations: userLocations },
   });
 
   return (
@@ -494,6 +503,7 @@ InventoryTable.propTypes = {
   showColumns: PropTypes.arrayOf(PropTypes.string),
   lowStockThreshold: PropTypes.number,
   showFilterBar: PropTypes.bool,
+  locationIds: PropTypes.arrayOf(PropTypes.number),
   onEditClick: PropTypes.func,
   onDeleteClick: PropTypes.func,
   onCategoriesLoaded: PropTypes.func,

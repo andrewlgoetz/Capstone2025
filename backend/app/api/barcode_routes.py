@@ -85,10 +85,15 @@ def confirm_scan_out(
         item_id=item_id,
         delta=-payload.quantity,
         db=db,
-        movement_type=MovementType.OUTBOUND
+        movement_type=MovementType.OUTBOUND,
+        user_id=current_user.user_id
     )
+    if payload.location_id is not None:
+        updated.location_id = payload.location_id
+        db.commit()
+        db.refresh(updated)
     log_activity(db, current_user.user_id, ActivityAction.SCAN_OUT, updated.item_id, updated.name,
-                 f"Scanned out qty {payload.quantity}, remaining {updated.quantity}")
+                 f"Scanned out qty {payload.quantity}, remaining {updated.quantity}, location {payload.location_id}")
     return InventoryRead.model_validate(updated)
 
 @router.post("/scan-in", response_model=ScanResponse)
@@ -134,7 +139,11 @@ def increase_item_quantity(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
-    updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db)
+    updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db, user_id=current_user.user_id)
+    if payload.location_id is not None:
+        updated.location_id = payload.location_id
+        db.commit()
+        db.refresh(updated)
     log_activity(db, current_user.user_id, ActivityAction.SCAN_IN, updated.item_id, updated.name,
-                 f"Scanned in qty {payload.amount}, new total {updated.quantity}")
+                 f"Scanned in qty {payload.amount}, new total {updated.quantity}, location {payload.location_id}")
     return InventoryRead.model_validate(updated)

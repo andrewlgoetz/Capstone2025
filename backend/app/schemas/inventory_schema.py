@@ -62,6 +62,26 @@ class ScanOutResponse(BaseModel):
 
 class ScanOutConfirmRequest(BaseModel):
     quantity: int = Field(..., gt=0)
+    location_id: Optional[int] = None  # if provided, records which location the item was taken from
 
 class QuantityDelta(BaseModel):
     amount: int = Field(..., gt=0)  # strictly positive; sign is decided by the endpoint
+    location_id: Optional[int] = None  # if provided, moves the item to this location
+
+class BulkImportItem(BaseModel):
+    name: str
+    category: Optional[str] = None
+    barcode: Optional[str] = None
+    quantity: int = Field(..., ge=0)
+    unit: Optional[str] = None
+    expiration_date: Optional[date] = None
+    location_id: Optional[int] = None
+
+class BulkImportRequest(BaseModel):
+    items: list[BulkImportItem]
+
+class BulkImportResult(BaseModel):
+    total_items: int
+    successful: int
+    failed: int
+    errors: list[dict] = []

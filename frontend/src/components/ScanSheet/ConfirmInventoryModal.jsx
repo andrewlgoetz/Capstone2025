@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createItem, fetchInventoryByBarcode, increaseInventory, getCategories } from '../../services/api'
 
 
-const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null }) => {
+const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null, locations = [] }) => {
   // Fetch categories from API
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
@@ -17,6 +17,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
       .map(cat => cat.name);
   }, [categoriesQuery.data]);
 
+
   const [form, setForm] = useState({
     barcode: '',
     quantity: '',
@@ -26,7 +27,9 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
     expiry_date: '',
     unit: 'units',
     custom_unit: '',
+    location_id: '',
   })
+
 
   useEffect(() => {
     if (initial) {
@@ -35,6 +38,8 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
       const initialQuantity = initial.quantity ?? 1
       // Use the mapped category from product (backend already mapped it) or from initial
       const initialCategory = initial.category || product?.category || ''
+      // Auto-select location if user has exactly one
+      const autoLocation = locations.length === 1 ? String(locations[0].location_id) : ''
       setForm({
         barcode: initial.barcode || '',
         quantity: initialQuantity,
@@ -43,14 +48,16 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
         category_notes: initial.category_notes || '',
         expiry_date: initial.expiry_date || '',
         unit: initial.unit || 'units',
-        custom_unit: initial.unit && !['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans'].includes(initial.unit) ? initial.unit : '',
+        custom_unit: initial.unit && !['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets'].includes(initial.unit) ? initial.unit : '',
+        location_id: autoLocation,
       })
     }
-  }, [initial, product])
+  }, [initial, product, locations])
+
 
   const handleChange = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const UNIT_OPTIONS = ['units','kgs','g','lbs','cups','oz','packs','blocks','cartons','bottles','cans','CUSTOM']
+  const UNIT_OPTIONS = ['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets','CUSTOM']
 
   const handleConfirm = () => {
     // perform create on backend, then notify parent
@@ -69,7 +76,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
           category_notes: categoryNotesToSend,
           unit: unitToSend,
           expiration_date: form.expiry_date || null,
-          location_id: 1,
+          location_id: form.location_id ? Number(form.location_id) : null,
         }
         const created = await createItem(payload)
         onConfirm?.(created)
@@ -177,6 +184,22 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
             )}
 
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
+
+            {locations.length > 1 && (
+              <FormControl fullWidth>
+                <InputLabel id="location-select-label">Location</InputLabel>
+                <Select
+                  labelId="location-select-label"
+                  value={form.location_id}
+                  label="Location"
+                  onChange={(e) => setForm(f => ({ ...f, location_id: e.target.value }))}
+                >
+                  {locations.map((loc) => (
+                    <MenuItem key={loc.location_id} value={String(loc.location_id)}>{loc.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <Typography variant="caption" color="textSecondary">You can edit fields before confirming.</Typography>
             {error && <Typography variant="body2" color="error">{error}</Typography>}

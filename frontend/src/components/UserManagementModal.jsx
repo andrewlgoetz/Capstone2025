@@ -33,8 +33,9 @@ import SaveIcon from '@mui/icons-material/Save';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import DownloadIcon from '@mui/icons-material/Download';
 import SecurityIcon from '@mui/icons-material/Security';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { updateUser, resetUserPassword, getUserActivityLog, getAllPermissions, getUserPermissions, updateUserPermissions } from '../services/api';
+import { updateUser, resetUserPassword, getUserActivityLog, getAllPermissions, getUserPermissions, updateUserPermissions, getAllBankLocations, getUserLocations, updateUserLocations } from '../services/api';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -99,6 +100,24 @@ export default function UserManagementModal({ user, open, onClose }) {
     enabled: false // Don't auto-fetch, only fetch when tab is opened
   });
 
+  // Fetch all bank locations (for location assignment UI)
+  const { data: allBankLocations } = useQuery({
+    queryKey: ['bankLocations'],
+    queryFn: getAllBankLocations,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Fetch user's assigned locations
+  const { data: userLocationData, refetch: refetchUserLocations } = useQuery({
+    queryKey: ['userLocations', user?.user_id],
+    queryFn: () => getUserLocations(user.user_id),
+    enabled: false,
+  });
+
+  // Local state for location assignment
+  const [selectedLocationIds, setSelectedLocationIds] = useState([]);
+  const [locationsChanged, setLocationsChanged] = useState(false);
+
   // Load permissions when Permissions tab is opened
   useEffect(() => {
     if (activeTab === 1 && user) {
@@ -120,6 +139,21 @@ export default function UserManagementModal({ user, open, onClose }) {
       refetchActivity();
     }
   }, [activeTab, user, refetchActivity]);
+
+  // Load user locations when Locations tab is opened
+  useEffect(() => {
+    if (activeTab === 4 && user) {
+      refetchUserLocations();
+    }
+  }, [activeTab, user, refetchUserLocations]);
+
+  // Sync selectedLocationIds with fetched data
+  useEffect(() => {
+    if (userLocationData?.location_ids) {
+      setSelectedLocationIds(userLocationData.location_ids);
+      setLocationsChanged(false);
+    }
+  }, [userLocationData]);
 
   // Update user mutation
   const updateUserMutation = useMutation({
@@ -167,6 +201,44 @@ export default function UserManagementModal({ user, open, onClose }) {
       setTimeout(() => setErrorMessage(''), 5000);
     }
   });
+
+  // Update user locations mutation
+  const updateLocationsMutation = useMutation({
+    mutationFn: (locationIds) => updateUserLocations(user.user_id, locationIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userLocations', user.user_id] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setSuccessMessage('Locations updated successfully!');
+      setLocationsChanged(false);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    },
+    onError: (error) => {
+      const message = error.response?.data?.detail || 'Failed to update locations';
+      setErrorMessage(message);
+      setTimeout(() => setErrorMessage(''), 5000);
+    },
+  });
+
+  const handleLocationToggle = (locationId) => {
+    setSelectedLocationIds((prev) => {
+      const next = prev.includes(locationId)
+        ? prev.filter((id) => id !== locationId)
+        : [...prev, locationId];
+      setLocationsChanged(true);
+      return next;
+    });
+  };
+
+  const handleSelectAllLocations = () => {
+    const allIds = (allBankLocations || []).map((l) => l.location_id);
+    const allSelected = allIds.every((id) => selectedLocationIds.includes(id));
+    setSelectedLocationIds(allSelected ? [] : allIds);
+    setLocationsChanged(true);
+  };
+
+  const handleSaveLocations = () => {
+    updateLocationsMutation.mutate(selectedLocationIds);
+  };
 
   // Permissions that require a prerequisite to be enabled first
   const PREREQUISITE_MAP = {
@@ -237,6 +309,8 @@ export default function UserManagementModal({ user, open, onClose }) {
     setErrorMessage('');
     setSelectedPermissions([]);
     setPermissionsChanged(false);
+    setSelectedLocationIds([]);
+    setLocationsChanged(false);
     onClose();
   };
 
@@ -299,6 +373,7 @@ export default function UserManagementModal({ user, open, onClose }) {
           <Tab label="Permissions" />
           <Tab label="Activity Log" />
           <Tab label="Security" />
+          <Tab label="Locations" /*icon={<LocationOnIcon sx={{ fontSize: 16 }} />} iconPosition="start"*/ />
         </Tabs>
       </Box>
 
@@ -335,10 +410,10 @@ export default function UserManagementModal({ user, open, onClose }) {
             <TextField
               label="Bank ID"
               type="number"
-              value={formData.bank_id}
-              onChange={(e) => setFormData({ ...formData, bank_id: parseInt(e.target.value) })}
-              required
+              value={1}
+              disabled
               fullWidth
+              helperText="Bank ID is managed automatically"
             />
             <TextField
               label="Role"
@@ -567,6 +642,92 @@ export default function UserManagementModal({ user, open, onClose }) {
                 <li>Password expiration policies</li>
               </ul>
             </Alert>
+          </Box>
+        </TabPanel>
+
+        {/* Tab 5: Locations */}
+        <TabPanel value={activeTab} index={4}>
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                <LocationOnIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
+                Assign locations this user can access
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<SaveIcon />}
+                onClick={handleSaveLocations}
+                disabled={!locationsChanged || updateLocationsMutation.isPending}
+                sx={{ backgroundColor: '#4f46e5', '&:hover': { backgroundColor: '#4338ca' } }}
+              >
+                {updateLocationsMutation.isPending ? 'Saving...' : 'Save Locations'}
+              </Button>
+            </Box>
+
+            {user.role_id === 1 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Admin users automatically have access to all locations regardless of assignments.
+              </Alert>
+            )}
+
+            {!allBankLocations || allBankLocations.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                No locations have been created yet. Add locations in the Locations tab on the Admin page.
+              </Typography>
+            ) : (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={
+                          allBankLocations.length > 0 &&
+                          allBankLocations.every((l) => selectedLocationIds.includes(l.location_id))
+                        }
+                        indeterminate={
+                          selectedLocationIds.length > 0 &&
+                          selectedLocationIds.length < allBankLocations.length
+                        }
+                        onChange={handleSelectAllLocations}
+                        sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Select All ({selectedLocationIds.length} of {allBankLocations.length})
+                      </Typography>
+                    }
+                    sx={{ borderBottom: '1px solid #e2e8f0', pb: 1, mb: 1 }}
+                  />
+                  {allBankLocations.map((loc) => (
+                    <FormControlLabel
+                      key={loc.location_id}
+                      control={
+                        <Checkbox
+                          checked={selectedLocationIds.includes(loc.location_id)}
+                          onChange={() => handleLocationToggle(loc.location_id)}
+                          sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {loc.name}
+                          </Typography>
+                          {loc.address && (
+                            <Typography variant="caption" color="text.secondary">
+                              {loc.address}
+                            </Typography>
+                          )}
+                        </Box>
+                      }
+                      sx={{ alignItems: 'flex-start', mb: 0.5 }}
+                    />
+                  ))}
+                </FormGroup>
+              </Paper>
+            )}
           </Box>
         </TabPanel>
       </DialogContent>

@@ -11,7 +11,9 @@ from app.schemas.auth_schema import (
     ChangePasswordRequest,
     UserCreate,
     UserRead,
+    UserLocationRead,
     UserUpdate,
+    UserLocationsUpdate,
     TemporaryPasswordResponse,
     PermissionsListResponse,
     UserPermissionsUpdate,
@@ -20,8 +22,22 @@ from app.schemas.auth_schema import (
 from app.services import auth_service
 from app.dependencies import get_db, get_current_user, get_current_active_user, require_admin
 from app.models.user import User
+from app.models.user_location import UserLocation
+from app.models.location import Location
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+def _get_user_locations(user_id: int, db: Session) -> list[UserLocationRead]:
+    """Get a user's assigned locations as schema objects."""
+    rows = (
+        db.query(Location.location_id, Location.name)
+        .join(UserLocation, UserLocation.location_id == Location.location_id)
+        .filter(UserLocation.user_id == user_id)
+        .order_by(Location.name)
+        .all()
+    )
+    return [UserLocationRead(location_id=r.location_id, name=r.name) for r in rows]
 
 
 # --------------- Public Endpoints (No Auth Required) ---------------
@@ -70,6 +86,19 @@ def get_current_user_info(
     """
     role_name = auth_service.get_user_role(current_user, db)
 
+    # Admins see all bank locations; others see only assigned
+    is_admin_user = auth_service.is_admin(current_user, db)
+    if is_admin_user:
+        rows = (
+            db.query(Location.location_id, Location.name)
+            .filter(Location.bank_id == current_user.bank_id)
+            .order_by(Location.name)
+            .all()
+        )
+        locations = [UserLocationRead(location_id=r.location_id, name=r.name) for r in rows]
+    else:
+        locations = _get_user_locations(current_user.user_id, db)
+
     return UserRead(
         user_id=current_user.user_id,
         name=current_user.name,
@@ -77,7 +106,8 @@ def get_current_user_info(
         bank_id=current_user.bank_id,
         role_id=current_user.role_id,
         requires_password_change=current_user.requires_password_change,
-        role_name=role_name
+        role_name=role_name,
+        locations=locations,
     )
 
 
@@ -146,7 +176,8 @@ def list_all_users(
             bank_id=user.bank_id,
             role_id=user.role_id,
             requires_password_change=user.requires_password_change,
-            role_name=role_name
+            role_name=role_name,
+            locations=_get_user_locations(user.user_id, db),
         )
         for user, role_name in users_with_roles
     ]
@@ -165,7 +196,7 @@ def create_new_user(
     new_user, temp_password = auth_service.create_user(
         name=user_data.name,
         email=user_data.email,
-        bank_id=user_data.bank_id,
+        bank_id=current_user.bank_id,
         role_id=user_data.role_id,
         db=db
     )
@@ -378,3 +409,56 @@ def update_user_permissions(
     permission_service.set_user_permissions(user_id, data.permissions, db)
     permissions = permission_service.get_user_permissions(user_id, db)
     return UserPermissionsResponse(user_id=user_id, permissions=permissions)
+
+
+# --------------- Location Assignment Endpoints ---------------
+
+@router.get("/users/{user_id}/locations")
+def get_user_locations(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Admin-only: Get location IDs assigned to a user."""
+    user = auth_service.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    rows = db.query(UserLocation.location_id).filter(UserLocation.user_id == user_id).all()
+    return {"user_id": user_id, "location_ids": [r.location_id for r in rows]}
+
+
+@router.put("/users/{user_id}/locations")
+def update_user_locations(
+    user_id: int,
+    data: UserLocationsUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Admin-only: Replace a user's location assignments."""
+    user = auth_service.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Validate that all location_ids belong to the user's bank
+    if data.location_ids:
+        valid = (
+            db.query(Location.location_id)
+            .filter(Location.location_id.in_(data.location_ids), Location.bank_id == user.bank_id)
+            .all()
+        )
+        valid_ids = {r.location_id for r in valid}
+        invalid = set(data.location_ids) - valid_ids
+        if invalid:
+            raise HTTPException(status_code=400, detail=f"Invalid location IDs: {invalid}")
+
+    # Delete existing assignments
+    db.query(UserLocation).filter(UserLocation.user_id == user_id).delete()
+
+    # Insert new assignments
+    for loc_id in data.location_ids:
+        db.add(UserLocation(user_id=user_id, location_id=loc_id))
+
+    db.commit()
+
+    return {"user_id": user_id, "location_ids": data.location_ids}

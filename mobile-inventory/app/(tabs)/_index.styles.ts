@@ -254,4 +254,116 @@ export const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
+
+  // Auth-related styles
+  userBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  userName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  // Location selector styles
+  locationBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    gap: 10,
+  },
+  locationLabel: {
+    color: '#aaa',
+    fontSize: 13,
+    flexShrink: 0,
+  },
+  locationSelector: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#4f46e5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  locationSelectorEmpty: {
+    borderColor: '#ef4444',
+  },
+  locationSelectorText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  locationSelectorTextEmpty: {
+    color: '#ef4444',
+  },
+  locationChevron: {
+    color: '#aaa',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  noPermText: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+
+  // Location picker for new item form
+  locationPicker: {
+    maxHeight: 150,
+  },
+  locationOption: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 6,
+    backgroundColor: '#f9f9f9',
+  },
+  locationOptionSelected: {
+    borderColor: '#4f46e5',
+    backgroundColor: '#eef2ff',
+  },
+  locationOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  locationOptionTextSelected: {
+    color: '#4f46e5',
+    fontWeight: '600',
+  },
+
+  // Location picker modal options
+  locationPickerOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  locationPickerOptionSelected: {
+    backgroundColor: '#eef2ff',
+    borderRadius: 6,
+  },
+  locationPickerOptionText: {
+    fontSize: 15,
+    color: '#333',
+  },
+  locationPickerOptionTextSelected: {
+    color: '#4f46e5',
+    fontWeight: '600',
+  },
 });

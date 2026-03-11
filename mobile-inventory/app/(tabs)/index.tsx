@@ -14,13 +14,11 @@ import {
   Platform
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getFavorites, addFavorite, FavoriteItem } from '../../utils/favorites';
+import api, { API_URL } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { styles } from './_index.styles';
-
-// !!! REPLACE WITH YOUR COMPUTER'S IP ADDRESS !!!
-const API_URL = 'http://192.168.1.154:8000';
 
 interface InventoryItem {
   item_id: number;
@@ -70,11 +68,31 @@ interface ScanOutResponse {
 }
 
 export default function App(): React.ReactElement {
+  const { user, userLocations, hasPermission, logout } = useAuth();
+  const canScanIn = hasPermission('barcode:scan_in');
+  const canScanOut = hasPermission('barcode:scan_out');
+
   const [permission, requestPermission] = useCameraPermissions();
   const [mode, setMode] = useState<'in' | 'out'>('in');
   const [loading, setLoading] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [categories, setCategories] = useState<string[]>([]);
+
+  // Default location: auto-select if user has exactly one
+  const defaultLocationId = userLocations.length === 1 ? String(userLocations[0].location_id) : '';
+
+  // Persistent scan-in location selector
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(defaultLocationId);
+  const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
+
+  // Keep location in sync if userLocations loads after mount
+  useEffect(() => {
+    if (userLocations.length === 1 && !selectedLocationId) {
+      setSelectedLocationId(String(userLocations[0].location_id));
+    }
+  }, [userLocations, selectedLocationId]);
+
+  const selectedLocation = userLocations.find(l => String(l.location_id) === selectedLocationId);
 
   // form state for new items
   const [showNewItemForm, setShowNewItemForm] = useState<boolean>(false);
@@ -86,7 +104,7 @@ export default function App(): React.ReactElement {
     quantity: '1',
     unit: 'pcs',
     expirationDate: null,
-    locationId: '1',
+    locationId: defaultLocationId,
   });
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState<boolean>(false);
@@ -113,7 +131,7 @@ export default function App(): React.ReactElement {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_URL}/categories/`);
+        const response = await api.get(`/categories/`);
         const activeCategories = response.data
           .filter((cat: any) => cat.is_active)
           .map((cat: any) => cat.name);
@@ -149,6 +167,7 @@ export default function App(): React.ReactElement {
     loadFavorites();
   }, []);
 
+
   useEffect(() => {
     let scanTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -180,23 +199,27 @@ export default function App(): React.ReactElement {
 
   const handleBarCodeScanned = async (result: BarcodeScanningResult): Promise<void> => {
     if (loading) return;
-    setIsScanning(false); 
+
+    if (mode === 'in' && !selectedLocationId) {
+      setIsScanning(false);
+      Alert.alert("No Location Selected", "Please select a location before scanning in.");
+      return;
+    }
+
+    setIsScanning(false);
     setLoading(true);
-    
+
     const payload = { barcode: result.data };
 
     try {
       if (mode === 'in') {
-        // --- SCAN IN LOGIC ---
-        const response = await axios.post<ScanInResponse>(`${API_URL}/barcode/scan-in`, payload);
+        const response = await api.post<ScanInResponse>('/barcode/scan-in', payload);
         const { status, item, candidate_info } = response.data;
 
         if (status === 'KNOWN' && item) {
-          // item exists - show form to enter quantity
           setKnownItemData({ item, quantity: '1' });
           setShowKnownItemForm(true);
         } else if (status === 'NEW') {
-          // new item - show form to create it
           setNewItemData({
             barcode: candidate_info?.barcode || result.data,
             name: candidate_info?.name || '',
@@ -205,28 +228,31 @@ export default function App(): React.ReactElement {
             quantity: '1',
             unit: 'pcs',
             expirationDate: null,
-            locationId: '1',
+            locationId: selectedLocationId,
           });
           setShowNewItemForm(true);
         } else {
           Alert.alert("Error", "Unknown response from server");
         }
       } else {
-        // --- SCAN OUT LOGIC ---
-        const response = await axios.post<ScanOutResponse>(`${API_URL}/barcode/scan-out`, payload);
+        const response = await api.post<ScanOutResponse>('/barcode/scan-out', payload);
         const { status, item } = response.data;
 
         if (status === 'FOUND' && item) {
-          // show form to enter quantity to remove
           setScanOutData({ item, quantity: '1' });
           setShowScanOutForm(true);
         } else {
           Alert.alert("Error", "Item not found in inventory.");
         }
       }
-    } catch (error) {
-      console.log(error);
-      Alert.alert("Connection Error", `Could not connect to ${API_URL}.\nEnsure backend is running and IP is correct.`);
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        Alert.alert("Session Expired", "Please sign in again.");
+        logout();
+      } else {
+        console.log(error);
+        Alert.alert("Connection Error", `Could not connect to server.\nEnsure backend is running and IP is correct.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -253,10 +279,10 @@ export default function App(): React.ReactElement {
         quantity: parseInt(newItemData.quantity),
         unit: newItemData.unit,
         expiration_date: newItemData.expirationDate ? newItemData.expirationDate.toISOString().split('T')[0] : null,
-        location_id: parseInt(newItemData.locationId),
+        location_id: parseInt(newItemData.locationId) || null,
       };
 
-      const response = await axios.post(`${API_URL}/inventory/add`, payload);
+      const response = await api.post('/inventory/add', payload);
       const createdItem = response.data;
 
       // Success - offer to add to favorites
@@ -287,6 +313,7 @@ export default function App(): React.ReactElement {
         ]
       );
 
+
       setShowNewItemForm(false);
       setNewItemData({
         barcode: '',
@@ -296,7 +323,7 @@ export default function App(): React.ReactElement {
         quantity: '1',
         unit: 'pcs',
         expirationDate: null,
-        locationId: '1',
+        locationId: defaultLocationId,
       });
     } catch (error: any) {
       console.log(error);
@@ -312,17 +339,16 @@ export default function App(): React.ReactElement {
       return;
     }
 
+    const quantity = parseInt(knownItemData.quantity);
+    const url = `/barcode/${knownItemData.item?.item_id}/increase`;
+    const data = { amount: quantity, location_id: parseInt(selectedLocationId) || undefined };
+    const addedItem = knownItemData.item;
+
     try {
       setLoading(true);
-      const quantity = parseInt(knownItemData.quantity);
-      
-      await axios.post(
-        `${API_URL}/barcode/${knownItemData.item?.item_id}/increase`,
-        { amount: quantity }
-      );
+      await api.post(url, data);
 
       // Success - offer to add to favorites
-      const addedItem = knownItemData.item;
       Alert.alert(
         "Success",
         `Added ${quantity} unit(s) of ${addedItem?.name}`,
@@ -339,6 +365,7 @@ export default function App(): React.ReactElement {
           }
         ]
       );
+
 
       setShowKnownItemForm(false);
       setKnownItemData({ item: null, quantity: '1' });
@@ -361,16 +388,15 @@ export default function App(): React.ReactElement {
       return;
     }
 
+    const quantity = parseInt(scanOutData.quantity);
+    const url = `/barcode/scan-out/${scanOutData.item?.item_id}/confirm`;
+    const data = { quantity };
+    const itemName = scanOutData.item?.name || 'item';
+
     try {
       setLoading(true);
-      const quantity = parseInt(scanOutData.quantity);
-
-      await axios.post(
-        `${API_URL}/barcode/scan-out/${scanOutData.item?.item_id}/confirm`,
-        { quantity }
-      );
-
-      Alert.alert("Success", `Removed ${quantity} unit(s) of ${scanOutData.item?.name}`);
+      await api.post(url, data);
+      Alert.alert("Success", `Removed ${quantity} unit(s) of ${itemName}`);
       setShowScanOutForm(false);
       setScanOutData({ item: null, quantity: '1' });
     } catch (error: any) {
@@ -411,31 +437,70 @@ export default function App(): React.ReactElement {
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert("Sign Out", "Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign Out", style: "destructive", onPress: () => logout() },
+    ]);
+  };
+
 
   return (
     <View style={styles.container}>
+      {/* User info bar */}
+      <View style={styles.userBar}>
+        <Text style={styles.userName}>{user?.name || 'User'}</Text>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Location selector (scan-in only) */}
+      {canScanIn && (
+        <View style={styles.locationBar}>
+          <Text style={styles.locationLabel}>Scanning to:</Text>
+          <TouchableOpacity
+            style={[styles.locationSelector, !selectedLocationId && styles.locationSelectorEmpty]}
+            onPress={() => userLocations.length > 1 && setShowLocationPicker(true)}
+            disabled={userLocations.length <= 1}
+          >
+            <Text style={[styles.locationSelectorText, !selectedLocationId && styles.locationSelectorTextEmpty]}>
+              {selectedLocation?.name ?? 'Select location'}
+            </Text>
+            {userLocations.length > 1 && <Text style={styles.locationChevron}>▾</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Header / Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity 
-          style={[styles.btn, isScanning && mode === "in" && styles.activeBtn]} 
-          onPress={() => {
-            setMode("in");
-            setIsScanning(true); 
-          }}>
-          <Text style={styles.btnText}>
-            {isScanning && mode === "in" ? "🔴 Scanning..." : "Scan IN \n(Add)"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.btn, isScanning && mode === "out" && styles.activeBtn]} 
-          onPress={() => {
-            setMode("out");
-            setIsScanning(true);  
-          }}>
-          <Text style={styles.btnText}>
-            {isScanning && mode === "out" ? "🔴 Scanning..." : "Scan OUT \n(Remove)"}
-          </Text>
-        </TouchableOpacity>
+        {canScanIn && (
+          <TouchableOpacity
+            style={[styles.btn, isScanning && mode === "in" && styles.activeBtn]}
+            onPress={() => {
+              setMode("in");
+              setIsScanning(true);
+            }}>
+            <Text style={styles.btnText}>
+              {isScanning && mode === "in" ? "Scanning..." : "Scan IN \n(Add)"}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {canScanOut && (
+          <TouchableOpacity
+            style={[styles.btn, isScanning && mode === "out" && styles.activeBtn]}
+            onPress={() => {
+              setMode("out");
+              setIsScanning(true);
+            }}>
+            <Text style={styles.btnText}>
+              {isScanning && mode === "out" ? "Scanning..." : "Scan OUT \n(Remove)"}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {!canScanIn && !canScanOut && (
+          <Text style={styles.noPermText}>You don&apos;t have scanning permissions. Contact your admin.</Text>
+        )}
       </View>
 
       {/* Camera View */}
@@ -623,28 +688,47 @@ export default function App(): React.ReactElement {
               </View>
             </Modal>
 
-            {/* Location ID */}
+            {/* Location */}
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Location ID</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 1"
-                value={newItemData.locationId}
-                onChangeText={(text) => setNewItemData({ ...newItemData, locationId: text })}
-                keyboardType="number-pad"
-                placeholderTextColor="#999"
-              />
+              <Text style={styles.label}>Location</Text>
+              {userLocations.length <= 1 ? (
+                <TextInput
+                  style={[styles.input, styles.readOnlyInput]}
+                  value={userLocations[0]?.name || 'No location assigned'}
+                  editable={false}
+                />
+              ) : (
+                <ScrollView horizontal={false} style={styles.locationPicker}>
+                  {userLocations.map((loc) => (
+                    <TouchableOpacity
+                      key={loc.location_id}
+                      style={[
+                        styles.locationOption,
+                        newItemData.locationId === String(loc.location_id) && styles.locationOptionSelected,
+                      ]}
+                      onPress={() => setNewItemData({ ...newItemData, locationId: String(loc.location_id) })}
+                    >
+                      <Text style={[
+                        styles.locationOptionText,
+                        newItemData.locationId === String(loc.location_id) && styles.locationOptionTextSelected,
+                      ]}>
+                        {loc.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             {/* Buttons */}
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowNewItemForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleAddNewItem}
                 disabled={loading}
@@ -686,13 +770,13 @@ export default function App(): React.ReactElement {
             </View>
 
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowKnownItemForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleConfirmKnownItem}
                 disabled={loading}
@@ -734,13 +818,13 @@ export default function App(): React.ReactElement {
             </View>
 
             <View style={styles.formButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowScanOutForm(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleConfirmScanOut}
                 disabled={loading}
@@ -750,6 +834,40 @@ export default function App(): React.ReactElement {
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ===== MODAL: LOCATION PICKER ===== */}
+      <Modal
+        visible={showLocationPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLocationPicker(false)}
+      >
+        <View style={styles.centeredModal}>
+          <View style={styles.quickFormContainer}>
+            <Text style={styles.quickFormTitle}>Select Location</Text>
+            {userLocations.map((loc) => (
+              <TouchableOpacity
+                key={loc.location_id}
+                style={[
+                  styles.locationPickerOption,
+                  selectedLocationId === String(loc.location_id) && styles.locationPickerOptionSelected,
+                ]}
+                onPress={() => {
+                  setSelectedLocationId(String(loc.location_id));
+                  setShowLocationPicker(false);
+                }}
+              >
+                <Text style={[
+                  styles.locationPickerOptionText,
+                  selectedLocationId === String(loc.location_id) && styles.locationPickerOptionTextSelected,
+                ]}>
+                  {loc.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </Modal>

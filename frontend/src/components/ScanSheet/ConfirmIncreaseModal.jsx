@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, IconButton } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Typography, IconButton } from '@mui/material'
 import RemoveIcon from '@mui/icons-material/Remove'
 import AddIcon from '@mui/icons-material/Add'
 
@@ -7,11 +7,8 @@ import AddIcon from '@mui/icons-material/Add'
 const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm }) => {
   const [quantity, setQuantity] = useState(1)
 
-  // initialize quantity when modal opens (preserve manual edits while open)
   useEffect(() => {
-    if (open) {
-      setQuantity(1)
-    }
+    if (open) setQuantity(1)
   }, [open])
 
   const handleConfirm = () => {

@@ -1,0 +1,11 @@
+name,category,barcode,quantity,unit,expiration_date,location_id
+Canned Beans,Canned Goods,012345678901,100,cans,2025-12-31,1
+Rice 5lb Bag,Grains,023456789012,50,bags,2026-06-30,1
+Pasta Penne,Grains,034567890123,75,boxes,,2
+Tomato Sauce,Canned Goods,045678901234,60,cans,2025-08-15,1
+Cereal Cheerios,Breakfast,056789012345,40,boxes,2025-05-20,
+Peanut Butter,Protein,067890123456,30,jars,2026-01-15,2
+Canned Corn,Canned Goods,078901234567,80,cans,2025-11-30,1
+Spaghetti,Grains,089012345678,65,boxes,2026-03-01,2
+Apple Juice,Beverages,090123456789,45,bottles,2025-04-30,3
+Crackers,Snacks,901234567890,55,boxes,2025-07-15,

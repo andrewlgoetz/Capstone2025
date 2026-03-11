@@ -4,12 +4,11 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import WarningIcon from '@mui/icons-material/Warning';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CloseIcon from '@mui/icons-material/Close';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import RedeemIcon from '@mui/icons-material/Redeem'; 
 
-import ScanSheet from '../components/ScanSheet.jsx'; 
+import ScanSheet from '../components/ScanSheet.jsx';
 import InventoryTable from '../components/InventoryTable.jsx';
 import { getItems } from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
@@ -18,9 +17,11 @@ import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 import { fetchProductByBarcode } from '../services/off';
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import LocationFilter from '../components/LocationFilter'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
+import BulkImportModal from '../components/BulkImportModal.jsx'
 import { fetchInventoryByBarcode, scanOutInventory, increaseInventory } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
@@ -91,23 +92,23 @@ const CategoryChart = ({ title, data = [] }) => {
 };
 
 const Home = () => {
-  const [query, setQuery] = useState('')
   const [showScan, setShowScan] = useState(false)
   const [scanMode, setScanMode] = useState('in') // 'in' or 'out'
   const [showFabMenu, setShowFabMenu] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
+  const [showBulkImport, setShowBulkImport] = useState(false)
 
-  const { hasPermission } = useAuth();
+  const { hasPermission, userLocations, selectedLocationIds, setSelectedLocationIds } = useAuth();
   const canViewInventory = hasPermission('inventory:view');
   const canScanIn = hasPermission('barcode:scan_in');
   const canScanOut = hasPermission('barcode:scan_out');
   const canCreate = hasPermission('inventory:create');
   const showFab = canScanIn || canScanOut || canCreate;
 
-  const { data: inventoryItems = [], isLoading: isDataLoading, isError } = useQuery({
-    queryKey: ["inventoryItems"],
-    queryFn: getItems,
+  const { data: inventoryItems = [], isLoading: isDataLoading } = useQuery({
+    queryKey: ["inventoryItems", selectedLocationIds],
+    queryFn: () => getItems(selectedLocationIds),
     enabled: canViewInventory,
   });
 
@@ -154,51 +155,41 @@ const Home = () => {
     }
   }, [snack.open]);
 
-  const handleScan = (code) => {
-  // start a loading lookup but don't open the generic product dialog yet
-  // (we may show increase/quantity modals instead)
-  setProductDialog({ open: false, loading: true, product: null, error: null })
+  const handleScan = (code, locationId) => {
+    setProductDialog({ open: false, loading: true, product: null, error: null })
 
-    // run both lookups in parallel
     Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
       .then(([prodRes, invRes]) => {
         const product = prodRes.status === 'fulfilled' ? prodRes.value : null
         const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
 
-        // If inventory is a known item (has item_id), show the increase modal instead of full-edit modal
         if (inventory && inventory.item_id) {
-          // close the generic product dialog and open the scan-in increase modal
           setProductDialog({ open: false, loading: false, product: product, inventory: inventory, error: null })
-          setScanInTarget({ product, inventory })
-          setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+          setScanInTarget({ product, inventory, locationId })
+          setSnack({ open: true, message: `Scanned ${code}`, severity: 'success' })
         } else {
-    setProductDialog({ open: true, loading: false, product: product, inventory: inventory, error: null })
-          setSnack({ open: true, message: `Scanned ${code}` , severity: 'success' })
+          setProductDialog({ open: true, loading: false, product: product, inventory: { ...inventory, location_id: locationId || inventory.location_id }, error: null })
+          setSnack({ open: true, message: `Scanned ${code}`, severity: 'success' })
         }
       })
       .catch(() => {
-  // show generic dialog on lookup failure
-  setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
+        setProductDialog({ open: true, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
         setSnack({ open: true, message: 'Lookup failed', severity: 'warning' })
       })
   }
 
-  // Scan out flow: expects barcode exists; opens confirm quantity modal and calls dummy scanOutInventory
   const [scanOutTarget, setScanOutTarget] = useState(null)
   const [scanInTarget, setScanInTarget] = useState(null)
 
-  const handleScanOut = (code) => {
-  // fetch product image and inventory info similar to scan-in, then show quantity modal
-  // don't open the generic dialog while loading; we'll show the quantity modal when ready
-  setProductDialog({ open: false, loading: true, product: null, error: null })
+  const handleScanOut = (code, locationId) => {
+    setProductDialog({ open: false, loading: true, product: null, error: null })
     Promise.allSettled([fetchProductByBarcode(code), fetchInventoryByBarcode(code)])
       .then(([prodRes, invRes]) => {
         const product = prodRes.status === 'fulfilled' ? prodRes.value : null
         const inventory = invRes.status === 'fulfilled' ? invRes.value : { barcode: code }
 
         setProductDialog({ open: false, loading: false, product: product, inventory: inventory, error: null })
-        // show separate modal for quantity confirmation
-        setScanOutTarget({ product, inventory })
+        setScanOutTarget({ product, inventory, locationId })
       })
       .catch(() => {
         setProductDialog({ open: false, loading: false, product: null, inventory: { barcode: code }, error: 'Lookup failed' })
@@ -217,9 +208,8 @@ const Home = () => {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               Home
             </h1>
-            <div className="inline-flex gap-2 items-center rounded-full px-3 py-1 text-sm bg-gray-100 text-slate-600 font-medium border border-gray-200 hidden sm:flex">
-              <LocationOnIcon className="w-4 h-4 text-slate-500" />
-              <span>Main Warehouse</span>
+            <div className="hidden sm:block">
+              <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
             </div>
           </div>
         </div>
@@ -281,7 +271,7 @@ const Home = () => {
                       /> */}
                     </div>
                   </div>
-                  <InventoryTable mode="widget" limit={5} showFilterBar={false} />
+                  <InventoryTable mode="widget" limit={5} showFilterBar={false} locationIds={selectedLocationIds} />
                 </div>
               </div>
             </div>
@@ -334,9 +324,9 @@ const Home = () => {
                 {canCreate && (
                   <button
                     className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
-                    onClick={() => { setShowFabMenu(false); /* Edit logic */ }}
+                    onClick={() => { setShowBulkImport(true); setShowFabMenu(false); }}
                   >
-                   Bulk Import
+                    Bulk Import
                   </button>
                 )}
               </div>
@@ -357,10 +347,11 @@ const Home = () => {
       {showScan && (
         <ScanSheet
           onClose={() => setShowScan(false)}
-          onScan={(code) => {
+          locations={userLocations}
+          onScan={(code, locationId) => {
             setShowScan(false)
-            if (scanMode === 'out') handleScanOut(code)
-            else handleScan(code)
+            if (scanMode === 'out') handleScanOut(code, locationId)
+            else handleScan(code, locationId)
           }}
         />
       )}
@@ -374,8 +365,7 @@ const Home = () => {
           maxQuantity={scanOutTarget.inventory?.quantity}
           imageUrl={scanOutTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            // call dummy API
-            scanOutInventory(payload.barcode, payload.quantity)
+            scanOutInventory(payload.barcode, payload.quantity, scanOutTarget.locationId)
               .then((res) => {
                 console.log('Scan out result', res)
                 setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
@@ -398,7 +388,7 @@ const Home = () => {
           initial={{ barcode: scanInTarget.inventory?.barcode, item_id: scanInTarget.inventory?.item_id, name: scanInTarget.inventory?.name, category: scanInTarget.inventory?.category }}
           imageUrl={scanInTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            increaseInventory(payload.item_id, payload.quantity)
+            increaseInventory(payload.item_id, payload.quantity, scanInTarget.locationId)
               .then((res) => {
                 setSnack({ open: true, message: `Added ${payload.quantity} — new qty ${res.quantity}`, severity: 'success' })
                 setScanInTarget(null)
@@ -416,6 +406,7 @@ const Home = () => {
           initial={productDialog.inventory || { barcode: productDialog.product?.code || '' }}
           imageUrl={productDialog.product?.image_front_small_url}
           product={productDialog.product}
+          locations={userLocations}
           onConfirm={(created) => {
             // created is the object returned from the backend createItem
             console.log('Confirmed inventory', created)
@@ -426,14 +417,31 @@ const Home = () => {
         />
       )}
 
+      {/* Bulk Import Modal */}
+      {showBulkImport && (
+        <BulkImportModal
+          open={showBulkImport}
+          onClose={() => setShowBulkImport(false)}
+          onSuccess={(result) => {
+            setSnack({
+              open: true,
+              message: `Imported ${result.successful} items successfully${result.failed > 0 ? `, ${result.failed} failed` : ''}`,
+              severity: result.failed > 0 ? 'warning' : 'success'
+            })
+            // Refresh inventory list
+            queryClient.invalidateQueries(["inventoryItems"])
+          }}
+        />
+      )}
+
       {/* Snackbar/Toast */}
       {snack.open && (
-        <div 
+        <div
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
         >
-          <div 
+          <div
             className={`p-3 text-sm rounded-lg shadow-xl flex items-center justify-between gap-4 ${
-              snack.severity === 'success' ? 'bg-emerald-600 text-white' : 
+              snack.severity === 'success' ? 'bg-emerald-600 text-white' :
               snack.severity === 'warning' ? 'bg-amber-500 text-slate-900' : 'bg-slate-600 text-white'
             }`}
           >

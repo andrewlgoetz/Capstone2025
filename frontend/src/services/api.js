@@ -134,6 +134,43 @@ export async function updateUserPermissions(userId, permissions) {
   return res.data;
 }
 
+// --------------- Location API Functions ---------------
+
+export async function getMyLocations() {
+  const res = await api.get('/locations');
+  return res.data;
+}
+
+export async function getAllBankLocations() {
+  const res = await api.get('/locations/all');
+  return res.data;
+}
+
+export async function createLocation(data) {
+  const res = await api.post('/locations', data);
+  return res.data;
+}
+
+export async function updateLocation(locationId, data) {
+  const res = await api.put(`/locations/${locationId}`, data);
+  return res.data;
+}
+
+export async function deleteLocation(locationId) {
+  const res = await api.delete(`/locations/${locationId}`);
+  return res.data;
+}
+
+export async function getUserLocations(userId) {
+  const res = await api.get(`/auth/users/${userId}/locations`);
+  return res.data;
+}
+
+export async function updateUserLocations(userId, locationIds) {
+  const res = await api.put(`/auth/users/${userId}/locations`, { location_ids: locationIds });
+  return res.data;
+}
+
 // --------------- Inventory API Functions ---------------
 
 // Create a new item
@@ -142,9 +179,10 @@ export async function createItem(item) {
   return res.data;
 }
 
-// Get all items
-export async function getItems() {
-  const res = await api.get("/inventory/all");
+// Get all items (optionally filtered by location IDs)
+export async function getItems(locationIds) {
+  const params = locationIds?.length ? { location_ids: locationIds.join(',') } : {};
+  const res = await api.get("/inventory/all", { params });
   return res.data;
 }
 
@@ -199,8 +237,8 @@ export async function fetchInventoryByBarcode(barcode) {
 }
 
 // scanOutInventory: 1) call POST /barcode/scan-out with barcode to find existing item
-// 2) if FOUND, call POST /barcode/scan-out/{item_id}/confirm with { quantity }
-export async function scanOutInventory(barcode, qty = 1) {
+// 2) if FOUND, call POST /barcode/scan-out/{item_id}/confirm with { quantity, location_id? }
+export async function scanOutInventory(barcode, qty = 1, location_id = null) {
   if (!barcode) throw new Error('No barcode provided')
 
   // 1) lookup
@@ -216,7 +254,9 @@ export async function scanOutInventory(barcode, qty = 1) {
   const item_id = item?.item_id
 
   // 2) confirm scan out
-  const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, { quantity: qty })
+  const confirmBody = { quantity: qty }
+  if (location_id != null) confirmBody.location_id = location_id
+  const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, confirmBody)
   const updated = confirmRes.data
 
   return {
@@ -231,9 +271,29 @@ export async function scanOutInventory(barcode, qty = 1) {
 }
 
 // Increase inventory quantity for an existing item (scan-in known item)
-export async function increaseInventory(item_id, amount = 1) {
+export async function increaseInventory(item_id, amount = 1, location_id = null) {
   if (!item_id) throw new Error('item_id required')
-  const res = await api.post(`/barcode/${item_id}/increase`, { amount })
+  const body = { amount }
+  if (location_id != null) body.location_id = location_id
+  const res = await api.post(`/barcode/${item_id}/increase`, body)
+  return res.data
+}
+
+// Bulk import from CSV file
+export async function bulkImportCSV(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await api.post('/inventory/bulk-import/csv', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return res.data
+}
+
+// Bulk import from JSON file
+export async function bulkImportJSON(jsonData) {
+  const res = await api.post('/inventory/bulk-import/json', jsonData)
   return res.data
 }
 
