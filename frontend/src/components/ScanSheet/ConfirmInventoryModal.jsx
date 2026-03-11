@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
-import { createItem, fetchInventoryByBarcode, increaseInventory } from '../../services/api'
+import { createItem, fetchInventoryByBarcode, increaseInventory, saveBarcodeMapping } from '../../services/api'
 
 // A small, extendable confirm modal for inventory items.
 // Props: open, onClose, initial (object), imageUrl, onConfirm
@@ -81,6 +81,13 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
           location_id: 1,
         }
         const created = await createItem(payload)
+        // Persist the barcode -> product mapping so future scans auto-fill details.
+        // Fire-and-forget: a failure here must not block the successful inventory creation.
+        if (form.barcode && form.name) {
+          saveBarcodeMapping(form.barcode, form.name, categoryToSend || null, null).catch(
+            (err) => console.warn('[ConfirmInventoryModal] saveBarcodeMapping failed (non-fatal):', err?.message)
+          )
+        }
         onConfirm?.(created)
         onClose?.()
       } catch (err) {

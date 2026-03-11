@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import date,datetime
-from typing import Optional,Literal
+from datetime import date, datetime
+from typing import Optional, Literal
 from app.models.inventory_movement import MovementType
 
 class InventoryCreate(BaseModel):
@@ -48,6 +48,7 @@ class BarcodeInfo(BaseModel):
     name: str
     category: Optional[str]
     barcode: Optional[str]
+    image_url: Optional[str] = None
 
 class ScanResponse(BaseModel):
     status: Literal["KNOWN", "NEW"]
@@ -63,3 +64,19 @@ class ScanOutConfirmRequest(BaseModel):
 
 class QuantityDelta(BaseModel):
     amount: int = Field(..., gt=0)  # strictly positive; sign is decided by the endpoint
+
+
+# ---------------------------------------------------------------------------
+# Barcode product mapping schemas
+# ---------------------------------------------------------------------------
+
+class BarcodeProductCreate(BaseModel):
+    barcode: str
+    name: str
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+
+class BarcodeProductRead(BarcodeProductCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    created_at: datetime

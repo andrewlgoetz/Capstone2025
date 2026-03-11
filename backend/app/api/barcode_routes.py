@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.services.barcode_service import lookup_barcode
+import app.services.barcode_product_service as barcode_product_service
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.models.food_banks import FoodBank
@@ -81,25 +82,33 @@ def confirm_scan_out(
 
 @router.post("/scan-in", response_model=ScanResponse)
 def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
-    code= inventory_service.normalize_barcode(payload.barcode)
+    code = inventory_service.normalize_barcode(payload.barcode)
     if not code:
         raise HTTPException(status_code=400, detail="barcode is required")
-    # code = _normalize_barcode(payload.barcode)
-    
 
-    # Barcode exists — check DB directly (don't call service which raises if not found)
+    # 1. Check inventory DB — known item already in stock
     existing = db.query(InventoryItem).filter(InventoryItem.barcode == code).first()
     if existing:
         return ScanResponse(
             status="KNOWN",
             item=InventoryRead.model_validate(existing),
-            candidate_info=None
+            candidate_info=None,
         )
-    
-    # Barcode does not exist in our DB — ask the barcode registry
+
+    # 2. Check our saved barcode-product mapping table
+    saved_product = barcode_product_service.get_by_barcode(code, db)
+    if saved_product:
+        candidate = BarcodeInfo(
+            name=saved_product.name,
+            category=saved_product.category,
+            barcode=saved_product.barcode,
+            image_url=saved_product.image_url,
+        )
+        return ScanResponse(status="NEW", item=None, candidate_info=candidate)
+
+    # 3. Fall back to external / dummy lookup
     info = lookup_barcode(code)
     if info:
-        # return candidate info so frontend can prefill fields (status NEW)
         candidate = BarcodeInfo(
             name=info.get("name") if isinstance(info, dict) else None,
             category=info.get("category") if isinstance(info, dict) else None,
@@ -107,8 +116,31 @@ def upsert_scanned_item(payload: ScanRequest, db: Session = Depends(get_db)):
         )
         return ScanResponse(status="NEW", item=None, candidate_info=candidate)
 
-    # No candidate info available
+    # 4. No candidate info available — manual entry required
     return ScanResponse(status="NEW", item=None, candidate_info=None)
+
+
+@router.post("/product-mapping", response_model=BarcodeProductRead, status_code=201)
+def save_product_mapping(payload: BarcodeProductCreate, db: Session = Depends(get_db)):
+    """Persist a barcode -> product mapping so future scans auto-fill item details.
+
+    Normalizes the barcode, then upserts: if the barcode already exists the
+    existing mapping is updated and returned (HTTP 201 either way for simplicity).
+    """
+    code = inventory_service.normalize_barcode(payload.barcode)
+    if not code:
+        raise HTTPException(status_code=400, detail="barcode is required")
+
+    from app.schemas.inventory_schema import BarcodeProductCreate as _BPC
+    normalized_payload = _BPC(
+        barcode=code,
+        name=payload.name,
+        category=payload.category,
+        image_url=payload.image_url,
+    )
+
+    product = barcode_product_service.upsert(normalized_payload, db)
+    return BarcodeProductRead.model_validate(product)
 
 @router.post("/{item_id}/increase", response_model=InventoryRead)
 def increase_item_quantity(

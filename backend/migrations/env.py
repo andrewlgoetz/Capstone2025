@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 
 from app.db.session import engine, Base
-from app.models import inventory, location, user, role, food_banks
+from app.models import inventory, location, user, role, food_banks, barcode_product  # noqa: F401
 
 target_metadata = Base.metadata
 

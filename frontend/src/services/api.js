@@ -105,6 +105,20 @@ export async function increaseInventory(item_id, amount = 1) {
   return res.data
 }
 
+/**
+ * Save a barcode -> product mapping so future scans auto-fill item details.
+ * Upserts: safe to call even if the barcode was already saved.
+ * @param {string} barcode
+ * @param {string} name
+ * @param {string|null} category
+ * @param {string|null} image_url
+ */
+export async function saveBarcodeMapping(barcode, name, category = null, image_url = null) {
+  if (!barcode || !name) throw new Error('barcode and name are required')
+  const res = await api.post('/barcode/product-mapping', { barcode, name, category, image_url })
+  return res.data
+}
+
 /*
   Dummy helpers (kept for local testing). Uncomment if you need the old behavior.
 
