@@ -38,6 +38,7 @@ interface NewItemFormData {
   categoryNotes: string;
   quantity: string;
   unit: string;
+  customUnit: string;
   expirationDate: Date | null;
   locationId: string;
 }
@@ -102,12 +103,16 @@ export default function App(): React.ReactElement {
     category: '',
     categoryNotes: '',
     quantity: '1',
-    unit: 'pcs',
+    unit: 'units',
+    customUnit: '',
     expirationDate: null,
     locationId: defaultLocationId,
   });
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState<boolean>(false);
+  const [showUnitPicker, setShowUnitPicker] = useState<boolean>(false);
+
+  const UNIT_OPTIONS = ['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets','CUSTOM'];
 
   // form state for known items (quantity)
   const [showKnownItemForm, setShowKnownItemForm] = useState<boolean>(false);
@@ -226,7 +231,8 @@ export default function App(): React.ReactElement {
             category: candidate_info?.category || '',
             categoryNotes: '',
             quantity: '1',
-            unit: 'pcs',
+            unit: 'units',
+            customUnit: '',
             expirationDate: null,
             locationId: selectedLocationId,
           });
@@ -276,13 +282,14 @@ export default function App(): React.ReactElement {
 
     try {
       setLoading(true);
+      const unitToSend = newItemData.unit === 'CUSTOM' ? (newItemData.customUnit || null) : newItemData.unit;
       const payload = {
         barcode: newItemData.barcode,
         name: newItemData.name,
         category: newItemData.category,
         category_notes: (newItemData.category === 'Other' && newItemData.categoryNotes) ? newItemData.categoryNotes : null,
         quantity: parseInt(newItemData.quantity),
-        unit: newItemData.unit,
+        unit: unitToSend,
         expiration_date: newItemData.expirationDate ? newItemData.expirationDate.toISOString().split('T')[0] : null,
         location_id: parseInt(newItemData.locationId) || null,
       };
@@ -326,7 +333,8 @@ export default function App(): React.ReactElement {
         category: '',
         categoryNotes: '',
         quantity: '1',
-        unit: 'pcs',
+        unit: 'units',
+        customUnit: '',
         expirationDate: null,
         locationId: defaultLocationId,
       });
@@ -628,14 +636,33 @@ export default function App(): React.ReactElement {
             {/* Unit */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>Unit</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., pcs, kg, bottle"
-                value={newItemData.unit}
-                onChangeText={(text) => setNewItemData({ ...newItemData, unit: text })}
-                placeholderTextColor="#999"
-              />
+              <TouchableOpacity
+                style={styles.categoryInput}
+                onPress={() => setShowUnitPicker(true)}
+              >
+                <Text style={[
+                  styles.categoryInputText,
+                  !newItemData.unit && styles.placeholderText
+                ]}>
+                  {newItemData.unit || 'Select a unit...'}
+                </Text>
+                <Text style={styles.dropdownArrow}>▼</Text>
+              </TouchableOpacity>
             </View>
+
+            {/* Custom Unit (shown only when "CUSTOM" is selected) */}
+            {newItemData.unit === 'CUSTOM' && (
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Custom Unit</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., bundles, jars, tins..."
+                  value={newItemData.customUnit}
+                  onChangeText={(text) => setNewItemData({ ...newItemData, customUnit: text })}
+                  placeholderTextColor="#999"
+                />
+              </View>
+            )}
 
             {/* Expiration Date */}
             <View style={styles.formGroup}>
@@ -700,6 +727,55 @@ export default function App(): React.ReactElement {
                           {cat}
                         </Text>
                         {newItemData.category === cat && (
+                          <Text style={styles.categoryPickerCheck}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
+
+            {/* Unit Picker Modal */}
+            <Modal
+              transparent
+              animationType="slide"
+              visible={showUnitPicker}
+              onRequestClose={() => setShowUnitPicker(false)}
+            >
+              <View style={styles.categoryPickerModal}>
+                <TouchableOpacity
+                  style={styles.categoryPickerBackdrop}
+                  activeOpacity={1}
+                  onPress={() => setShowUnitPicker(false)}
+                />
+                <View style={styles.categoryPickerContent}>
+                  <View style={styles.categoryPickerHeader}>
+                    <Text style={styles.categoryPickerTitle}>Select Unit</Text>
+                    <TouchableOpacity onPress={() => setShowUnitPicker(false)}>
+                      <Text style={styles.categoryPickerClose}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={styles.categoryPickerScroll}>
+                    {UNIT_OPTIONS.map((unit) => (
+                      <TouchableOpacity
+                        key={unit}
+                        style={[
+                          styles.categoryPickerOption,
+                          newItemData.unit === unit && styles.categoryPickerOptionActive
+                        ]}
+                        onPress={() => {
+                          setNewItemData({ ...newItemData, unit: unit });
+                          setShowUnitPicker(false);
+                        }}
+                      >
+                        <Text style={[
+                          styles.categoryPickerOptionText,
+                          newItemData.unit === unit && styles.categoryPickerOptionTextActive
+                        ]}>
+                          {unit}
+                        </Text>
+                        {newItemData.unit === unit && (
                           <Text style={styles.categoryPickerCheck}>✓</Text>
                         )}
                       </TouchableOpacity>

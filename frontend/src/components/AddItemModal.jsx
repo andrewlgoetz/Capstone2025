@@ -1,7 +1,9 @@
 import * as React from "react";
-import { fetchInventoryByBarcode } from "../services/api";
+import { useQuery } from '@tanstack/react-query';
+import { fetchInventoryByBarcode, getCategories } from "../services/api";
 
-const CATEGORY_OPTIONS = [
+// Fallback categories if database fetch fails
+const FALLBACK_CATEGORY_OPTIONS = [
   'Produce',
   'Meat & Seafood',
   'Dairy',
@@ -22,7 +24,6 @@ const CATEGORY_OPTIONS = [
   'Pet Supplies',
   'Health & Medicine',
   'Other',
-  'Custom',
 ];
 
 const UNIT_OPTIONS = [
@@ -58,6 +59,22 @@ export default function AddItemModal({
   mode = "add",
   locations = [],
 }) {
+  // Fetch categories from API
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
+
+  // Process categories: filter active ones
+  const CATEGORY_OPTIONS = React.useMemo(() => {
+    if (!categoriesQuery.data) {
+      return FALLBACK_CATEGORY_OPTIONS;
+    }
+    return categoriesQuery.data
+      .filter(cat => cat.is_active)
+      .map(cat => cat.name);
+  }, [categoriesQuery.data]);
+
   const [values, setValues] = React.useState({
     item_id: null,
     name: "",
@@ -162,9 +179,9 @@ export default function AddItemModal({
             category: (() => {
               if (v.category) return v.category;
               if (!rawCategory) return "";
-              return CATEGORY_OPTIONS.slice(0, -1).includes(rawCategory)
+              return CATEGORY_OPTIONS.includes(rawCategory)
                 ? rawCategory
-                : "Custom";
+                : "Other";
             })(),
             unit: (() => {
               if (v.unit && v.unit !== "units") return v.unit;
@@ -175,7 +192,7 @@ export default function AddItemModal({
             })(),
           }));
 
-          if (rawCategory && !CATEGORY_OPTIONS.slice(0, -1).includes(rawCategory)) {
+          if (rawCategory && !CATEGORY_OPTIONS.includes(rawCategory)) {
             setCustomCategory(rawCategory);
           }
           if (rawUnit && !UNIT_OPTIONS.slice(0, -1).includes(rawUnit)) {
@@ -249,7 +266,7 @@ export default function AddItemModal({
     const resolvedUnit =
       values.unit === "Custom" ? customUnit.trim() || null : values.unit || null;
     const resolvedCategory =
-      values.category === "Custom"
+      values.category === "Other"
         ? customCategory.trim() || null
         : values.category || null;
 
@@ -369,7 +386,7 @@ export default function AddItemModal({
                       </select>
                       {chevron}
                     </div>
-                    {values.category === "Custom" && (
+                    {values.category === "Other" && (
                       <input
                         type="text"
                         placeholder="Enter custom category"

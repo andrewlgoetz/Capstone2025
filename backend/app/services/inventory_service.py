@@ -73,7 +73,30 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int 
         db.refresh(new_item)
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Constraint violation (likely duplicate barcode or PK).")
+        error_msg = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+
+        # Check for specific constraint violations
+        if 'barcode' in error_msg and ('unique' in error_msg or 'duplicate' in error_msg):
+            raise HTTPException(
+                status_code=409,
+                detail=f"An item with barcode '{code}' already exists in the system. Please use a different barcode or update the existing item."
+            )
+        elif 'location' in error_msg and 'foreign key' in error_msg:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid location specified. Please select a valid location from the list."
+            )
+        elif 'primary key' in error_msg or 'duplicate' in error_msg:
+            raise HTTPException(
+                status_code=409,
+                detail="This item already exists in the database. Please try updating the existing item instead."
+            )
+        else:
+            # Generic constraint violation message
+            raise HTTPException(
+                status_code=409,
+                detail="Unable to add item due to a data conflict. Please check your input and try again."
+            )
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
