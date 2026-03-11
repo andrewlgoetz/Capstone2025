@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from typing import Optional, List
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType
@@ -67,6 +68,24 @@ def get_inventory_history(
         }
         for m in movements
     ]
+
+@router.get("/dashboard/monthly-distributed")
+def get_monthly_distributed(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW))
+):
+    distributed = (
+        db.query(func.coalesce(func.sum(func.abs(InventoryMovement.quantity_change)), 0))
+        .join(InventoryItem, InventoryMovement.item_id == InventoryItem.item_id)
+        .filter(
+            InventoryItem.bank_id == current_user.bank_id,
+            InventoryMovement.movement_type == MovementType.OUTBOUND,
+            InventoryMovement.created_at >= func.date_trunc('month', func.current_date())
+        )
+        .scalar()
+    )
+
+    return {"distributed": int(distributed)}
 
 def get_allowed_location_ids(user: User, db: Session, requested_ids: Optional[List[int]] = None) -> Optional[List[int]]:
     """

@@ -22,7 +22,7 @@ import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
 import BulkImportModal from '../components/BulkImportModal.jsx'
-import { fetchInventoryByBarcode, scanOutInventory, increaseInventory } from '../services/api'
+import { fetchInventoryByBarcode, scanOutInventory, increaseInventory, getMonthlyDistributed } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
 const StatCard = ({ icon: Icon, title, value, accentColor }) => (
@@ -142,8 +142,25 @@ const Home = () => {
     }),
     [inventoryItems]
   );
-  const distributedThisMonth = 420; // Hardcoded
 
+  const [distributedThisMonth, setDistributedThisMonth] = useState(0);
+  const [loadingDistributed, setLoadingDistributed] = useState(true);
+  
+  const fetchMonthlyDistributed = async () => {
+    try {
+      const data = await getMonthlyDistributed();
+      setDistributedThisMonth(data.distributed ?? 0);
+    } catch (error) {
+      console.error('Failed to fetch monthly distributed:', error);
+      setDistributedThisMonth(0);
+    } finally {
+      setLoadingDistributed(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchMonthlyDistributed();
+  }, []);
 
   // Auto-close snackbar logic 
   useEffect(() => {
@@ -239,7 +256,7 @@ const Home = () => {
               <StatCard
                 icon={RedeemIcon}
                 title="This Month Distributed"
-                value={distributedThisMonth}
+                value={loadingDistributed ? '...' : distributedThisMonth.toLocaleString()}
                 accentColor="text-pink-400"
               />
             </div>
@@ -370,6 +387,7 @@ const Home = () => {
                 console.log('Scan out result', res)
                 setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
                 setScanOutTarget(null)
+                fetchMonthlyDistributed();
               })
               .catch((err) => {
                 console.error('Scan out failed', err)

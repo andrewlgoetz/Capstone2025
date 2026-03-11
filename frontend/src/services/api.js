@@ -186,6 +186,11 @@ export async function getItems(locationIds) {
   return res.data;
 }
 
+export async function getMonthlyDistributed() {
+  const res = await api.get('/inventory/dashboard/monthly-distributed');
+  return res.data;
+}
+
 // Delete item
 export async function deleteItem(itemId) {
   const res = await api.delete(`/inventory/${itemId}`);
