@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
+import { getCategories } from "../../services/api";
 
 const COLORS = [
   "#4f46e5", "#10b981", "#f59e0b", "#ef4444",
@@ -8,19 +9,36 @@ const COLORS = [
 ];
 
 const InventoryCategoryPie = ({ inventory }) => {
-  const counts = inventory.reduce((acc, item) => {
-    if (item.category) {
-      acc[item.category] = (acc[item.category] || 0) + 1;
-    }
-    return acc;
-  }, {});
+  const [categories, setCategories] = useState([]);
 
-  const sorted = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data.filter(cat => cat.is_active));
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Sum quantities per category using the lookup table
+  const categoryCounts = categories.map(cat => {
+    const items = inventory.filter(item => item.category === cat.name);
+    const quantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const itemCount = items.length;
+    return { name: cat.name, quantity, itemCount };
+  });
+
+  // Filter out empty categories and sort by quantity
+  const sorted = categoryCounts
+    .filter(({ quantity }) => quantity > 0)
+    .sort((a, b) => b.quantity - a.quantity)
     .slice(0, 10);
 
-  const labels = sorted.map(([category]) => category);
-  const values = sorted.map(([_, count]) => count);
+  const labels = sorted.map(({ name, itemCount }) => `${name} (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`);
+  const values = sorted.map(({ quantity }) => quantity);
 
   const pieData = {
     labels,

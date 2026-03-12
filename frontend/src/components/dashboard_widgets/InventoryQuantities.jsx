@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
+import { getCategories } from "../../services/api";
 
 const COLORS = [
   "#4f46e5", "#10b981", "#f59e0b", "#ef4444",
@@ -9,11 +10,23 @@ const COLORS = [
 
 const InventoryQuantitiesBarChart = ({ inventory }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState([]);
 
-  const categories = useMemo(
-    () => [...new Set(inventory.map((item) => item.category).filter(Boolean))],
-    [inventory]
-  );
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        const activeCategories = data.filter(cat => cat.is_active).map(cat => cat.name);
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        // Fallback to extracting from inventory
+        const inventoryCategories = [...new Set(inventory.map((item) => item.category).filter(Boolean))];
+        setCategories(inventoryCategories);
+      }
+    };
+    fetchCategories();
+  }, [inventory]);
 
   const filtered = selectedCategory
     ? inventory.filter((i) => i.category === selectedCategory)

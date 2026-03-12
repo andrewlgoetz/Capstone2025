@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AddIcon from '@mui/icons-material/Add';
-import SearchIcon from '@mui/icons-material/Search';
 import WarningIcon from '@mui/icons-material/Warning';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CloseIcon from '@mui/icons-material/Close';
@@ -10,7 +9,7 @@ import RedeemIcon from '@mui/icons-material/Redeem';
 
 import ScanSheet from '../components/ScanSheet.jsx';
 import InventoryTable from '../components/InventoryTable.jsx';
-import { getItems } from '../services/api';
+import { getItems, getCategories } from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
 import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
@@ -40,17 +39,31 @@ const StatCard = ({ icon: Icon, title, value, accentColor }) => (
 );
 
 const CategoryChart = ({ title, data = [] }) => {
-    const categoryTotals = useMemo(() => {
-        const totals = data.reduce((acc, item) => {
-            const category = item.category || 'Other';
-            acc[category] = (acc[category] || 0) + (item.quantity || 0);
-            return acc;
-        }, {});
-        return Object.entries(totals).map(([category, quantity]) => ({
-            category,
-            quantity,
-        }));
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const categoryData = await getCategories();
+                setCategories(categoryData.filter(cat => cat.is_active));
+            } catch (error) {
+                console.error("Failed to fetch categories:", error);
+                // Fallback to extracting from inventory
+                const inventoryCategories = [...new Set(data.map((item) => item.category).filter(Boolean))];
+                setCategories(inventoryCategories.map(name => ({ name })));
+            }
+        };
+        fetchCategories();
     }, [data]);
+
+    const categoryTotals = useMemo(() => {
+        return categories.map(cat => {
+            const items = data.filter(item => item.category === cat.name);
+            const quantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+            const itemCount = items.length;
+            return { category: cat.name, quantity, itemCount };
+        }).filter(({ quantity }) => quantity > 0);
+    }, [categories, data]);
 
     const topCategories = useMemo(() => {
         return categoryTotals
@@ -73,13 +86,16 @@ const CategoryChart = ({ title, data = [] }) => {
                         return (
                             <div key={item.category} className="text-sm">
                                 <div className="flex justify-between text-slate-700 mb-0.5">
-                                    <span className="font-medium">{item.category}</span>
-                                    <span className="font-semibold">{item.quantity.toLocaleString()}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">{item.category}</span>
+                                        <span className="text-xs text-slate-500">{item.itemCount} {item.itemCount === 1 ? 'item' : 'items'}</span>
+                                    </div>
+                                    <span className="font-semibold">{item.quantity.toLocaleString()} units</span>
                                 </div>
                                 <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-2.5 bg-blue-600 rounded-full transition-all duration-500" 
-                                        style={{ width: `${widthPercent}%` }} 
+                                    <div
+                                        className="h-2.5 bg-blue-600 rounded-full transition-all duration-500"
+                                        style={{ width: `${widthPercent}%` }}
                                     />
                                 </div>
                             </div>
@@ -118,8 +134,7 @@ const Home = () => {
   
   // Total Items (Sum of all quantities)
   const totalItems = useMemo(() => 
-    inventoryItems.reduce((sum, item) => sum + (item.quantity || 0), 0),
-    [inventoryItems]
+    inventoryItems.length
   );
   
   // Low Stock
@@ -260,18 +275,8 @@ const Home = () => {
                     <h4 className="text-xl font-semibold text-slate-800 m-0 tracking-tight">
                       Recent Inventory Activity
                     </h4>
-                    <div className="relative">
-                      {/* <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input 
-                        type="text"
-                        className="pl-8 pr-3 py-1.5 border border-gray-300 rounded-full w-48 text-sm focus:ring-slate-500 focus:border-slate-500 transition"
-                        placeholder="Quick filter..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                      /> */}
-                    </div>
                   </div>
-                  <InventoryTable mode="widget" limit={5} showFilterBar={false} locationIds={selectedLocationIds} />
+                  <InventoryTable mode="widget" limit={7} showFilterBar={false} locationIds={selectedLocationIds} />
                 </div>
               </div>
             </div>
