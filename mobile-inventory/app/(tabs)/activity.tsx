@@ -212,7 +212,7 @@ export default function ActivityScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Filter by Movement</Text>
             <ScrollView>
-              {['All', 'Inbound', 'Outbound'].map((type) => (
+              {['All', 'Inbound', 'Outbound', 'Adjustment'].map((type) => (
                 <TouchableOpacity
                   key={type}
                   style={[
