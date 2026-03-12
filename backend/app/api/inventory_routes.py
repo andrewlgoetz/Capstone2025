@@ -71,10 +71,13 @@ def get_inventory_history(
 
 @router.get("/dashboard/monthly-distributed")
 def get_monthly_distributed(
+    location_ids: Optional[str] = Query(None, description="Comma-separated location IDs"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW))
 ):
-    distributed = (
+    requested = [int(x) for x in location_ids.split(",") if x.strip()] if location_ids else None
+    allowed = get_allowed_location_ids(current_user, db, requested)
+    query = (
         db.query(func.coalesce(func.sum(func.abs(InventoryMovement.quantity_change)), 0))
         .join(InventoryItem, InventoryMovement.item_id == InventoryItem.item_id)
         .filter(
@@ -82,8 +85,12 @@ def get_monthly_distributed(
             InventoryMovement.movement_type == MovementType.OUTBOUND,
             InventoryMovement.created_at >= func.date_trunc('month', func.current_date())
         )
-        .scalar()
     )
+
+    if allowed is not None:
+        query = query.filter(InventoryMovement.from_location_id.in_(allowed))
+
+    distributed = query.scalar()
 
     return {"distributed": int(distributed)}
 

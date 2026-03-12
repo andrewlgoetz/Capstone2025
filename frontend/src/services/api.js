@@ -186,8 +186,9 @@ export async function getItems(locationIds) {
   return res.data;
 }
 
-export async function getMonthlyDistributed() {
-  const res = await api.get('/inventory/dashboard/monthly-distributed');
+export async function getMonthlyDistributed(locationIds) {
+  const params = locationIds?.length ? { location_ids: locationIds.join(',') } : {};
+  const res = await api.get('/inventory/dashboard/monthly-distributed', { params });
   return res.data;
 }
 

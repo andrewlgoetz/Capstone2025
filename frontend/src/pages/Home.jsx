@@ -148,7 +148,7 @@ const Home = () => {
   
   const fetchMonthlyDistributed = async () => {
     try {
-      const data = await getMonthlyDistributed();
+      const data = await getMonthlyDistributed(selectedLocationIds);
       setDistributedThisMonth(data.distributed ?? 0);
     } catch (error) {
       console.error('Failed to fetch monthly distributed:', error);
@@ -160,7 +160,7 @@ const Home = () => {
   
   useEffect(() => {
     fetchMonthlyDistributed();
-  }, []);
+  }, [selectedLocationIds]);
 
   // Auto-close snackbar logic 
   useEffect(() => {
