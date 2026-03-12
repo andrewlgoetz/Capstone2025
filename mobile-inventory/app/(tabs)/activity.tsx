@@ -13,6 +13,7 @@ interface ActivityItem {
   item_name: string;
   category: string | null;
   quantity_change: number;
+  current_quantity: number;
   movement_type: string;
   unit: string | null;
   location_name: string | null;
@@ -120,6 +121,9 @@ export default function ActivityScreen() {
             {qtyText}
           </Text>
           {item.unit && <Text style={styles.unit}>{item.unit}</Text>}
+          <Text style={styles.totalStock}>
+            Total: {item.current_quantity}
+          </Text>
         </View>
       </View>
     );
@@ -403,6 +407,7 @@ const styles = StyleSheet.create({
   quantityBox: { minWidth: 40, alignItems: 'flex-end' },
   quantity: { fontSize: 18, fontWeight: '700' },
   unit: { fontSize: 12, color: '#8E8E93' },
+  totalStock: { fontSize: 11, color: '#A1A1AA', marginTop: 4, fontWeight: '500' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
