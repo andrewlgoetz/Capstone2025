@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.exc import IntegrityError
@@ -217,7 +218,6 @@ def log_activity(db: Session, user_id: int, action: ActivityAction, entity_id: i
     db.add(entry)
     db.commit()
 
-
 # add a new item
 @router.post("/add", response_model=InventoryRead)
 def add_item(
@@ -257,6 +257,48 @@ def update_item(
         log_activity(db, current_user.user_id, ActivityAction.CATEGORY_ASSIGN, updated.item_id,
                      updated.name, f"Category changed: '{old_vals.get('category')}' → '{sent['category']}'")
     return updated
+
+@router.get("/export")
+def export_inventory_csv(
+    location_ids: Optional[str] = Query(None, description="Comma-separated location IDs"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW))
+):
+    requested = [int(x) for x in location_ids.split(",") if x.strip()] if location_ids else None
+    allowed = get_allowed_location_ids(current_user, db, requested)
+
+    query = (
+        db.query(InventoryItem, Location)
+        .join(Location, InventoryItem.location_id == Location.location_id)
+        .filter(InventoryItem.bank_id == current_user.bank_id)
+    )
+
+    if allowed is not None:
+        query = query.filter(InventoryItem.location_id.in_(allowed))
+
+    results = query.order_by(Location.name, InventoryItem.name).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(["Item Name", "Category", "Quantity", "Expiration Date", "Location"])
+
+    for item, location in results:
+        writer.writerow([
+            item.name,
+            item.category,
+            item.quantity,
+            item.expiration_date.isoformat() if item.expiration_date else "",
+            location.name
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=inventory_export.csv"}
+    )
 
 @router.get("/allwithlocation")
 def get_inventory(

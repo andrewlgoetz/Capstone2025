@@ -8,7 +8,7 @@ import InventoryTable from '../components/InventoryTable'
 import AddItemModal from '../components/AddItemModal'
 import ItemManagerModal from '../components/ItemManagerModal'
 import InventoryMovementLogModal from '../components/InventoryMovementLogModal'
-import { createItem, updateItem, deleteItem, getItems } from '../services/api'
+import { createItem, updateItem, deleteItem, getItems, exportInventoryCSV } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import LocationFilter from '../components/LocationFilter'
 
@@ -144,43 +144,79 @@ export default function Inventory() {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const blob = await exportInventoryCSV(selectedLocationIds);
+
+      const filename = selectedLocationIds?.length
+        ? `location_${selectedLocationIds.join('_')}_inventory.csv`
+        : 'all_locations_inventory.csv';
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export inventory CSV:', error);
+      setSnack({
+        open: true,
+        message: 'Failed to export CSV',
+        severity: 'warning'
+      });
+    }
+  };
+
 return (
   <div className="min-h-screen bg-gray-50 pb-16">
     <div className="max-w-7xl mx-auto p-4 md:p-6">
-        <header className="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              Inventory Management
-            </h1>
-            <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-lg font-medium shadow-sm hover:bg-gray-50 transition text-sm"
-              onClick={() => setMovementLogOpen(true)}
-            >
-              <HistoryIcon fontSize="small" />
-              Movement Log
-            </button>
-            {canEditCategory && (
-              <button
-                className="px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-lg font-medium shadow-sm hover:bg-gray-50 transition text-sm"
-                onClick={() => setItemManagerOpen(true)}
-              >
-                Item Manager
-              </button>
-            )}
-            {canCreate && (
-              <button
-                className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
-                onClick={handleAddClick}
-              >
-                <AddIcon fontSize="small" />
-                Add Item
-              </button>
-            )}
-          </div>
-        </header>
+    <header className="flex flex-wrap justify-between items-center gap-4 mb-6">
+    <div className="flex items-center gap-4 flex-wrap">
+      <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+        Inventory Management
+      </h1>
+      <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
+    </div>
+
+    <div className="flex items-center gap-3 flex-wrap">
+      <button
+        className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 text-slate-700 rounded-2xl font-semibold shadow-sm hover:bg-gray-50 transition"
+        onClick={() => setMovementLogOpen(true)}
+      >
+        <HistoryIcon fontSize="small" />
+        Movement Log
+      </button>
+
+      {canEditCategory && (
+        <button
+          className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 text-slate-700 rounded-2xl font-semibold shadow-sm hover:bg-gray-50 transition"
+          onClick={() => setItemManagerOpen(true)}
+        >
+          Item Manager
+        </button>
+      )}
+
+      {canCreate && (
+        <button
+          className="inline-flex items-center gap-2 px-5 py-3 bg-slate-800 text-white rounded-2xl font-semibold shadow-md hover:bg-slate-700 transition"
+          onClick={handleAddClick}
+        >
+          <AddIcon fontSize="small" />
+          Add Item
+        </button>
+      )}
+
+      <button
+        className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 text-slate-700 rounded-2xl font-semibold shadow-sm hover:bg-gray-50 transition"
+        onClick={handleExportCSV}
+      >
+        Export CSV
+      </button>
+    </div>
+  </header>
 
         {/* Inventory Table */}
         <InventoryTable

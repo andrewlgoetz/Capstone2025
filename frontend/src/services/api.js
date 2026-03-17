@@ -201,6 +201,19 @@ export async function getInventoryMovements(locationIds, limit = 500) {
   return res.data;
 }
 
+export async function exportInventoryCSV(locationIds) {
+  const params = locationIds?.length
+    ? { location_ids: locationIds.join(',') }
+    : {};
+
+  const res = await api.get('/inventory/export', {
+    params,
+    responseType: 'blob',
+  });
+
+  return res.data;
+}
+
 // Delete item
 export async function deleteItem(itemId) {
   const res = await api.delete(`/inventory/${itemId}`);
