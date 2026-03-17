@@ -90,7 +90,7 @@ def seed_inventory():
     items = [
         dict(item_id=1,  name="Canned Beans",       category="Canned Goods",  barcode="100000111001", quantity=250, unit="cans",    expiration_date=date(2026, 5,  1),  location_id=1, bank_id=1, created_by=1, modified_by=2),
         dict(item_id=2,  name="Peanut Butter",       category="Spreads",       barcode="100000111002", quantity=120, unit="jars",    expiration_date=date(2026, 2, 15),  location_id=1, bank_id=1, created_by=2, modified_by=2),
-        dict(item_id=3,  name="Chicken Breasts",     category="Frozen Meat",   barcode="100000111003", quantity=80,  unit="packs",   expiration_date=date(2026, 12, 20), location_id=2, bank_id=1, created_by=1, modified_by=3),
+        dict(item_id=3,  name="Chicken Breasts",     category="Frozen",        barcode="100000111003", quantity=80,  unit="packs",   expiration_date=date(2026, 12, 20), location_id=2, bank_id=1, created_by=1, modified_by=3),
         dict(item_id=4,  name="Pasta",               category="Grains",        barcode="100000111004", quantity=300, unit="boxes",   expiration_date=date(2027, 1, 10),  location_id=3, bank_id=1, created_by=2, modified_by=1),
         dict(item_id=5,  name="Tomato Sauce",        category="Canned Goods",  barcode="100000111005", quantity=200, unit="cans",    expiration_date=date(2026, 9, 15),  location_id=3, bank_id=1, created_by=1, modified_by=2),
         dict(item_id=6,  name="Milk",                category="Refrigerated",  barcode="100000111006", quantity=60,  unit="cartons", expiration_date=date(2026, 11, 10), location_id=4, bank_id=1, created_by=2, modified_by=1),
@@ -159,7 +159,7 @@ def seed_inventory():
 def main():
     seed_roles()
     seed_food_banks()
-    seed_users()
+    # seed_users() skipped — users are already seeded by the auth migration (e5f6g7h8i9j0)
     seed_locations()
     seed_inventory()
     print("\nAll data seeded successfully!")

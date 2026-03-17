@@ -2,7 +2,7 @@ import axios from "axios";
 import { jwtDecode } from 'jwt-decode';
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000",  // backend address
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
 });
 
 // Request interceptor - add JWT token and auto-refresh if needed
