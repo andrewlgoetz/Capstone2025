@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.execute("""
         SELECT setval(
             pg_get_serial_sequence('locations', 'location_id'),
-            COALESCE((SELECT MAX(location_id) FROM locations), 0)
+            COALESCE((SELECT MAX(location_id) FROM locations), 1)
         )
     """)
 
