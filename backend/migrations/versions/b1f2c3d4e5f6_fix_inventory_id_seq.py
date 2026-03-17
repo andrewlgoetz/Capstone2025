@@ -23,7 +23,7 @@ def upgrade() -> None:
 
     # Set sequence value to current max(item_id) so nextval yields max+1
     op.execute(
-        "SELECT setval('inventory_item_id_seq', COALESCE((SELECT MAX(item_id) FROM inventory), 0));"
+        "SELECT setval('inventory_item_id_seq', COALESCE((SELECT MAX(item_id) FROM inventory), 1));"
     )
 
     # Attach sequence as default for the column
