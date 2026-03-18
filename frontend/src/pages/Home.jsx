@@ -21,7 +21,7 @@ import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
 import BulkImportModal from '../components/BulkImportModal.jsx'
-import { fetchInventoryByBarcode, scanOutInventory, increaseInventory, getMonthlyDistributed } from '../services/api'
+import { fetchInventoryByBarcode, scanOutInventory, scanOutInventoryByItemId, increaseInventory, getMonthlyDistributed } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
 const StatCard = ({ icon: Icon, title, value, accentColor }) => (
@@ -375,6 +375,22 @@ const Home = () => {
             if (scanMode === 'out') handleScanOut(code, locationId)
             else handleScan(code, locationId)
           }}
+          onSelectItem={(item, locationId) => {
+            setShowScan(false);
+            if (scanMode === 'out') {
+              setScanOutTarget({
+                product: null,
+                inventory: item,
+                locationId,
+              });
+            } else {
+              setScanInTarget({
+                product: null,
+                inventory: item,
+                locationId,
+              });
+            }
+          }}
         />
       )}
 
@@ -387,18 +403,26 @@ const Home = () => {
           maxQuantity={scanOutTarget.inventory?.quantity}
           imageUrl={scanOutTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            scanOutInventory(payload.barcode, payload.quantity, scanOutTarget.locationId)
+            const request = scanOutTarget.inventory?.barcode
+              ? scanOutInventory(payload.barcode, payload.quantity, scanOutTarget.locationId)
+              : scanOutInventoryByItemId(scanOutTarget.inventory?.item_id, payload.quantity, scanOutTarget.locationId);
+          
+            request
               .then((res) => {
-                console.log('Scan out result', res)
-                setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
-                setScanOutTarget(null)
+                console.log('Scan out result', res);
+                setSnack({
+                  open: true,
+                  message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`,
+                  severity: 'success'
+                });
+                setScanOutTarget(null);
                 fetchMonthlyDistributed();
               })
               .catch((err) => {
-                console.error('Scan out failed', err)
-                const msg = err?.response?.data?.detail || err?.message || 'Scan out failed'
-                setSnack({ open: true, message: msg, severity: 'warning' })
-              })
+                console.error('Scan out failed', err);
+                const msg = err?.response?.data?.detail || err?.message || 'Scan out failed';
+                setSnack({ open: true, message: msg, severity: 'warning' });
+              });
           }}
         />
       )}
