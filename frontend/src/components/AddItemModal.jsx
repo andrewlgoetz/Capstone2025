@@ -374,19 +374,18 @@ export default function AddItemModal({
               {/* Barcode */}
               <div>
                 <label htmlFor="barcode" className={labelClass}>
-                  Barcode <span className="text-red-500">*</span>
+                  Barcode <span className="text-red-500"></span>
                 </label>
                 <div className="relative">
                   <input
                     id="barcode"
                     name="barcode"
                     type="text"
-                    required
                     value={values.barcode}
                     onChange={isEditMode ? handleChange : handleBarcodeChange}
                     className={inputClass}
                     disabled={isEditMode}
-                    placeholder={isEditMode ? "" : "Scan or type barcode…"}
+                    placeholder={isEditMode ? "" : "Type barcode (Optional)…"}
                   />
                   {barcodeLoading && (
                     <div className="absolute inset-y-0 right-2 flex items-center">
