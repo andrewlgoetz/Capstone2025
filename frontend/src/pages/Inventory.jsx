@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import HistoryIcon from '@mui/icons-material/History';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import InventoryTable from '../components/InventoryTable'
 import AddItemModal from '../components/AddItemModal'
-import { createItem, updateItem, deleteItem } from '../services/api'
+import ItemManagerModal from '../components/ItemManagerModal'
+import InventoryMovementLogModal from '../components/InventoryMovementLogModal'
+import { createItem, updateItem, deleteItem, getItems } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import LocationFilter from '../components/LocationFilter'
 
@@ -15,9 +18,12 @@ export default function Inventory() {
   const canCreate = hasPermission('inventory:create')
   const canEdit = hasPermission('inventory:edit')
   const canDelete = hasPermission('inventory:delete')
+  const canEditCategory = hasPermission('category:edit')
 
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState(null);
+  const [itemManagerOpen, setItemManagerOpen] = useState(false);
+  const [movementLogOpen, setMovementLogOpen] = useState(false);
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
 
 
@@ -115,6 +121,20 @@ export default function Inventory() {
     deleteItemMutation.mutate(item.item_id);
   };
 
+  // open an item by ID from Item Manager "Recent Changes"
+  const handleOpenItemById = async (itemId) => {
+    try {
+      const items = await getItems();
+      const found = items.find((i) => i.item_id === itemId);
+      if (found) {
+        setEditItem(found);
+        setOpen(true);
+      }
+    } catch {
+      // ignore — item may have been deleted
+    }
+  };
+
   // called by AddItemModal
   const handleSave = ({ mode, item_id, payload }) => {
     if (mode === 'edit') {
@@ -134,15 +154,32 @@ return (
             </h1>
             <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
           </div>
-          {canCreate && (
+          <div className="flex items-center gap-2">
             <button
-              className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
-              onClick={handleAddClick}
+              className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-lg font-medium shadow-sm hover:bg-gray-50 transition text-sm"
+              onClick={() => setMovementLogOpen(true)}
             >
-              <AddIcon fontSize="small" />
-              Add Item
+              <HistoryIcon fontSize="small" />
+              Movement Log
             </button>
-          )}
+            {canEditCategory && (
+              <button
+                className="px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-lg font-medium shadow-sm hover:bg-gray-50 transition text-sm"
+                onClick={() => setItemManagerOpen(true)}
+              >
+                Item Manager
+              </button>
+            )}
+            {canCreate && (
+              <button
+                className="flex items-center gap-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
+                onClick={handleAddClick}
+              >
+                <AddIcon fontSize="small" />
+                Add Item
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Inventory Table */}
@@ -165,6 +202,17 @@ return (
           mode={editItem ? 'edit' : 'add'}
           defaultValues={editItem}
           locations={userLocations}
+          canEditCategory={canEditCategory}
+        />
+        <ItemManagerModal
+          open={itemManagerOpen}
+          onClose={() => setItemManagerOpen(false)}
+          onOpenItem={handleOpenItemById}
+        />
+        <InventoryMovementLogModal
+          open={movementLogOpen}
+          onClose={() => setMovementLogOpen(false)}
+          locationIds={selectedLocationIds}
         />
         {snack.open && (
           <div 

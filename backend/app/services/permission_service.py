@@ -47,6 +47,10 @@ class Permission(str, Enum):
     USERS_DELETE = "users:delete"
     USERS_MANAGE_PERMISSIONS = "users:manage_permissions"
 
+    # Category management permissions
+    CATEGORY_CREATE = "category:create"
+    CATEGORY_EDIT = "category:edit"
+
 
 # Human-readable descriptions for each permission
 PERMISSION_DESCRIPTIONS = {
@@ -64,6 +68,8 @@ PERMISSION_DESCRIPTIONS = {
     Permission.USERS_EDIT: "Edit user information",
     Permission.USERS_DELETE: "Delete users",
     Permission.USERS_MANAGE_PERMISSIONS: "Manage user permissions",
+    Permission.CATEGORY_CREATE: "Create new categories when entering items",
+    Permission.CATEGORY_EDIT: "Edit item categories and manage the category list",
 }
 
 # Group permissions by category for UI display
@@ -91,6 +97,10 @@ PERMISSION_GROUPS = {
         Permission.USERS_EDIT,
         Permission.USERS_DELETE,
         Permission.USERS_MANAGE_PERMISSIONS,
+    ],
+    "Category Management": [
+        Permission.CATEGORY_CREATE,
+        Permission.CATEGORY_EDIT,
     ],
 }
 

@@ -147,7 +147,13 @@ def increase_item_quantity(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.INVENTORY_EDIT))
 ):
-    updated = inventory_service.adjust_item_quantity(item_id=item_id, delta=payload.amount, db=db, user_id=current_user.user_id)
+    updated = inventory_service.adjust_item_quantity(
+        item_id=item_id,
+        delta=payload.amount,
+        db=db,
+        movement_type=MovementType.INBOUND,
+        user_id=current_user.user_id
+    )
     if payload.location_id is not None:
         updated.location_id = payload.location_id
         db.commit()

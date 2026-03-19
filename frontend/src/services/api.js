@@ -192,6 +192,15 @@ export async function getMonthlyDistributed(locationIds) {
   return res.data;
 }
 
+export async function getInventoryMovements(locationIds, limit = 500) {
+  const params = {
+    limit,
+    ...(locationIds?.length ? { location_ids: locationIds.join(',') } : {}),
+  };
+  const res = await api.get('/inventory/movements', { params });
+  return res.data;
+}
+
 // Delete item
 export async function deleteItem(itemId) {
   const res = await api.delete(`/inventory/${itemId}`);
@@ -304,8 +313,37 @@ export async function bulkImportJSON(jsonData) {
 }
 
 // Get all categories
-export async function getCategories() {
-  const res = await api.get("/categories/");
+export async function getCategories(includeInactive = false) {
+  const res = await api.get("/categories/", { params: includeInactive ? { include_inactive: true } : {} });
+  return res.data;
+}
+
+export async function createCategory(data) {
+  const res = await api.post("/categories/", data);
+  return res.data;
+}
+
+export async function updateCategory(categoryId, data) {
+  const res = await api.put(`/categories/${categoryId}`, data);
+  return res.data;
+}
+
+export async function deactivateCategory(categoryId) {
+  const res = await api.delete(`/categories/${categoryId}`);
+  return res.data;
+}
+
+export async function reactivateCategory(categoryId) {
+  const res = await api.post(`/categories/${categoryId}/reactivate`);
+  return res.data;
+}
+
+// --------------- Activity Log API Functions ---------------
+
+export async function getItemChangesLog(limit = 100, entityType = null) {
+  const params = { limit };
+  if (entityType) params.entity_type = entityType;
+  const res = await api.get("/activity-log/item-changes", { params });
   return res.data;
 }
 

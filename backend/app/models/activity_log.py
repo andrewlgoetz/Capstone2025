@@ -10,6 +10,7 @@ class ActivityAction(str, Enum):
     DELETE = "DELETE"
     SCAN_IN = "SCAN_IN"
     SCAN_OUT = "SCAN_OUT"
+    CATEGORY_ASSIGN = "CATEGORY_ASSIGN"
 
 
 class ActivityLog(Base):
