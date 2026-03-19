@@ -42,6 +42,7 @@ def get_inventory_history(
             InventoryItem.name.label("item_name"),
             InventoryItem.category.label("category"),
             InventoryItem.unit.label("unit"),
+            InventoryItem.quantity.label("current_quantity"),
             Location.name.label("location_name"),
             User.name.label("user_name") # Add this select
         )
@@ -60,6 +61,7 @@ def get_inventory_history(
             "item_name": m.item_name,
             "category": m.category,
             "quantity_change": m.quantity_change,
+            "current_quantity": m.current_quantity,
             "movement_type": m.movement_type.value if hasattr(m.movement_type, 'value') else str(m.movement_type),
             "unit": m.unit,
             "location_name": m.location_name,
