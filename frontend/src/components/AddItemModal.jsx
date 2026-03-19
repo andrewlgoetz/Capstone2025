@@ -300,6 +300,8 @@ export default function AddItemModal({
       <option value="">Select reason</option>
       <option value="OUTBOUND">Outbound</option>
       <option value="WASTE">Waste</option>
+      <option value="TRANSFER">Transfer</option>
+      <option value="ADJUSTMENT">Adjustment</option>
     </>
   );
 

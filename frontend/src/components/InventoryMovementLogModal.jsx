@@ -241,9 +241,15 @@ export default function InventoryMovementLogModal({ open, onClose, locationIds =
                 checked={showDetailedView}
                 onChange={(e) => setShowDetailedView(e.target.checked)}
               />
-              <Button variant="outlined" size="small" onClick={() => refetch()} disabled={isFetching}>
-                Refresh
-              </Button>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="px-3 py-1.5 text-xs font-medium text-slate-600 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition"
+                aria-label="Refresh"
+              >
+                {isFetching ? 'Refreshing...' : '↻ Refresh'}
+              </button>
             </Stack>
           </Stack>
 
