@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from typing import Optional, List
@@ -67,6 +67,94 @@ def get_inventory_history(
             "location_name": m.location_name,
             "user_name": m.user_name or "System", # Pass user name
             "timestamp": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in movements
+    ]
+
+@router.get("/movements")
+def get_inventory_movements(
+    limit: int = Query(500, ge=1, le=5000, description="Maximum number of movement rows to fetch"),
+    location_ids: Optional[str] = Query(None, description="Comma-separated location IDs to filter by"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(Permission.INVENTORY_VIEW))
+):
+    requested = [int(x) for x in location_ids.split(",") if x.strip()] if location_ids else None
+    allowed = get_allowed_location_ids(current_user, db, requested)
+
+    from_location = aliased(Location)
+    to_location = aliased(Location)
+
+    query = (
+        db.query(
+            InventoryMovement.id,
+            InventoryMovement.item_id,
+            InventoryMovement.user_id,
+            InventoryMovement.quantity_change,
+            InventoryMovement.movement_type,
+            InventoryMovement.reason,
+            InventoryMovement.from_location_id,
+            InventoryMovement.to_location_id,
+            InventoryMovement.created_at,
+            InventoryItem.name.label("item_name"),
+            InventoryItem.category.label("item_category"),
+            InventoryItem.unit.label("item_unit"),
+            InventoryItem.barcode.label("item_barcode"),
+            InventoryItem.quantity.label("current_quantity"),
+            User.name.label("user_name"),
+            from_location.name.label("from_location_name"),
+            to_location.name.label("to_location_name"),
+        )
+        .join(InventoryItem, InventoryMovement.item_id == InventoryItem.item_id)
+        .outerjoin(User, InventoryMovement.user_id == User.user_id)
+        .outerjoin(from_location, InventoryMovement.from_location_id == from_location.location_id)
+        .outerjoin(to_location, InventoryMovement.to_location_id == to_location.location_id)
+        .filter(InventoryItem.bank_id == current_user.bank_id)
+        .order_by(InventoryMovement.created_at.desc(), InventoryMovement.id.desc())
+    )
+
+    if allowed is not None:
+        query = query.filter(
+            (InventoryMovement.from_location_id.in_(allowed))
+            | (InventoryMovement.to_location_id.in_(allowed))
+            | (
+                (InventoryMovement.from_location_id.is_(None))
+                & (InventoryMovement.to_location_id.is_(None))
+                & (InventoryItem.location_id.in_(allowed))
+            )
+        )
+
+    movements = query.limit(limit).all()
+
+    return [
+        {
+            "id": m.id,
+            "item_id": m.item_id,
+            "item_name": m.item_name,
+            "item_category": m.item_category,
+            "item_unit": m.item_unit,
+            "item_barcode": m.item_barcode,
+            "current_quantity": m.current_quantity,
+            "quantity_change": m.quantity_change,
+            "movement_type": m.movement_type.value if hasattr(m.movement_type, "value") else str(m.movement_type),
+            "reason": m.reason,
+            "user_id": m.user_id,
+            "user_name": m.user_name or "System",
+            "from_location_id": m.from_location_id,
+            "from_location_name": m.from_location_name,
+            "to_location_id": m.to_location_id,
+            "to_location_name": m.to_location_name,
+            "timestamp": m.created_at.isoformat() if m.created_at else None,
+            "raw": {
+                "id": m.id,
+                "item_id": m.item_id,
+                "user_id": m.user_id,
+                "quantity_change": m.quantity_change,
+                "movement_type": m.movement_type.value if hasattr(m.movement_type, "value") else str(m.movement_type),
+                "reason": m.reason,
+                "from_location_id": m.from_location_id,
+                "to_location_id": m.to_location_id,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            },
         }
         for m in movements
     ]
@@ -140,6 +228,10 @@ def add_item(
     new_item = inventory_service.add_item(item, db, current_user.user_id)
     log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
                  f"Added with qty {new_item.quantity}")
+    # Log category assignment separately so supervisors can review selections
+    if new_item.category:
+        log_activity(db, current_user.user_id, ActivityAction.CATEGORY_ASSIGN, new_item.item_id,
+                     new_item.name, f"Category set to '{new_item.category}'")
     return new_item
 
 @router.put("/{item_id}", response_model=InventoryRead)
@@ -160,6 +252,10 @@ def update_item(
     diffs = [f"{k}: {old_vals[k]} → {sent[k]}" for k in sent if old_vals.get(k) != sent[k]]
     detail_str = ", ".join(diffs) if diffs else "no changes"
     log_activity(db, current_user.user_id, ActivityAction.UPDATE, updated.item_id, updated.name, detail_str)
+    # Log category change separately for Item Manager visibility
+    if "category" in sent and old_vals.get("category") != sent["category"]:
+        log_activity(db, current_user.user_id, ActivityAction.CATEGORY_ASSIGN, updated.item_id,
+                     updated.name, f"Category changed: '{old_vals.get('category')}' → '{sent['category']}'")
     return updated
 
 @router.get("/allwithlocation")

@@ -59,6 +59,7 @@ export default function AddItemModal({
   isSaving,
   mode = "add",
   locations = [],
+  canEditCategory = false,
 }) {
   // Fetch categories from API
   const categoriesQuery = useQuery({
@@ -349,7 +350,7 @@ export default function AddItemModal({
                 <label htmlFor="category" className={labelClass}>
                   Category <span className="text-red-500">*</span>
                 </label>
-                {isEditMode ? (
+                {isEditMode && !canEditCategory ? (
                   <input
                     type="text"
                     value={values.category}
