@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { createItem, fetchInventoryByBarcode, increaseInventory, getCategories } from '../../services/api'
+import CategorySearch from '../CategorySearch'
 
 
 const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null, locations = [] }) => {
@@ -66,14 +67,11 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
     const doCreate = async () => {
       try {
         const unitToSend = form.unit === 'CUSTOM' ? (form.custom_unit || null) : form.unit
-        const categoryToSend = form.category || null
-        const categoryNotesToSend = (form.category === 'Other' && form.category_notes) ? form.category_notes : null
         const payload = {
           barcode: form.barcode,
           quantity: Number(form.quantity) || 0,
           name: form.name || '',
-          category: categoryToSend,
-          category_notes: categoryNotesToSend,
+          category: form.category || null,
           unit: unitToSend,
           expiration_date: form.expiry_date || null,
           location_id: form.location_id ? Number(form.location_id) : null,
@@ -158,30 +156,18 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
 
             <TextField label="Name" value={form.name} onChange={handleChange('name')} />
 
-            <FormControl fullWidth>
-              <InputLabel id="category-select-label">Category</InputLabel>
-              <Select
-                labelId="category-select-label"
+            <div>
+              <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>
+                Category
+              </Typography>
+              <CategorySearch
+                categories={categories}
                 value={form.category || ''}
-                label="Category"
-                onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
-              >
-                {categories.map((c) => (
-                  <MenuItem key={c} value={c}>{c}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {form.category === 'Other' && (
-              <TextField
-                label="Category notes (optional)"
-                value={form.category_notes}
-                onChange={handleChange('category_notes')}
-                placeholder="e.g., Pet supplies, cleaning products..."
-                fullWidth
-                helperText="Specify what type of item this is"
+                onChange={(cat) => setForm(f => ({ ...f, category: cat }))}
+                placeholder="Search categories…"
+                inputClassName="border border-gray-300"
               />
-            )}
+            </div>
 
             <TextField label="Expiry date" value={form.expiry_date} onChange={handleChange('expiry_date')} placeholder="YYYY-MM-DD" />
 

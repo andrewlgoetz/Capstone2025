@@ -6,12 +6,14 @@ from app.services.barcode_service import lookup_barcode
 from app.models.inventory import InventoryItem
 from app.models.food_banks import FoodBank
 from app.models.user import User
+from app.models.category import Category
 from app.schemas.inventory_schema import * # InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo, ScanOutResponse
 import app.services.inventory_service as inventory_service
 from app.models.inventory_movement import MovementType
 from app.models.activity_log import ActivityLog, ActivityAction
 from app.dependencies import get_db
 from app.services.permission_service import Permission, require_permission
+from app.category_mappings import match_off_to_category
 
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
 
@@ -121,10 +123,16 @@ def upsert_scanned_item(
     # Barcode does not exist in our DB — ask the barcode registry
     info = lookup_barcode(code)
     if info:
-        # return candidate info so frontend can prefill fields (status NEW)
+        # Try to match the raw OFF categories string against active DB categories
+        off_cats = info.get("off_categories", "") if isinstance(info, dict) else ""
+        active_category_names = [
+            c.name for c in db.query(Category).filter(Category.is_active == True).all()
+        ]
+        matched_category = match_off_to_category(off_cats, active_category_names) if off_cats else None
+
         candidate = BarcodeInfo(
             name=info.get("name") if isinstance(info, dict) else None,
-            category=info.get("category") if isinstance(info, dict) else None,
+            category=matched_category,  # None if no match — user fills in
             barcode=info.get("barcode") if isinstance(info, dict) else code,
         )
         return ScanResponse(status="NEW", item=None, candidate_info=candidate)
