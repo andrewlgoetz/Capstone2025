@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useQuery } from '@tanstack/react-query';
 import { fetchInventoryByBarcode, getCategories } from "../services/api";
+import CategorySearch from "./CategorySearch";
 
 // Fallback categories if database fetch fails
 const FALLBACK_CATEGORY_OPTIONS = [
@@ -89,7 +90,6 @@ export default function AddItemModal({
   });
 
   const [customUnit, setCustomUnit] = React.useState("");
-  const [customCategory, setCustomCategory] = React.useState("");
   const [barcodeStatus, setBarcodeStatus] = React.useState(null); // null | 'KNOWN' | 'NEW'
   const [barcodeLoading, setBarcodeLoading] = React.useState(false);
   const barcodeTimerRef = React.useRef(null);
@@ -126,7 +126,6 @@ export default function AddItemModal({
       });
 
       setCustomUnit("");
-      setCustomCategory("");
       setOriginalValues({
         quantity: quantityStr,
         location_id: locationStr,
@@ -145,7 +144,6 @@ export default function AddItemModal({
         movement_reason: "",
       });
       setCustomUnit("");
-      setCustomCategory("");
       setOriginalValues(null);
       setBarcodeStatus(null);
     }
@@ -171,18 +169,14 @@ export default function AddItemModal({
           setBarcodeStatus(status);
 
           const rawUnit = result.raw?.unit || "";
+          // Backend returns matched category or null; empty string means "user must choose"
           const rawCategory = result.category || "";
 
           setValues((v) => ({
             ...v,
             name: v.name || result.name || "",
-            category: (() => {
-              if (v.category) return v.category;
-              if (!rawCategory) return "";
-              return CATEGORY_OPTIONS.includes(rawCategory)
-                ? rawCategory
-                : "Other";
-            })(),
+            // Only prefill category if we got a match and user hasn't set one already
+            category: v.category ? v.category : rawCategory,
             unit: (() => {
               if (v.unit && v.unit !== "units") return v.unit;
               if (!rawUnit) return "units";
@@ -192,9 +186,6 @@ export default function AddItemModal({
             })(),
           }));
 
-          if (rawCategory && !CATEGORY_OPTIONS.includes(rawCategory)) {
-            setCustomCategory(rawCategory);
-          }
           if (rawUnit && !UNIT_OPTIONS.slice(0, -1).includes(rawUnit)) {
             setCustomUnit(rawUnit);
           }
@@ -265,10 +256,7 @@ export default function AddItemModal({
 
     const resolvedUnit =
       values.unit === "Custom" ? customUnit.trim() || null : values.unit || null;
-    const resolvedCategory =
-      values.category === "Other"
-        ? customCategory.trim() || null
-        : values.category || null;
+    const resolvedCategory = values.category?.trim() || null;
 
     const payload = {
       name: values.name.trim(),
@@ -369,34 +357,14 @@ export default function AddItemModal({
                     className={inputClass}
                   />
                 ) : (
-                  <>
-                    <div className="relative">
-                      <select
-                        id="category"
-                        name="category"
-                        required
-                        value={values.category}
-                        onChange={handleChange}
-                        className={selectClass}
-                      >
-                        <option value="" disabled>Select category</option>
-                        {CATEGORY_OPTIONS.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      {chevron}
-                    </div>
-                    {values.category === "Other" && (
-                      <input
-                        type="text"
-                        placeholder="Enter custom category"
-                        value={customCategory}
-                        onChange={(e) => setCustomCategory(e.target.value)}
-                        className={`${inputClass} mt-2`}
-                        required
-                      />
-                    )}
-                  </>
+                  <CategorySearch
+                    categories={CATEGORY_OPTIONS}
+                    value={values.category}
+                    onChange={(cat) => setValues((v) => ({ ...v, category: cat }))}
+                    required
+                    placeholder="Search categories…"
+                    inputClassName=""
+                  />
                 )}
               </div>
 

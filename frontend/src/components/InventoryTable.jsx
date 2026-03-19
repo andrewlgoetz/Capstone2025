@@ -14,6 +14,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import SortIcon from "@mui/icons-material/Sort";
 import api, { getCategories } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import CategorySearch from "./CategorySearch";
 
 
 const formatDate = (dateString) => {
@@ -312,28 +313,14 @@ export default function InventoryTable({
             onChange={(e) => setSearch(e.target.value)}
           />
           {/* Category Filter */}
-          <div className="relative">
-            <select
+          <div className="w-56">
+            <CategorySearch
+              categories={categories}
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="appearance-none block w-56 px-3 py-1.5 border border-gray-300 bg-white rounded-lg text-sm focus:border-slate-500"
-            >
-              <option value="">All Categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <svg
-                className="fill-current h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-              </svg>
-            </div>
+              onChange={(cat) => setCategoryFilter(cat)}
+              placeholder="All categories…"
+              inputClassName="py-1.5 px-3"
+            />
           </div>
           <label className="flex items-center text-sm text-slate-700">
             <input
