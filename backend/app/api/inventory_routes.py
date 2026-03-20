@@ -22,6 +22,7 @@ from app.services.permission_service import Permission, require_permission, requ
 from app.services import auth_service
 import csv
 import io
+import re
 from datetime import datetime
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
@@ -299,6 +300,46 @@ def export_inventory_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=inventory_export.csv"}
     )
+
+@router.get("/search")
+def search_inventory_items(
+    query: str,
+    location_ids: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW))
+):
+    # Clean query: remove punctuation + lowercase
+    cleaned_query = re.sub(r'[^a-zA-Z0-9\s]', '', query).lower()
+
+    requested = [int(x) for x in location_ids.split(",") if x.strip()] if location_ids else None
+    allowed = get_allowed_location_ids(current_user, db, requested)
+
+    # Normalize DB name: remove punctuation + lowercase
+    normalized_name = func.lower(
+        func.regexp_replace(InventoryItem.name, r'[^a-zA-Z0-9\s]', '', 'g')
+    )
+
+    q = db.query(InventoryItem).filter(
+        InventoryItem.bank_id == current_user.bank_id,
+        normalized_name.contains(cleaned_query)
+    )
+
+    if allowed is not None:
+        q = q.filter(InventoryItem.location_id.in_(allowed))
+
+    results = q.limit(20).all()
+
+    return [
+        {
+            "item_id": item.item_id,
+            "name": item.name,
+            "quantity": item.quantity,
+            "location_id": item.location_id,
+            "category": item.category
+        }
+        for item in results
+    ]
+
 
 @router.get("/allwithlocation")
 def get_inventory(

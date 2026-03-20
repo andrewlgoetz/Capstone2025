@@ -214,6 +214,34 @@ export async function exportInventoryCSV(locationIds) {
   return res.data;
 }
 
+export async function searchInventoryItems(query, locationIds) {
+  const params = {
+    query,
+    ...(locationIds?.length && { location_ids: locationIds.join(',') })
+  };
+
+  const res = await api.get('/inventory/search', { params });
+  return res.data;
+}
+
+export async function scanOutInventoryByItemId(item_id, qty = 1, location_id = null) {
+  if (!item_id) throw new Error('item_id required');
+
+  const confirmBody = { quantity: qty };
+  if (location_id != null) confirmBody.location_id = location_id;
+
+  const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, confirmBody);
+  const updated = confirmRes.data;
+
+  return {
+    status: 'OK',
+    requested: qty,
+    remaining_quantity: updated.quantity ?? null,
+    deleted: updated.quantity === 0,
+    item: updated,
+  };
+}
+
 // Delete item
 export async function deleteItem(itemId) {
   const res = await api.delete(`/inventory/${itemId}`);
