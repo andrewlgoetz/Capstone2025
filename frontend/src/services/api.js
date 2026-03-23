@@ -379,6 +379,11 @@ export async function reactivateCategory(categoryId) {
   return res.data;
 }
 
+export async function completeCheckout(payload) {
+  const res = await api.post('/checkout/complete', payload);
+  return res.data;
+}
+
 // --------------- Activity Log API Functions ---------------
 
 export async function getItemChangesLog(limit = 100, entityType = null) {

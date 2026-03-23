@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AddIcon from '@mui/icons-material/Add';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -121,6 +122,7 @@ const Home = () => {
   const canScanOut = hasPermission('barcode:scan_out');
   const canCreate = hasPermission('inventory:create');
   const showFab = canScanIn || canScanOut || canCreate;
+  const navigate = useNavigate();
 
   const { data: inventoryItems = [], isLoading: isDataLoading } = useQuery({
     queryKey: ["inventoryItems", selectedLocationIds],
@@ -244,6 +246,12 @@ const Home = () => {
               <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
             </div>
           </div>
+          <button
+            className="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
+            onClick={() => navigate('/checkout')}
+          >
+            Start Checkout
+          </button>
         </div>
       </header>
 
