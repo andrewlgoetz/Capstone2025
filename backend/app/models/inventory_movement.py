@@ -36,6 +36,7 @@ class InventoryMovement(Base):
     )
     
     quantity_change = Column(Integer, nullable=False)
+    quantity_after = Column(Integer, nullable=True)
     movement_type = Column(SAEnum(MovementType), nullable=False)
     reason = Column(String, nullable=True)
     from_location_id = Column(

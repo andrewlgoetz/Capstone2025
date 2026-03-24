@@ -202,6 +202,16 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     maxHeight: '70%',
   },
+  pickerSearchInput: {
+    margin: 12,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    fontSize: 15,
+    color: '#333',
+  },
   categoryPickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

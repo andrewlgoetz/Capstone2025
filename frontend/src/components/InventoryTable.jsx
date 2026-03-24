@@ -87,8 +87,8 @@ export default function InventoryTable({
 
   const [expiryFrom, setExpiryFrom] = useState("");
   const [expiryTo, setExpiryTo] = useState("");
-  const [onlyWithExpiry, setOnlyWithExpiry] = useState(false);
-  const [expiringInDays, setExpiringInDays] = useState("");
+  const [expiryPreset, setExpiryPreset] = useState("");
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -220,6 +220,7 @@ export default function InventoryTable({
       .map(cat => cat.name);
   }, [categoriesQuery.data]);
 
+
   useEffect(() => {
     if (onCategoriesLoaded && categories.length > 0) {
       onCategoriesLoaded(categories);
@@ -236,18 +237,11 @@ export default function InventoryTable({
     const to = parseYMD(expiryTo);
 
     return displayed.filter((r) => {
-      const matchesText =
-        !q ||
-        [r.name, r.category, r.barcode, r.location_id]
-          .map((v) => String(v ?? "").toLowerCase())
-          .some((txt) => txt.includes(q));
-
+      const matchesText = !q || String(r.name ?? "").toLowerCase().includes(q);
       const matchesCategory = !categoryFilter || r.category === categoryFilter;
-      const matchesLowStock =
-        !lowStockOnly || Number(r.quantity ?? 0) <= lowStockThreshold;
+      const matchesLowStock = !lowStockOnly || Number(r.quantity ?? 0) <= lowStockThreshold;
 
       const hasExpiry = !!r.expiration_date;
-      if (onlyWithExpiry && !hasExpiry) return false;
 
       let matchesDateRange = true;
       if (from && hasExpiry)
@@ -256,14 +250,13 @@ export default function InventoryTable({
         matchesDateRange = matchesDateRange && new Date(`${r.expiration_date}T00:00:00`) <= to;
       if ((from || to) && !hasExpiry) matchesDateRange = false;
 
-      const matchesExpiringSoon =
-        !expiringInDays || inNextNDays(r.expiration_date, expiringInDays);
+      const matchesPreset = !expiryPreset || inNextNDays(r.expiration_date, expiryPreset);
 
-      return matchesText && matchesCategory && matchesLowStock && matchesDateRange && matchesExpiringSoon;
+      return matchesText && matchesCategory && matchesLowStock && matchesDateRange && matchesPreset;
     });
   }, [
     displayed, search, categoryFilter, lowStockOnly, lowStockThreshold,
-    expiryFrom, expiryTo, onlyWithExpiry, expiringInDays,
+    expiryFrom, expiryTo, expiryPreset,
   ]);
 
   // --- Grouped view data ---
@@ -323,89 +316,134 @@ export default function InventoryTable({
       {isLoading && <div className="h-0.5 w-full bg-blue-500 animate-pulse" />}
 
       {showFilterBar && mode === "full" && (
-        <div className="flex flex-wrap gap-3 items-center p-3 border-b border-gray-200">
-          {/* Search Input */}
-          <input
-            type="text"
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-48 focus:border-slate-500"
-            placeholder="Search name, category..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {/* Category Filter */}
-          <div className="w-56">
-            <CategorySearch
-              categories={categories}
-              value={categoryFilter}
-              onChange={(cat) => setCategoryFilter(cat)}
-              placeholder="All categories…"
-              inputClassName="py-1.5 px-3"
-            />
-          </div>
-          <label className="flex items-center text-sm text-slate-700">
-            <input
-              type="checkbox"
-              className="rounded text-slate-600 border-gray-300 mr-2"
-              checked={lowStockOnly}
-              onChange={(e) => setLowStockOnly(e.target.checked)}
-            />
-            Low stock (≤ {lowStockThreshold})
-          </label>
-
-          <div className="relative">
-            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry from</label>
-            <input
-              type="date"
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36 mt-2 focus:border-slate-500"
-              value={expiryFrom}
-              onChange={(e) => setExpiryFrom(e.target.value)}
-            />
-          </div>
-
-          <div className="relative">
-            <label className="text-xs absolute -top-2 left-2 px-1 bg-white text-gray-500">Expiry to</label>
-            <input
-              type="date"
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-36 mt-2 focus:border-slate-500"
-              value={expiryTo}
-              onChange={(e) => setExpiryTo(e.target.value)}
-            />
-          </div>
-
-          <input
-            type="number"
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-32 focus:border-slate-500"
-            placeholder="Expiring in (days)"
-            min="1"
-            value={expiringInDays}
-            onChange={(e) => setExpiringInDays(e.target.value)}
-          />
-
-          <label className="flex items-center text-sm text-slate-700">
-            <input
-              type="checkbox"
-              className="rounded text-slate-600 border-gray-300 mr-2"
-              checked={onlyWithExpiry}
-              onChange={(e) => setOnlyWithExpiry(e.target.checked)}
-            />
-            Only with expiry
-          </label>
-
-          {/* View toggle — right-aligned */}
-          <div className="ml-auto flex rounded-lg border border-gray-300 overflow-hidden text-sm">
+        <div className="border-b border-gray-200">
+          {/* View tabs */}
+          <div className="flex border-b border-gray-200">
             <button
-              className={`px-3 py-1.5 font-medium transition ${!groupView ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-gray-50"}`}
+              className={`px-5 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${!groupView ? "border-slate-800 text-slate-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}
               onClick={() => setGroupView(false)}
             >
               Items
             </button>
             <button
-              className={`px-3 py-1.5 font-medium transition border-l border-gray-300 ${groupView ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-gray-50"}`}
+              className={`px-5 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${groupView ? "border-slate-800 text-slate-800" : "border-transparent text-slate-500 hover:text-slate-700"}`}
               onClick={() => setGroupView(true)}
             >
               By Category
             </button>
           </div>
+
+          {/* Primary filters row */}
+          <div className="flex flex-wrap gap-2 items-center px-3 py-2.5">
+            <input
+              type="text"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-52 focus:outline-none focus:border-slate-500"
+              placeholder="Search by name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div className="w-56">
+              <CategorySearch
+                categories={categories}
+                value={categoryFilter}
+                onChange={(cat) => setCategoryFilter(cat)}
+                placeholder="All categories…"
+                inputClassName="py-1.5 px-3"
+              />
+            </div>
+            <button
+              onClick={() => setLowStockOnly((v) => !v)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${lowStockOnly ? "bg-amber-50 border-amber-400 text-amber-700" : "border-gray-300 text-slate-600 hover:bg-gray-50"}`}
+            >
+              Low stock (≤ {lowStockThreshold})
+            </button>
+            <button
+              onClick={() => setShowMoreFilters((v) => !v)}
+              className={`ml-auto px-3 py-1.5 rounded-lg text-sm font-medium border transition flex items-center gap-1 ${showMoreFilters || expiryFrom || expiryTo || expiryPreset ? "bg-slate-100 border-slate-400 text-slate-700" : "border-gray-300 text-slate-500 hover:bg-gray-50"}`}
+            >
+              Expiry filters
+              <span className="text-xs">{showMoreFilters ? "▲" : "▼"}</span>
+            </button>
+          </div>
+
+          {/* Expiry filters row (collapsible) */}
+          {showMoreFilters && (
+            <div className="flex flex-wrap gap-2 items-center px-3 pb-2.5">
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 whitespace-nowrap">From</label>
+                <input
+                  type="date"
+                  className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-slate-500"
+                  value={expiryFrom}
+                  onChange={(e) => { setExpiryFrom(e.target.value); setExpiryPreset(""); }}
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 whitespace-nowrap">To</label>
+                <input
+                  type="date"
+                  className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-slate-500"
+                  value={expiryTo}
+                  onChange={(e) => { setExpiryTo(e.target.value); setExpiryPreset(""); }}
+                />
+              </div>
+              <select
+                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-600 focus:outline-none focus:border-slate-500"
+                value={expiryPreset}
+                onChange={(e) => { setExpiryPreset(e.target.value); setExpiryFrom(""); setExpiryTo(""); }}
+              >
+                <option value="">Expiring in...</option>
+                <option value="7">Next 7 days</option>
+                <option value="30">Next 30 days</option>
+                <option value="60">Next 60 days</option>
+                <option value="90">Next 90 days</option>
+              </select>
+              {(expiryFrom || expiryTo || expiryPreset) && (
+                <button
+                  className="text-xs text-slate-400 hover:text-slate-600 underline"
+                  onClick={() => { setExpiryFrom(""); setExpiryTo(""); setExpiryPreset(""); }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Active filter chips */}
+          {(search || categoryFilter || lowStockOnly || expiryFrom || expiryTo || expiryPreset) && (
+            <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+              {search && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">
+                  Name: {search}
+                  <button onClick={() => setSearch("")} className="hover:text-slate-900">✕</button>
+                </span>
+              )}
+              {categoryFilter && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">
+                  Category: {categoryFilter}
+                  <button onClick={() => setCategoryFilter("")} className="hover:text-slate-900">✕</button>
+                </span>
+              )}
+              {lowStockOnly && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">
+                  Low stock
+                  <button onClick={() => setLowStockOnly(false)} className="hover:text-amber-900">✕</button>
+                </span>
+              )}
+              {expiryPreset && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">
+                  Expiring: next {expiryPreset} days
+                  <button onClick={() => setExpiryPreset("")} className="hover:text-slate-900">✕</button>
+                </span>
+              )}
+              {(expiryFrom || expiryTo) && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700">
+                  Expiry: {expiryFrom || "…"} → {expiryTo || "…"}
+                  <button onClick={() => { setExpiryFrom(""); setExpiryTo(""); }} className="hover:text-slate-900">✕</button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

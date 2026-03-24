@@ -221,7 +221,7 @@ return (
         {/* Inventory Table */}
         <InventoryTable
           mode="full"
-          lowStockThreshold={25}
+          lowStockThreshold={10}
           showFilterBar
           locationIds={selectedLocationIds}
           onEditClick={canEdit ? handleEditClick : null}
@@ -229,7 +229,7 @@ return (
           onCategoriesLoaded={() => {}}
         />
 
-        {/* Add/Edit Modal (Assumes AddItemModal uses Tailwind) */}
+        {/* Add/Edit Modal */}
         <AddItemModal
           open={open}
           onClose={closeModal}

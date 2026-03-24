@@ -69,7 +69,7 @@ interface ScanOutResponse {
 }
 
 export default function App(): React.ReactElement {
-  const { user, userLocations, hasPermission, logout } = useAuth();
+  const { user, userLocations, hasPermission, logout, loading: authLoading } = useAuth();
   const canScanIn = hasPermission('barcode:scan_in');
   const canScanOut = hasPermission('barcode:scan_out');
 
@@ -110,7 +110,9 @@ export default function App(): React.ReactElement {
   });
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState<boolean>(false);
+  const [categorySearch, setCategorySearch] = useState<string>('');
   const [showUnitPicker, setShowUnitPicker] = useState<boolean>(false);
+  const [unitSearch, setUnitSearch] = useState<string>('');
 
   const UNIT_OPTIONS = ['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets','CUSTOM'];
 
@@ -132,8 +134,9 @@ export default function App(): React.ReactElement {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const anyModalOpen = showNewItemForm || showKnownItemForm || showScanOutForm;
 
-  // Fetch categories on mount
+  // Fetch categories once auth is ready
   useEffect(() => {
+    if (authLoading) return;
     const fetchCategories = async () => {
       try {
         const response = await api.get(`/categories/`);
@@ -143,7 +146,6 @@ export default function App(): React.ReactElement {
         setCategories(activeCategories);
       } catch (error) {
         console.error('Failed to fetch categories:', error);
-        // Fallback to default categories if fetch fails
         setCategories([
           "Canned & Packaged",
           "Fresh Produce",
@@ -157,7 +159,7 @@ export default function App(): React.ReactElement {
       }
     };
     fetchCategories();
-  }, []);
+  }, [authLoading]);
 
   // Load favorites on mount
   useEffect(() => {
@@ -692,45 +694,56 @@ export default function App(): React.ReactElement {
               transparent
               animationType="slide"
               visible={showCategoryPicker}
-              onRequestClose={() => setShowCategoryPicker(false)}
+              onRequestClose={() => { setShowCategoryPicker(false); setCategorySearch(''); }}
             >
               <View style={styles.categoryPickerModal}>
                 <TouchableOpacity
                   style={styles.categoryPickerBackdrop}
                   activeOpacity={1}
-                  onPress={() => setShowCategoryPicker(false)}
+                  onPress={() => { setShowCategoryPicker(false); setCategorySearch(''); }}
                 />
                 <View style={styles.categoryPickerContent}>
                   <View style={styles.categoryPickerHeader}>
                     <Text style={styles.categoryPickerTitle}>Select Category</Text>
-                    <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
+                    <TouchableOpacity onPress={() => { setShowCategoryPicker(false); setCategorySearch(''); }}>
                       <Text style={styles.categoryPickerClose}>✕</Text>
                     </TouchableOpacity>
                   </View>
-                  <ScrollView style={styles.categoryPickerScroll}>
-                    {categories.map((cat) => (
-                      <TouchableOpacity
-                        key={cat}
-                        style={[
-                          styles.categoryPickerOption,
-                          newItemData.category === cat && styles.categoryPickerOptionActive
-                        ]}
-                        onPress={() => {
-                          setNewItemData({ ...newItemData, category: cat });
-                          setShowCategoryPicker(false);
-                        }}
-                      >
-                        <Text style={[
-                          styles.categoryPickerOptionText,
-                          newItemData.category === cat && styles.categoryPickerOptionTextActive
-                        ]}>
-                          {cat}
-                        </Text>
-                        {newItemData.category === cat && (
-                          <Text style={styles.categoryPickerCheck}>✓</Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
+                  <TextInput
+                    style={styles.pickerSearchInput}
+                    placeholder="Search categories..."
+                    placeholderTextColor="#999"
+                    value={categorySearch}
+                    onChangeText={setCategorySearch}
+                    autoFocus
+                  />
+                  <ScrollView style={styles.categoryPickerScroll} keyboardShouldPersistTaps="handled">
+                    {categories
+                      .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
+                      .map((cat) => (
+                        <TouchableOpacity
+                          key={cat}
+                          style={[
+                            styles.categoryPickerOption,
+                            newItemData.category === cat && styles.categoryPickerOptionActive
+                          ]}
+                          onPress={() => {
+                            setNewItemData({ ...newItemData, category: cat });
+                            setShowCategoryPicker(false);
+                            setCategorySearch('');
+                          }}
+                        >
+                          <Text style={[
+                            styles.categoryPickerOptionText,
+                            newItemData.category === cat && styles.categoryPickerOptionTextActive
+                          ]}>
+                            {cat}
+                          </Text>
+                          {newItemData.category === cat && (
+                            <Text style={styles.categoryPickerCheck}>✓</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
                   </ScrollView>
                 </View>
               </View>
@@ -741,45 +754,56 @@ export default function App(): React.ReactElement {
               transparent
               animationType="slide"
               visible={showUnitPicker}
-              onRequestClose={() => setShowUnitPicker(false)}
+              onRequestClose={() => { setShowUnitPicker(false); setUnitSearch(''); }}
             >
               <View style={styles.categoryPickerModal}>
                 <TouchableOpacity
                   style={styles.categoryPickerBackdrop}
                   activeOpacity={1}
-                  onPress={() => setShowUnitPicker(false)}
+                  onPress={() => { setShowUnitPicker(false); setUnitSearch(''); }}
                 />
                 <View style={styles.categoryPickerContent}>
                   <View style={styles.categoryPickerHeader}>
                     <Text style={styles.categoryPickerTitle}>Select Unit</Text>
-                    <TouchableOpacity onPress={() => setShowUnitPicker(false)}>
+                    <TouchableOpacity onPress={() => { setShowUnitPicker(false); setUnitSearch(''); }}>
                       <Text style={styles.categoryPickerClose}>✕</Text>
                     </TouchableOpacity>
                   </View>
-                  <ScrollView style={styles.categoryPickerScroll}>
-                    {UNIT_OPTIONS.map((unit) => (
-                      <TouchableOpacity
-                        key={unit}
-                        style={[
-                          styles.categoryPickerOption,
-                          newItemData.unit === unit && styles.categoryPickerOptionActive
-                        ]}
-                        onPress={() => {
-                          setNewItemData({ ...newItemData, unit: unit });
-                          setShowUnitPicker(false);
-                        }}
-                      >
-                        <Text style={[
-                          styles.categoryPickerOptionText,
-                          newItemData.unit === unit && styles.categoryPickerOptionTextActive
-                        ]}>
-                          {unit}
-                        </Text>
-                        {newItemData.unit === unit && (
-                          <Text style={styles.categoryPickerCheck}>✓</Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
+                  <TextInput
+                    style={styles.pickerSearchInput}
+                    placeholder="Search units..."
+                    placeholderTextColor="#999"
+                    value={unitSearch}
+                    onChangeText={setUnitSearch}
+                    autoFocus
+                  />
+                  <ScrollView style={styles.categoryPickerScroll} keyboardShouldPersistTaps="handled">
+                    {UNIT_OPTIONS
+                      .filter(unit => unit.toLowerCase().includes(unitSearch.toLowerCase()))
+                      .map((unit) => (
+                        <TouchableOpacity
+                          key={unit}
+                          style={[
+                            styles.categoryPickerOption,
+                            newItemData.unit === unit && styles.categoryPickerOptionActive
+                          ]}
+                          onPress={() => {
+                            setNewItemData({ ...newItemData, unit: unit });
+                            setShowUnitPicker(false);
+                            setUnitSearch('');
+                          }}
+                        >
+                          <Text style={[
+                            styles.categoryPickerOptionText,
+                            newItemData.unit === unit && styles.categoryPickerOptionTextActive
+                          ]}>
+                            {unit}
+                          </Text>
+                          {newItemData.unit === unit && (
+                            <Text style={styles.categoryPickerCheck}>✓</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
                   </ScrollView>
                 </View>
               </View>

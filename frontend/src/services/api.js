@@ -379,6 +379,28 @@ export async function reactivateCategory(categoryId) {
   return res.data;
 }
 
+export async function getCategoryRequests() {
+  const res = await api.get("/inventory/category-requests");
+  return res.data;
+}
+
+export async function dismissCategoryRequest(itemId) {
+  const res = await api.put(`/inventory/${itemId}`, { category_notes: null });
+  return res.data;
+}
+
+export async function downloadInventoryReport(locationIds, startDate, endDate) {
+  const params = { start_date: startDate, end_date: endDate };
+  if (locationIds?.length) params.location_ids = locationIds.join(',');
+
+  const res = await api.get('/inventory/reports/download', {
+    params,
+    responseType: 'blob',
+  });
+
+  return res.data;
+}
+
 export async function completeCheckout(payload) {
   const res = await api.post('/checkout/complete', payload);
   return res.data;

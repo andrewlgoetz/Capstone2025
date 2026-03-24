@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from typing import Optional, List
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType
@@ -39,6 +39,7 @@ def get_inventory_history(
         db.query(
             InventoryMovement.id,
             InventoryMovement.quantity_change,
+            InventoryMovement.quantity_after,
             InventoryMovement.movement_type,
             InventoryMovement.created_at,
             InventoryItem.name.label("item_name"),
@@ -63,7 +64,7 @@ def get_inventory_history(
             "item_name": m.item_name,
             "category": m.category,
             "quantity_change": m.quantity_change,
-            "current_quantity": m.current_quantity,
+            "current_quantity": m.quantity_after if m.quantity_after is not None else m.current_quantity,
             "movement_type": m.movement_type.value if hasattr(m.movement_type, 'value') else str(m.movement_type),
             "unit": m.unit,
             "location_name": m.location_name,
@@ -185,6 +186,104 @@ def get_monthly_distributed(
     distributed = query.scalar()
 
     return {"distributed": int(distributed)}
+
+@router.get("/reports/download")
+def download_report(
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    location_ids: Optional[str] = Query(None, description="Comma-separated location IDs"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.REPORTS_VIEW, Permission.REPORTS_DOWNLOAD))
+):
+    try:
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, microsecond=999999)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    requested = [int(x) for x in location_ids.split(",") if x.strip()] if location_ids else None
+    allowed = get_allowed_location_ids(current_user, db, requested)
+
+    rows = (
+        db.query(
+            InventoryItem.item_id,
+            InventoryItem.name,
+            InventoryItem.category,
+            InventoryItem.quantity,
+            InventoryMovement.movement_type,
+            func.sum(func.abs(InventoryMovement.quantity_change)).label("total")
+        )
+        .join(InventoryItem, InventoryMovement.item_id == InventoryItem.item_id)
+        .filter(
+            InventoryItem.bank_id == current_user.bank_id,
+            InventoryMovement.movement_type.in_([MovementType.INBOUND, MovementType.OUTBOUND]),
+            InventoryMovement.created_at >= start_dt,
+            InventoryMovement.created_at <= end_dt,
+        )
+    )
+
+    if allowed is not None:
+        rows = rows.filter(
+            or_(
+                InventoryMovement.to_location_id.in_(allowed),
+                InventoryMovement.from_location_id.in_(allowed),
+            )
+        )
+
+    rows = rows.group_by(
+        InventoryItem.item_id,
+        InventoryItem.name,
+        InventoryItem.category,
+        InventoryItem.quantity,
+        InventoryMovement.movement_type,
+    ).all()
+
+    items: dict = {}
+    for item_id, name, category, quantity, movement_type, total in rows:
+        if item_id not in items:
+            items[item_id] = {
+                "item_name": name,
+                "category": category or "",
+                "checked_in": 0,
+                "checked_out": 0,
+                "current_quantity": quantity,
+            }
+        if movement_type == MovementType.INBOUND:
+            items[item_id]["checked_in"] = int(total)
+        else:
+            items[item_id]["checked_out"] = int(total)
+
+    total_in = sum(i["checked_in"] for i in items.values())
+    total_out = sum(i["checked_out"] for i in items.values())
+
+    if start_date == end_date:
+        period_label = start_date
+    else:
+        period_label = f"{start_date} to {end_date}"
+
+    output = io.StringIO()
+    output.write('\ufeff')  # UTF-8 BOM for Excel compatibility
+    writer = csv.writer(output)
+    writer.writerow(["Item Name", "Category", "Inbound", "Outbound", "Current Quantity"])
+    for item in sorted(items.values(), key=lambda x: x["item_name"]):
+        writer.writerow([
+            item["item_name"],
+            item["category"],
+            item["checked_in"],
+            item["checked_out"],
+            item["current_quantity"],
+        ])
+    writer.writerow([])
+    writer.writerow([f"Report: {period_label}", "", f"Total Inbound: {total_in}", f"Total Outbound: {total_out}", ""])
+
+    output.seek(0)
+    filename = f"inventory-report-{start_date}-to-{end_date}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
 
 def get_allowed_location_ids(user: User, db: Session, requested_ids: Optional[List[int]] = None) -> Optional[List[int]]:
     """
@@ -401,6 +500,32 @@ def list_items(
         query = query.filter(InventoryItem.location_id.in_(allowed))
 
     return query.all()
+
+@router.get("/category-requests")
+def get_category_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(Permission.CATEGORY_EDIT))
+):
+    """Return items where category='Other' and category_notes is set — staff requests for new categories."""
+    items = (
+        db.query(InventoryItem)
+        .filter(
+            InventoryItem.bank_id == current_user.bank_id,
+            InventoryItem.category == "Other",
+            InventoryItem.category_notes.isnot(None),
+            InventoryItem.category_notes != "",
+        )
+        .order_by(InventoryItem.date_added.desc())
+        .all()
+    )
+    return [
+        {
+            "item_id": item.item_id,
+            "name": item.name,
+            "category_notes": item.category_notes,
+        }
+        for item in items
+    ]
 
 @router.get("/{item_id}", response_model=InventoryRead)
 def get_item(

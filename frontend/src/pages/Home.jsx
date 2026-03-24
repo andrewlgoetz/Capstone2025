@@ -509,7 +509,7 @@ const Home = () => {
       )}
       {/* Small help button fixed at bottom-left */}
       <div className="fixed bottom-6 left-6 z-30">
-        <Link to="/help" className="px-3 py-2 rounded bg-white border border-gray-200 shadow-sm text-sm text-slate-700 hover:bg-gray-50">
+        <Link to="/help" className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium shadow-md hover:bg-slate-700 transition">
           Help
         </Link>
       </div>

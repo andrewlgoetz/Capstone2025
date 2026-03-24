@@ -147,4 +147,59 @@ export async function changePassword(oldPassword: string, newPassword: string): 
   });
 }
 
+// --- Inventory Search ---
+
+export async function searchInventoryItems(query: string, locationId?: number): Promise<any[]> {
+  const params: Record<string, any> = { query };
+  if (locationId) params.location_ids = String(locationId);
+  const response = await api.get('/inventory/search', { params });
+  return response.data;
+}
+
+// --- Checkout ---
+
+export interface CheckoutItemPayload {
+  item_id: number;
+  location_id: number | null;
+  quantity: number;
+}
+
+export interface CheckoutPayload {
+  patron_id: string;
+  patron_type: string | null;
+  items: CheckoutItemPayload[];
+}
+
+export interface CheckoutResponse {
+  checkout_id: number;
+  item_count: number;
+  total_quantity: number;
+  message: string;
+}
+
+export async function completeCheckout(payload: CheckoutPayload): Promise<CheckoutResponse> {
+  const response = await api.post<CheckoutResponse>('/checkout/complete', payload);
+  return response.data;
+}
+
+// --- Barcode Scan Out Lookup ---
+
+export interface ScanOutItem {
+  item_id: number;
+  name: string;
+  quantity: number;
+  category: string | null;
+  location_id: number | null;
+}
+
+export interface ScanOutResponse {
+  status: 'FOUND' | 'NOT_FOUND';
+  item: ScanOutItem | null;
+}
+
+export async function scanOutLookup(barcode: string): Promise<ScanOutResponse> {
+  const response = await api.post<ScanOutResponse>('/barcode/scan-out', { barcode });
+  return response.data;
+}
+
 export default api;

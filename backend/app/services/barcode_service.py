@@ -25,11 +25,13 @@ def lookup_barcode(barcode: str):
         ]
 
         url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-        response = requests.get(url, params={'fields': ','.join(fields)}, timeout=5)
+        headers = {'User-Agent': 'HamFoodBank-InventoryApp/1.0 (contact@hamfoodbank.ca)'}
+        response = requests.get(url, params={'fields': ','.join(fields)}, headers=headers, timeout=5)
         data = response.json()
 
         if data and data.get('status') == 1 and data.get('product'):
             product = data['product']
+            print(f"[OFF] name={product.get('product_name')} | categories={product.get('categories')}")
             return {
                 'name': product.get('product_name', 'Unknown Product'),
                 'off_categories': product.get('categories', ''),  # raw — caller maps to local category

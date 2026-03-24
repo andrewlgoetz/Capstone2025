@@ -6,6 +6,8 @@ import {
   updateCategory,
   deactivateCategory,
   reactivateCategory,
+  getCategoryRequests,
+  dismissCategoryRequest,
   getItemChangesLog,
   getUserActivityLog,
 } from "../services/api";
@@ -55,16 +57,29 @@ function CategoriesTab() {
     queryFn: () => getCategories(true),
   });
 
+  const { data: requests = [] } = useQuery({
+    queryKey: ["category-requests"],
+    queryFn: getCategoryRequests,
+  });
+
   const [newName, setNewName] = React.useState("");
   const [editingId, setEditingId] = React.useState(null);
   const [editingName, setEditingName] = React.useState("");
   const [filter, setFilter] = React.useState("active"); // 'active' | 'inactive' | 'all'
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["categories"] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["categories"] });
+    qc.invalidateQueries({ queryKey: ["category-requests"] });
+  };
 
   const createMut = useMutation({
     mutationFn: createCategory,
     onSuccess: () => { setNewName(""); invalidate(); },
+  });
+
+  const dismissMut = useMutation({
+    mutationFn: dismissCategoryRequest,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["category-requests"] }),
   });
 
   const renameMut = useMutation({
@@ -109,6 +124,45 @@ function CategoriesTab() {
 
   return (
     <div className="space-y-4">
+      {/* Category Requests */}
+      {requests.length > 0 && (
+        <div className="border border-amber-200 bg-amber-50 rounded-lg p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-amber-800">Category Requests</span>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">
+              {requests.length}
+            </span>
+            <span className="text-xs text-amber-600 ml-1">Staff flagged these items as "Other" with notes</span>
+          </div>
+          <ul className="space-y-2">
+            {requests.map((req) => (
+              <li key={req.item_id} className="flex items-start gap-3 bg-white rounded-lg border border-amber-100 px-3 py-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-700 truncate">{req.name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">"{req.category_notes}"</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setNewName(req.category_notes)}
+                    className="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-white hover:bg-slate-700 transition"
+                  >
+                    Use as name
+                  </button>
+                  <button
+                    onClick={() => dismissMut.mutate(req.item_id)}
+                    disabled={dismissMut.isPending}
+                    className="text-xs text-gray-400 hover:text-red-500 transition disabled:opacity-50"
+                    title="Dismiss request"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Create new */}
       <form onSubmit={handleCreate} className="flex gap-2">
         <input

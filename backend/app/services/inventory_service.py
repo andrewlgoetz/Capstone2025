@@ -6,7 +6,7 @@ from app.models.inventory_movement import InventoryMovement, MovementType
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def get_db():
@@ -47,7 +47,7 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int 
 
     data = item.model_dump()
     data["bank_id"] = bank_id
-    data["last_modified"] = datetime.now()
+    data["last_modified"] = datetime.now(timezone.utc)
     if "barcode" in data:
         data["barcode"] = code
 
@@ -62,6 +62,7 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int 
             initial_movement = InventoryMovement(
                 item_id=new_item.item_id,
                 quantity_change=new_item.quantity,
+                quantity_after=new_item.quantity,
                 movement_type=MovementType.INBOUND,
                 to_location_id=new_item.location_id,
                 user_id=user_id
@@ -130,7 +131,7 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session, user_id: int =
     for field, value in data.items():
         setattr(db_item, field, value)
 
-    db_item.last_modified = datetime.now()
+    db_item.last_modified = datetime.now(timezone.utc)
 
     new_qty = db_item.quantity
     new_loc = db_item.location_id
@@ -152,6 +153,7 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session, user_id: int =
             movement = InventoryMovement(
                 item_id=db_item.item_id,
                 quantity_change=qty_delta if qty_delta is not None else 0,
+                quantity_after=new_qty,
                 movement_type=actual_movement_type,
                 reason=movement_reason,
                 from_location_id=old_loc,
