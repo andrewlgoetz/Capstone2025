@@ -302,9 +302,6 @@ export default function Checkout() {
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
             Checkout
             </h1>
-            <p className="text-slate-500 mt-1">
-            Scan or search items, add them to the cart, and complete checkout all at once.
-            </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -366,15 +363,12 @@ export default function Checkout() {
         </div>
         </header>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section className="bg-white rounded-xl border border-gray-200 shadow-sm min-h-[600px]">
             <div className="p-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-slate-800 tracking-tight">
                 Scan or Search Items
               </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Use barcode scan or search by item name to add items to this checkout.
-              </p>
             </div>
 
             <div className="p-4 space-y-4">
@@ -383,7 +377,7 @@ export default function Checkout() {
                   <div>
                     <h3 className="font-medium text-slate-800">Barcode Scanner</h3>
                     <p className="text-sm text-slate-500">
-                      Start the camera to scan items directly into checkout.
+                      Start the camera to scan items.
                     </p>
                   </div>
 

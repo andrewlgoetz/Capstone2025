@@ -384,6 +384,11 @@ export async function completeCheckout(payload) {
   return res.data;
 }
 
+export async function completeCheckin(payload) {
+  const res = await api.post('/checkin/complete', payload);
+  return res.data;
+}
+
 // --------------- Activity Log API Functions ---------------
 
 export async function getItemChangesLog(limit = 100, entityType = null) {
