@@ -236,24 +236,36 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Home
-            </h1>
-            <div className="hidden sm:block">
-              <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          Home
+        </h1>
+        <div className="hidden sm:block">
+          <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {canScanIn && (
           <button
-            className="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium shadow-md hover:bg-slate-700 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-xl font-medium shadow-sm hover:bg-gray-50 transition"
+            onClick={() => navigate('/checkin')}
+          >
+            Start Check In
+          </button>
+        )}
+
+        {canScanOut && (
+          <button
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl font-medium shadow-md hover:bg-slate-700 transition"
             onClick={() => navigate('/checkout')}
           >
             Start Checkout
           </button>
-        </div>
-      </header>
+        )}
+      </div>
+    </div>
 
       <div className="max-w-7xl mx-auto p-4">
         <main className="space-y-6">  

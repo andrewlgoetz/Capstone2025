@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import Home from './pages/Home.jsx'
 import Help from './pages/Help.jsx'
 import Checkout from './pages/Checkout.jsx'
+import CheckIn from './pages/Checkin.jsx'
 
 // Persistent layout: Navbar stays mounted across all page navigations
 function AppLayout() {
@@ -47,6 +48,11 @@ function App() {
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<Home />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkin" element={
+            <RequirePermission permission="barcode:scan_in">
+              <CheckIn />
+            </RequirePermission>
+          } />
             <Route path="/inventory" element={
               <RequirePermission permission="inventory:view">
                 <Inventory />
