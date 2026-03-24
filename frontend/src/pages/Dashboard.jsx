@@ -8,6 +8,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useAuth } from "../contexts/AuthContext";
 import LocationFilter from "../components/common/LocationFilter";
+import DownloadIcon from '@mui/icons-material/Download';
 
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -117,6 +118,7 @@ const Dashboard = () => {
             onClick={handleDownloadPdf}
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl font-medium shadow-md hover:bg-slate-700 transition"
           >
+            <DownloadIcon fontSize="small" />
             Save Dashboard as PDF
           </button>
         )}
