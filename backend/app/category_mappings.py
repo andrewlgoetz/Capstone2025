@@ -61,7 +61,7 @@ FOODBANK_CATEGORIES = [
     # --- Spreads ---
     {"name": "Peanut Butter",                       "description": "Peanut butter, almond butter, other nut butters",          "display_order": 110},
     {"name": "Jam / Jelly",                         "description": "Jam, jelly, marmalade, fruit spread",                     "display_order": 111},
-    {"name": "Other Spreads",                       "description": "Honey, maple syrup, hazelnut spread",                     "display_order": 112},
+    {"name": "Other Spreads",                       "description": "Honey, maple syrup, hazelnut spread",                      "display_order": 112},
     # --- Fresh Produce ---
     {"name": "Fresh Produce - Root Vegetables",     "description": "Carrots, potatoes, turnips, beets, sweet potatoes",       "display_order": 120},
     {"name": "Fresh Produce - Leafy Greens",        "description": "Lettuce, spinach, kale, cabbage",                         "display_order": 121},
@@ -226,10 +226,10 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "Canned Vegetables - Mixed": ["mixed vegetables", "canned vegetables"],
     "Canned Vegetables - Other": [],
     "Pasta / Tomato Sauce": [
-        "pasta sauces", "marinara", "tomato sauces", "bolognese", "arrabiata sauces",
+        "pasta sauces", "marinara", "tomato sauces", "bolognese", "arrabiata sauces", "sauces pesto"
     ],
     "Cooking Sauces": [
-        "stir fry sauce", "curry sauce", "soy sauce", "hot sauce",
+        "stir fry sauce", "curry sauces", "soy sauces", "hot sauces",
         "hoisin", "teriyaki",
     ],
     "Condiments": [
@@ -239,7 +239,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "Sauces / Condiments - Other": [],
     "Peanut Butter": ["peanut butters", "almond butters", "nut butters"],
     "Jam / Jelly": ["jams", "jelly", "berry jams", "fruit spread", "fruit and vegetable preserves"],
-    "Other Spreads": ["honeys", "maple syrups", "hazelnut spreads", "chocolate spreads", "cocoa and hazelnuts spreads"],
+    "Other Spreads": ["honeys", "maple syrups", "hazelnut spreads", "chocolate spreads", "cocoa and hazelnuts spreads", "pâtes à tartiner au chocolat"],
     "Fresh Produce - Root Vegetables": [
         "carrots", "potatoes", "turnips", "beets", "sweet potatoes",
         "radish", "parsnip",
@@ -284,14 +284,14 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     ],
     "Frozen Desserts": ["ice cream", "frozen yogurt", "popsicle", "gelato", "sherbet"],
     "Frozen - Other": [],
-    "Milk - Fresh": ["whole milk", "2% milk", "skim milk", "fresh milk", "dairy milk"],
+    "Milk - Fresh": ["whole milk", "2% milk", "skim milk", "fresh milk", "dairy milks"],
     "Milk - Shelf-Stable": [
         "uht milk", "long life milk", "evaporated milk",
         "powdered milk", "dry milk",
     ],
     "Cheese": [
         "cheddar", "mozzarella", "parmesan", "cheese slices",
-        "cream cheese", "cottage cheese",
+        "cream cheeses", "cottage cheeses",
     ],
     "Yogurt": ["yogurt", "greek yogurt", "yoghurt"],
     "Eggs": ["eggs", "egg carton"],
@@ -316,7 +316,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "cookies", "biscuits", "digestive", "shortbread", "wafers",
     ],
     "Granola Bars / Energy Bars": [
-        "granola bars", "energy bars", "cereal bars", "protein bars",
+        "granola bars", "energy bars", "cereal bars", "protein bars", "barres protéinées"
     ],
     "Nuts / Seeds / Trail Mix": [
         "mixed nuts", "trail mix", "pumpkin seeds", "sunflower seeds",

@@ -2,10 +2,10 @@ import { useState } from "react";
 
 const sections = [
   { id: "overview", label: "Overview" },
-  { id: "dashboard", label: "Dashboard" },
   { id: "inventory", label: "Inventory" },
+  { id: "dashboard", label: "Dashboard" },
   { id: "scanning", label: "Scanning" },
-  { id: "checkout", label: "Checkout" },
+  { id: "checkin-checkout", label: "Check In & Checkout" },
   { id: "item-manager", label: "Item Manager" },
   { id: "admin", label: "Admin" },
   { id: "troubleshooting", label: "Troubleshooting" },
@@ -92,9 +92,9 @@ const Help = () => {
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: "Dashboard", desc: "Stock overview & trends", color: "indigo" },
                   { label: "Inventory", desc: "Browse & manage items", color: "green" },
-                  { label: "Checkout", desc: "Patron item checkout", color: "amber" },
+                  { label: "Dashboard", desc: "Stock overview & trends", color: "indigo" },
+                  { label: "Check In & Checkout", desc: "Donations in, patrons out", color: "amber" },
                   { label: "Admin", desc: "Users & permissions", color: "slate" },
                 ].map((f) => (
                   <div key={f.label} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
@@ -103,20 +103,6 @@ const Help = () => {
                   </div>
                 ))}
               </div>
-            </Card>
-          </div>
-
-          {/* Dashboard */}
-          <div id="dashboard" className="scroll-mt-24">
-            <Card title="Dashboard">
-              <p className="text-slate-600 mb-4">
-                The dashboard gives a real-time snapshot of your inventory health. Widgets update automatically as items are scanned in and out.
-              </p>
-              <Item label="Low Stock">Items at or below the low stock threshold are highlighted so you can restock before running out.</Item>
-              <Item label="Expiring Soon">Items within 30 days of expiry are surfaced so nothing goes to waste.</Item>
-              <Item label="Inventory by Category">A breakdown of quantity across all active categories.</Item>
-              <Item label="Stock Trend">A chart showing inbound vs. outbound movement over the past weeks.</Item>
-              <Item label="Recent Activity">A live feed of the latest inventory movements across all locations.</Item>
             </Card>
           </div>
 
@@ -130,10 +116,22 @@ const Help = () => {
               <Item label="Category filter">Use the category dropdown to narrow down to a specific category.</Item>
               <Item label="Low stock filter">Toggle the low stock button to show only items below the threshold.</Item>
               <Item label="Expiry filters">Click "Expiry filters" to expand date range controls or pick a quick preset (e.g. expiring in the next 30 days).</Item>
-              <Item label="Items view">The default view shows each item as a row in a table, sortable by any column.</Item>
-              <Item label="By Category view">Switch to the "By Category" tab to see items grouped by category, with totals and low-stock counts per group. Click a category row to expand it.</Item>
               <Item label="Edit / Delete">Use the edit (pencil) or delete (trash) icons on each row to modify or remove an item. Requires the appropriate permissions.</Item>
-              <Item label="Movement Log">Click the movement log icon on an item to see its full inbound/outbound history.</Item>
+              <Item label="Movement Log">Click Movement Log to open a full audit log of all item movements. Use the Movement Report button inside to download a CSV summary of inbound and outbound activity for a selected date range.</Item>
+              <Item label="Export CSV">Download the current inventory as a CSV file for use in Excel or other tools.</Item>
+            </Card>
+          </div>
+
+          {/* Dashboard */}
+          <div id="dashboard" className="scroll-mt-24">
+            <Card title="Dashboard">
+              <p className="text-slate-600 mb-4">
+                The dashboard gives a real-time snapshot of your inventory health. Widgets update automatically as items are scanned in and out.
+              </p>
+              <Item label="Stock Levels">A chart showing current stock levels. Hover over a bar to see its details.</Item>
+              <Item label="Inventory by Category">A pie chart that breaks down quantity across all active categories. Hover over a category to see its details.</Item>
+              <Item label="Low Stock">Items at or below the low stock threshold are highlighted so you can restock before running out.</Item>
+              <Item label="Expiring Soon">Use slider to adjust expiration date threshold to see items that are expiring soon.</Item>
             </Card>
           </div>
 
@@ -168,18 +166,34 @@ const Help = () => {
             </Card>
           </div>
 
-          {/* Checkout */}
-          <div id="checkout" className="scroll-mt-24">
-            <Card title="Checkout">
+          {/* Check In & Checkout */}
+          <div id="checkin-checkout" className="scroll-mt-24">
+            <Card title="Check In & Checkout">
               <p className="text-slate-600 mb-4">
-                The Checkout screen (available on both web and mobile) lets you record items given to a patron in a single transaction.
+                Both flows follow the same pattern — scan or search for items, build a cart, fill in the required details, and submit.
               </p>
-              <Item label="Patron ID">Enter the patron's ID (e.g. student card number). This field is required.</Item>
-              <Item label="Patron Type">Optionally select the patron type (Undergraduate, Graduate, Faculty, Staff, Community, Other).</Item>
-              <Item label="Add items">Search by item name or scan a barcode to add items to the cart. Adjust quantities with the + / − controls.</Item>
-              <Item label="Complete Checkout">Once the cart is ready, tap Complete Checkout. All items are recorded as outbound movements.</Item>
-              <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-600">
-                Each checkout is logged with the patron ID, patron type, items, quantities, and the staff member who served them.
+              <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-green-800 mb-2">Check In — Recording donations</p>
+                  <ul className="text-sm text-green-700 space-y-1 list-disc list-inside">
+                    <li>Enter donor name (required) and donor type.</li>
+                    <li>Scan or search items to add to the cart.</li>
+                    <li>New items are created automatically from barcode data.</li>
+                    <li>Recorded as inbound movements.</li>
+                  </ul>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-amber-800 mb-2">Checkout — Serving patrons</p>
+                  <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
+                    <li>Enter patron ID (required) and patron type.</li>
+                    <li>Scan or search items to add to the cart.</li>
+                    <li>Cannot exceed available quantity per item.</li>
+                    <li>Recorded as outbound movements.</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-600">
+                Both transactions are fully logged — who did it, when, which items, and at which location.
               </div>
             </Card>
           </div>
@@ -190,11 +204,8 @@ const Help = () => {
               <p className="text-slate-600 mb-4">
                 The Item Manager (accessible from the Inventory page) lets authorised users manage categories and view the full activity log.
               </p>
-              <Item label="Categories tab">View all active and inactive categories. Add a new category by typing a name and clicking Add. Edit a category name inline, or deactivate/reactivate it with the toggle buttons.</Item>
+              <Item label="Categories tab">View all active and inactive categories. Add a new category by typing a name and clicking Add. Edit a category name inline, or deactivate/reactivate it with the toggle buttons. When a staff member assigns "Other" to an item and adds a note describing what it is, it appears here as a category request for review, allowing authorised users to create a proper category and reassign the item.</Item>
               <Item label="Activity Log tab">A full audit log of all inventory changes — what was changed, by whom, and when. Filterable by item type and action.</Item>
-              <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm text-indigo-800">
-                <strong>Note:</strong> Categories added here become available in the category dropdowns across the app (web and mobile) immediately.
-              </div>
             </Card>
           </div>
 

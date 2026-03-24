@@ -3,6 +3,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import HistoryIcon from '@mui/icons-material/History';
 import { useQuery } from '@tanstack/react-query';
 import { getInventoryMovements } from '../../services/api';
+import MovementReportButton from './MovementReportButton';
 
 function formatTimestamp(value) {
   if (!value) return 'Unknown time';
@@ -106,9 +107,12 @@ export default function InventoryMovementLogModal({ open, onClose, locationIds =
             <HistoryIcon fontSize="small" className="text-slate-500" />
             <h2 className="text-lg font-semibold text-slate-800">Item Movement Log</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-gray-100 hover:text-slate-600 transition">
-            <CloseIcon fontSize="small" />
-          </button>
+          <div className="flex items-center gap-2">
+            <MovementReportButton locationIds={locationIds} />
+            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-gray-100 hover:text-slate-600 transition">
+              <CloseIcon fontSize="small" />
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -148,7 +152,6 @@ export default function InventoryMovementLogModal({ open, onClose, locationIds =
               Showing <span className="font-medium text-slate-700">{filteredMovements.length}</span> of {movements.length} movements
             </p>
             <div className="flex items-center gap-3">
-              {/* Detailed view toggle */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500">Detailed view</span>
                 <button
@@ -257,14 +260,7 @@ export default function InventoryMovementLogModal({ open, onClose, locationIds =
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end shrink-0">
-          {/* <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
-          >
-            Close
-          </button> */}
-        </div>
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end shrink-0" />
       </div>
     </div>
   );
