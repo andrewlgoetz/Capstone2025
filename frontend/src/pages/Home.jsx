@@ -8,106 +8,37 @@ import CloseIcon from '@mui/icons-material/Close';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import RedeemIcon from '@mui/icons-material/Redeem'; 
 
-import ScanSheet from '../components/ScanSheet.jsx';
-import InventoryTable from '../components/InventoryTable.jsx';
-import { getItems, getCategories } from '../services/api';
+import ScanSheet from '../components/ScanSheet';
+import { getItems } from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
 import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
-import RecentActivity from '../components/RecentActivity.jsx';
+import RecentActivity from '../components/home/RecentActivity.jsx';
+import CategoryDistribution from '../components/home/CategoryDistribution.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
-import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import LocationFilter from '../components/LocationFilter'
+import LocationFilter from '../components/common/LocationFilter.jsx'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
 import ConfirmQuantityModal from '../components/ScanSheet/ConfirmQuantityModal.jsx'
 import ConfirmIncreaseModal from '../components/ScanSheet/ConfirmIncreaseModal.jsx'
-import BulkImportModal from '../components/BulkImportModal.jsx'
+import BulkImportModal from '../components/home/BulkImportModal.jsx'
 import { fetchInventoryByBarcode, scanOutInventory, scanOutInventoryByItemId, increaseInventory, getMonthlyDistributed } from '../services/api'
 
 // Stat Card Component (Total Items, Low Stock, Expiring Soon, This Month Distributed)
-const StatCard = ({ icon: Icon, title, value, accentColor }) => (
+const StatCard = ({ icon: Icon, title, value, iconBg, iconColor }) => (
   <div className="p-5 bg-white rounded-xl shadow-sm border border-gray-200">
     <div className="flex items-start justify-between">
       <div className="flex flex-col">
         <div className="text-sm font-medium text-slate-500">{title}</div>
         <div className="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">{value}</div>
       </div>
-      <div className={`w-10 h-10 rounded-full grid place-items-center ${accentColor} bg-opacity-10`}>
-        <Icon className="w-5 h-5" />
+      <div className={`w-10 h-10 rounded-full grid place-items-center ${iconBg}`}>
+        <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
     </div>
   </div>
 );
 
-const CategoryChart = ({ title, data = [] }) => {
-    const [categories, setCategories] = useState([]);
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const categoryData = await getCategories();
-                setCategories(categoryData.filter(cat => cat.is_active));
-            } catch (error) {
-                console.error("Failed to fetch categories:", error);
-                // Fallback to extracting from inventory
-                const inventoryCategories = [...new Set(data.map((item) => item.category).filter(Boolean))];
-                setCategories(inventoryCategories.map(name => ({ name })));
-            }
-        };
-        fetchCategories();
-    }, [data]);
-
-    const categoryTotals = useMemo(() => {
-        return categories.map(cat => {
-            const items = data.filter(item => item.category === cat.name);
-            const quantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-            const itemCount = items.length;
-            return { category: cat.name, quantity, itemCount };
-        }).filter(({ quantity }) => quantity > 0);
-    }, [categories, data]);
-
-    const topCategories = useMemo(() => {
-        return categoryTotals
-            .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 5);
-    }, [categoryTotals]);
-
-    const maxQuantity = topCategories[0]?.quantity || 1;
-
-    return (
-        <div className="bg-white rounded-xl p-4 grid grid-rows-[auto_1fr] shadow-lg border border-gray-200 h-full">
-            <div className="text-xl font-semibold text-slate-800 mb-4 tracking-tight">{title}</div>
-            
-            <div className="space-y-4">
-                {topCategories.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-8">No inventory data available for categorization.</p>
-                ) : (
-                    topCategories.map((item) => {
-                        const widthPercent = (item.quantity / maxQuantity) * 100;
-                        return (
-                            <div key={item.category} className="text-sm">
-                                <div className="flex justify-between text-slate-700 mb-0.5">
-                                    <div className="flex flex-col">
-                                        <span className="font-medium">{item.category}</span>
-                                        <span className="text-xs text-slate-500">{item.itemCount} {item.itemCount === 1 ? 'item' : 'items'}</span>
-                                    </div>
-                                    <span className="font-semibold">{item.quantity.toLocaleString()} units</span>
-                                </div>
-                                <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-2.5 bg-blue-600 rounded-full transition-all duration-500"
-                                        style={{ width: `${widthPercent}%` }}
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
-        </div>
-    );
-};
 
 const Home = () => {
   const [showScan, setShowScan] = useState(false)
@@ -125,7 +56,7 @@ const Home = () => {
   const showFab = canScanIn || canScanOut || canCreate;
   const navigate = useNavigate();
 
-  const { data: inventoryItems = [], isLoading: isDataLoading } = useQuery({
+  const { data: inventoryItems = [] } = useQuery({
     queryKey: ["inventoryItems", selectedLocationIds],
     queryFn: () => getItems(selectedLocationIds),
     enabled: canViewInventory,
@@ -134,28 +65,19 @@ const Home = () => {
   const queryClient = useQueryClient();
 
   const LOW_STOCK_THRESHOLD = 10;
-  
-  // Total Items (Sum of all quantities)
-  const totalItems = useMemo(() => 
-    inventoryItems.length
-  );
-  
-  // Low Stock
-  const lowStock = useMemo(() => 
-    inventoryItems.filter((i) => (i.quantity || 0) <= LOW_STOCK_THRESHOLD),
+  const totalItems = inventoryItems.length;
+  const lowStock = useMemo(
+    () => inventoryItems.filter((i) => (i.quantity || 0) <= LOW_STOCK_THRESHOLD),
     [inventoryItems]
   );
-  
-  // Expiring Soon (Count of items expiring in next 30 days)
-  const expiringSoon = useMemo(() => 
-    inventoryItems.filter((i) => {
+
+  const expiringSoon = useMemo(
+    () => inventoryItems.filter((i) => {
       if (!i.expiration_date) return false;
-      
       const expiry = new Date(i.expiration_date);
       const today = new Date();
       const limitDate = new Date(today);
       limitDate.setDate(limitDate.getDate() + 30);
-      
       return !isNaN(expiry) && expiry >= today && expiry <= limitDate;
     }),
     [inventoryItems]
@@ -232,78 +154,74 @@ const Home = () => {
       })
   }
 
-  const getWidgetValue = (value) => isDataLoading ? '...' : value.toLocaleString();
-  const getWidgetCount = (list) => isDataLoading ? '...' : list.length;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
-      <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Home
-        </h1>
-        <div className="hidden sm:block">
-          <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
-        </div>
-      </div>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        <header className="flex flex-wrap justify-between items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Home</h1>
+              <p className="text-slate-500 mt-1">Overview of your inventory activity.</p>
+            </div>
+            <LocationFilter selectedIds={selectedLocationIds} onChange={setSelectedLocationIds} />
+          </div>
+          <div className="flex items-center gap-2">
+            {canScanIn && (
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-xl font-medium shadow-sm hover:bg-gray-50 transition"
+                onClick={() => navigate('/checkin')}
+              >
+                Start Check In
+              </button>
+            )}
+            {canScanOut && (
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl font-medium shadow-md hover:bg-slate-700 transition"
+                onClick={() => navigate('/checkout')}
+              >
+                Start Checkout
+              </button>
+            )}
+          </div>
+        </header>
 
-      <div className="flex items-center gap-2">
-        {canScanIn && (
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-xl font-medium shadow-sm hover:bg-gray-50 transition"
-            onClick={() => navigate('/checkin')}
-          >
-            Start Check In
-          </button>
-        )}
-
-        {canScanOut && (
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl font-medium shadow-md hover:bg-slate-700 transition"
-            onClick={() => navigate('/checkout')}
-          >
-            Start Checkout
-          </button>
-        )}
-      </div>
-    </div>
-
-      <div className="max-w-7xl mx-auto p-4">
         <main className="space-y-6">  
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
                 icon={Inventory2Icon}
                 title="Total Items"
-                value={getWidgetValue(totalItems)}
-                accentColor="text-blue-600"
+                value={totalItems.toLocaleString()}
+                iconBg="bg-blue-100"
+                iconColor="text-blue-600"
               />
               <StatCard
                 icon={WarningIcon}
                 title="Low Stock (≤ 10)"
-                value={getWidgetCount(lowStock)}
-                accentColor="text-red-600"
+                value={lowStock.length}
+                iconBg="bg-red-100"
+                iconColor="text-red-600"
               />
               <StatCard
                 icon={AccessTimeIcon}
                 title="Expiring Soon (30 days)"
-                value={getWidgetCount(expiringSoon)}
-                accentColor="text-purple-600"
+                value={expiringSoon.length}
+                iconBg="bg-purple-100"
+                iconColor="text-purple-600"
               />
               <StatCard
                 icon={RedeemIcon}
                 title="This Month Distributed"
                 value={loadingDistributed ? '...' : distributedThisMonth.toLocaleString()}
-                accentColor="text-pink-400"
+                iconBg="bg-pink-100"
+                iconColor="text-pink-500"
               />
             </div>
             
             {/* Category Chart and Inventory Table */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                  <CategoryChart
-                      title="Category Distribution"
-                      data={inventoryItems}
-                  />
+                <CategoryDistribution />
               </div>
 
             {/* Recent Activity Widget */}
@@ -331,8 +249,8 @@ const Home = () => {
               </div>
             </div>
 
-          </main>
-        </div>
+        </main>
+      </div>
 
       {/* FAB (Floating Action Button) - only shown if user has any scan/create permissions */}
       {showFab && (
@@ -343,7 +261,7 @@ const Home = () => {
               <div className="absolute right-0 bottom-16 grid gap-2 p-2 bg-white border border-gray-200 rounded-xl shadow-xl">
                 {canScanIn && (
                   <button
-                    className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
+                    className="px-4 py-2 text-sm rounded-xl hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
                     onClick={() => { setScanMode('in'); setShowScan(true); setShowFabMenu(false); }}
                   >
                     Scan In (Add/Update)
@@ -351,7 +269,7 @@ const Home = () => {
                 )}
                 {canScanOut && (
                   <button
-                    className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
+                    className="px-4 py-2 text-sm rounded-xl hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
                     onClick={() => { setScanMode('out'); setShowScan(true); setShowFabMenu(false); }}
                   >
                     Scan Out
@@ -359,7 +277,7 @@ const Home = () => {
                 )}
                 {canCreate && (
                   <button
-                    className="px-4 py-2 text-sm rounded hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
+                    className="px-4 py-2 text-sm rounded-xl hover:bg-gray-100 whitespace-nowrap text-right font-medium text-slate-700"
                     onClick={() => { setShowBulkImport(true); setShowFabMenu(false); }}
                   >
                     Bulk Import
@@ -411,7 +329,7 @@ const Home = () => {
       {/* Scan-Out Quantity Confirmation */}
       {scanOutTarget && (
         <ConfirmQuantityModal
-          open={Boolean(scanOutTarget)}
+          open
           onClose={() => setScanOutTarget(null)}
           initial={{ barcode: scanOutTarget.inventory?.barcode, quantity: 1, name: scanOutTarget.inventory?.name }}
           maxQuantity={scanOutTarget.inventory?.quantity}
@@ -444,7 +362,7 @@ const Home = () => {
       {/* Scan-In (existing item) Increase Confirmation */}
       {scanInTarget && (
         <ConfirmIncreaseModal
-          open={Boolean(scanInTarget)}
+          open
           onClose={() => setScanInTarget(null)}
           initial={{ barcode: scanInTarget.inventory?.barcode, item_id: scanInTarget.inventory?.item_id, name: scanInTarget.inventory?.name, category: scanInTarget.inventory?.category }}
           imageUrl={scanInTarget.product?.image_front_small_url}
@@ -462,7 +380,7 @@ const Home = () => {
       {/* Product / Confirm Inventory Dialog (new) */}
       {productDialog.open && (
         <ConfirmInventoryModal
-          open={productDialog.open}
+          open
           onClose={() => setProductDialog({ open: false, loading: false, product: null, inventory: null, error: null })}
           initial={productDialog.inventory || { barcode: productDialog.product?.code || '' }}
           imageUrl={productDialog.product?.image_front_small_url}
@@ -495,7 +413,7 @@ const Home = () => {
         />
       )}
 
-      {/* Snackbar/Toast */}
+      {/* Snackbar */}
       {snack.open && (
         <div
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300"
@@ -513,12 +431,6 @@ const Home = () => {
           </div>
         </div>
       )}
-      {/* Small help button fixed at bottom-left */}
-      <div className="fixed bottom-6 left-6 z-30">
-        <Link to="/help" className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium shadow-md hover:bg-slate-700 transition">
-          Help
-        </Link>
-      </div>
     </div>
   );
 };

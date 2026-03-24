@@ -35,7 +35,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import SecurityIcon from '@mui/icons-material/Security';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { updateUser, resetUserPassword, getUserActivityLog, getAllPermissions, getUserPermissions, updateUserPermissions, getAllBankLocations, getUserLocations, updateUserLocations } from '../services/api';
+import { updateUser, resetUserPassword, getUserActivityLog, getAllPermissions, getUserPermissions, updateUserPermissions, getAllBankLocations, getUserLocations, updateUserLocations } from '../../services/api';
 
 function TabPanel({ children, value, index, ...other }) {
   return (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api from "../../services/api";
 
 // This component shows recent inventory activity, with a badge indicating quantity change and a link to the inventory page for more details. It fetches the 10 most recent movements and displays them in a scrollable list.
 

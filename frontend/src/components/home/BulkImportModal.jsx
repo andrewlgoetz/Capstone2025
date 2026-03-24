@@ -4,7 +4,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
 import DescriptionIcon from '@mui/icons-material/Description'
-import { bulkImportCSV, bulkImportJSON } from '../services/api'
+import { bulkImportCSV, bulkImportJSON } from '../../services/api'
 
 const BulkImportModal = ({ open, onClose, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState(null)

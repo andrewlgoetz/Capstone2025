@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import DownloadIcon from '@mui/icons-material/Download';
 import api from "../services/api";
 import { downloadInventoryReport } from "../services/api";
 import InventoryQuantitiesBarChart from "../components/dashboard_widgets/InventoryQuantities";
@@ -10,7 +11,7 @@ import StockTrend from "../components/dashboard_widgets/StockTrend";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useAuth } from "../contexts/AuthContext";
-import LocationFilter from "../components/LocationFilter";
+import LocationFilter from "../components/common/LocationFilter";
 
 // Returns today's date as YYYY-MM-DD 
 function localToday() {
@@ -175,7 +176,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4 flex-wrap">
           <div>
@@ -191,16 +192,14 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => setShowReport(v => !v)}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-2xl font-semibold shadow-md hover:bg-indigo-500 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-slate-700 rounded-xl font-medium shadow-sm hover:bg-gray-50 transition"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 8l-3-3m3 3l3-3" />
-                </svg>
+                <DownloadIcon fontSize="small" />
                 Export Report
               </button>
 
               {showReport && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-4">
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4">
                   <p className="text-sm font-semibold text-slate-700 mb-3">Generate CSV Report</p>
 
                   {/* Preset tabs */}
@@ -268,7 +267,7 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-800 text-white rounded-2xl font-semibold shadow-md hover:bg-slate-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl font-medium shadow-md hover:bg-slate-700 transition"
             >
               Download PDF
             </button>

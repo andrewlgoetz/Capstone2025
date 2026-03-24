@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from '@tanstack/react-query';
-import { fetchInventoryByBarcode, getCategories } from "../services/api";
+import { fetchInventoryByBarcode, getCategories } from '../../services/api';
 import CategorySearch from "./CategorySearch";
 
 // Fallback categories if database fetch fails

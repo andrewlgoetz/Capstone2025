@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword } from '../services/api';
 
 export default function Profile() {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const [oldPassword, setOldPassword] = useState('');
@@ -34,114 +33,145 @@ export default function Profile() {
     try {
       await changePassword(oldPassword, newPassword);
       setSuccess('Password changed successfully!');
-
-      // Reset form
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
-
       setTimeout(() => {
         setChangePasswordOpen(false);
         setSuccess('');
       }, 2000);
     } catch (err) {
-      const message = err.response?.data?.detail || 'Failed to change password';
-      setError(message);
+      setError(err.response?.data?.detail || 'Failed to change password');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    setChangePasswordOpen(false);
+    setError('');
+    setSuccess('');
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const inputClass = "w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 transition";
+
   if (!user) {
-    return <div>Loading...</div>;
+    return <div className="min-h-screen bg-gray-50" />;
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-8">My Profile</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-6">
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Profile</h1>
+          <p className="text-slate-500 mt-1">View your account details and manage security settings.</p>
+        </header>
 
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Account Information</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-            <p className="text-lg text-slate-900">{user.name}</p>
+        {/* Account Information */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-4">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Account Information</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {[
+              { label: 'Name', value: user.name },
+              { label: 'Email', value: user.email },
+              { label: 'Role', value: user.role_name || 'User', capitalize: true },
+              { label: 'Bank ID', value: user.bank_id },
+            ].map(({ label, value, capitalize }) => (
+              <div key={label}>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">{label}</p>
+                <p className={`text-base text-slate-800 font-medium ${capitalize ? 'capitalize' : ''}`}>{value}</p>
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <p className="text-lg text-slate-900">{user.email}</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-            <p className="text-lg text-slate-900 capitalize">{user.role_name || 'User'}</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Bank ID</label>
-            <p className="text-lg text-slate-900">{user.bank_id}</p>
-          </div>
+        {/* Security */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">Security</h2>
+          <p className="text-sm text-slate-500 mb-4">Update your password to keep your account secure.</p>
+          <button
+            onClick={() => setChangePasswordOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition shadow-sm"
+          >
+            Change Password
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Security</h2>
-        <Button
-          variant="contained"
-          onClick={() => setChangePasswordOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700"
-          style={{ backgroundColor: '#4f46e5' }}
-        >
-          Change Password
-        </Button>
-      </div>
-
       {/* Change Password Modal */}
-      <Dialog open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Change Password</DialogTitle>
-        <form onSubmit={handlePasswordChange}>
-          <DialogContent>
-            {error && <Alert severity="error" className="mb-4">{error}</Alert>}
-            {success && <Alert severity="success" className="mb-4">{success}</Alert>}
-
-            <div className="space-y-4">
-              <TextField
-                label="Current Password"
-                type="password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                required
-                fullWidth
-              />
-              <TextField
-                label="New Password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                fullWidth
-                helperText="Minimum 8 characters"
-              />
-              <TextField
-                label="Confirm New Password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                fullWidth
-              />
+      {changePasswordOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-slate-800">Change Password</h2>
             </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setChangePasswordOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained" disabled={loading} style={{ backgroundColor: '#4f46e5' }}>
-              {loading ? 'Updating...' : 'Update Password'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+            <form onSubmit={handlePasswordChange}>
+              <div className="px-6 py-5 space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+                    {success}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    required
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className={inputClass}
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Minimum 8 characters.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-slate-800 rounded-xl hover:bg-slate-700 transition disabled:opacity-60"
+                >
+                  {loading ? 'Updating…' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

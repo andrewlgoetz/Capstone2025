@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { createItem, fetchInventoryByBarcode, increaseInventory, getCategories } from '../../services/api'
-import CategorySearch from '../CategorySearch'
+import CategorySearch from '../inventory/CategorySearch'
 
 
 const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfirm, product = null, locations = [] }) => {

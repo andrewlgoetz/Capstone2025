@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { createItem, getCategories } from '../../services/api';
-import CategorySearch from '../CategorySearch';
+import CategorySearch from '../inventory/CategorySearch';
 
 const UNIT_OPTIONS = [
   'units', 'kg', 'g', 'lbs', 'oz', 'cups', 'ml', 'L',

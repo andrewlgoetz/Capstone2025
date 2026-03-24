@@ -10,8 +10,8 @@ import {
   dismissCategoryRequest,
   getItemChangesLog,
   getUserActivityLog,
-} from "../services/api";
-import { useAuth } from "../contexts/AuthContext";
+} from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from "react-router-dom";
 
 const ACTION_LABELS = {
