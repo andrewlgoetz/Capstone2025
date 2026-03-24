@@ -148,17 +148,30 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session, user_id: int =
     )
 
     if should_create_movement:
-            actual_movement_type = movement_type or MovementType.ADJUSTMENT
-            movement = InventoryMovement(
-                item_id=db_item.item_id,
-                quantity_change=qty_delta if qty_delta is not None else 0,
-                movement_type=actual_movement_type,
-                reason=movement_reason,
-                from_location_id=old_loc,
-                to_location_id=new_loc if loc_changed else None,
-                user_id=user_id # Add this
-            )
-            db.add(movement)
+        # 1. If the frontend explicitly sends a movement_type (like ticking an "Adjustment" box), use it.
+        if movement_type:
+            actual_movement_type = movement_type
+        # 2. Otherwise, infer the type logically based on the math
+        else:
+            if qty_delta is not None and qty_delta > 0:
+                actual_movement_type = MovementType.INBOUND
+            elif qty_delta is not None and qty_delta < 0:
+                actual_movement_type = MovementType.OUTBOUND
+            elif loc_changed:
+                actual_movement_type = MovementType.TRANSFER
+            else:
+                actual_movement_type = MovementType.ADJUSTMENT # Fallback
+
+        movement = InventoryMovement(
+            item_id=db_item.item_id,
+            quantity_change=qty_delta if qty_delta is not None else 0,
+            movement_type=actual_movement_type,
+            reason=movement_reason,
+            from_location_id=old_loc,
+            to_location_id=new_loc if loc_changed else None,
+            user_id=user_id 
+        )
+        db.add(movement)
 
     try:
         db.commit()

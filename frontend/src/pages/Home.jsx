@@ -7,14 +7,17 @@ import CloseIcon from '@mui/icons-material/Close';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import RedeemIcon from '@mui/icons-material/Redeem'; 
 
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+
 import ScanSheet from '../components/ScanSheet.jsx';
 import InventoryTable from '../components/InventoryTable.jsx';
-import { getItems, getCategories } from '../services/api';
+import { getItems, getCategories, getInventoryHistory} from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
 import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import LocationFilter from '../components/LocationFilter'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
@@ -107,7 +110,68 @@ const CategoryChart = ({ title, data = [] }) => {
     );
 };
 
+const RecentActivityWidget = ({ limit = 5 }) => {
+  const { data: activities = [], isLoading } = useQuery({
+    queryKey: ["inventoryHistory", limit],
+    queryFn: () => getInventoryHistory(limit),
+  });
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-slate-500">Loading activity...</div>;
+  }
+
+  if (activities.length === 0) {
+    return <div className="p-8 text-center text-slate-500">No recent activity found.</div>;
+  }
+
+  return (
+    <div className="divide-y divide-gray-200">
+      {activities.map((item) => {
+        const isPositive = item.quantity_change > 0;
+        const date = new Date(item.timestamp);
+        
+        return (
+          <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-4">
+              {/* Icon Box */}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                isPositive ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+              }`}>
+                {isPositive ? <ArrowDownwardIcon fontSize="small" /> : <ArrowUpwardIcon fontSize="small" />}
+              </div>
+              
+              {/* Details Column */}
+              <div className="flex flex-col">
+                <span className="font-semibold text-slate-900">{item.item_name}</span>
+                <span className="text-xs text-slate-500 capitalize mt-0.5">
+                  {item.movement_type} • {item.location_name || 'No Location'} • By {item.user_name}
+                </span>
+                <span className="text-xs text-slate-400 mt-0.5">
+                  {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at {date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+            
+            {/* Quantity Column */}
+            <div className="flex flex-col items-end">
+              <span className={`text-lg font-bold tracking-tight ${
+                isPositive ? 'text-emerald-600' : 'text-red-600'
+              }`}>
+                {isPositive ? '+' : ''}{item.quantity_change}
+              </span>
+              <span className="text-xs text-slate-500 font-medium mt-1">
+                Total: {item.current_quantity}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Home = () => {
+  const navigate = useNavigate();
   const [showScan, setShowScan] = useState(false)
   const [scanMode, setScanMode] = useState('in') // 'in' or 'out'
   const [showFabMenu, setShowFabMenu] = useState(false)
@@ -286,17 +350,24 @@ const Home = () => {
               </div>
 
               {/* Inventory Table */}
+
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <div 
+                  onClick={() => navigate('/activity')}
+                  className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 h-full cursor-pointer hover:shadow-xl hover:border-blue-200 transition-all group"
+                >
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50 group-hover:bg-blue-50/50 transition-colors">
                     <h4 className="text-xl font-semibold text-slate-800 m-0 tracking-tight">
                       Recent Inventory Activity
                     </h4>
+                    <span className="text-sm text-blue-600 font-medium flex items-center">
+                      View more activity &rarr;
+                    </span>
                   </div>
-                  <InventoryTable mode="widget" limit={7} showFilterBar={false} locationIds={selectedLocationIds} />
+                  <RecentActivityWidget limit={5} />
                 </div>
               </div>
-            </div>
+              </div>
 
             {/* Forecasting & Trends */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-4">
@@ -387,7 +458,7 @@ const Home = () => {
           maxQuantity={scanOutTarget.inventory?.quantity}
           imageUrl={scanOutTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            scanOutInventory(payload.barcode, payload.quantity, scanOutTarget.locationId)
+            scanOutInventory(payload.barcode, payload.quantity, scanOutTarget.locationId, payload.isAdjustment)
               .then((res) => {
                 console.log('Scan out result', res)
                 setSnack({ open: true, message: `Scanned out ${payload.quantity} — remaining ${res.remaining_quantity}`, severity: 'success' })
@@ -411,7 +482,7 @@ const Home = () => {
           initial={{ barcode: scanInTarget.inventory?.barcode, item_id: scanInTarget.inventory?.item_id, name: scanInTarget.inventory?.name, category: scanInTarget.inventory?.category }}
           imageUrl={scanInTarget.product?.image_front_small_url}
           onConfirm={(payload) => {
-            increaseInventory(payload.item_id, payload.quantity, scanInTarget.locationId)
+            increaseInventory(payload.item_id, payload.quantity, scanInTarget.locationId, payload.isAdjustment)
               .then((res) => {
                 setSnack({ open: true, message: `Added ${payload.quantity} — new qty ${res.quantity}`, severity: 'success' })
                 setScanInTarget(null)

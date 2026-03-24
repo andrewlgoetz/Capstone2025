@@ -244,7 +244,9 @@ export async function fetchInventoryByBarcode(barcode) {
 
 // scanOutInventory: 1) call POST /barcode/scan-out with barcode to find existing item
 // 2) if FOUND, call POST /barcode/scan-out/{item_id}/confirm with { quantity, location_id? }
-export async function scanOutInventory(barcode, qty = 1, location_id = null) {
+// Capstone2025 copy/frontend/src/services/api.js
+
+export async function scanOutInventory(barcode, qty = 1, location_id = null, isAdjustment = false) {
   if (!barcode) throw new Error('No barcode provided')
 
   // 1) lookup
@@ -262,6 +264,8 @@ export async function scanOutInventory(barcode, qty = 1, location_id = null) {
   // 2) confirm scan out
   const confirmBody = { quantity: qty }
   if (location_id != null) confirmBody.location_id = location_id
+  if (isAdjustment) confirmBody.movement_type = 'ADJUSTMENT'
+  
   const confirmRes = await api.post(`/barcode/scan-out/${item_id}/confirm`, confirmBody)
   const updated = confirmRes.data
 
@@ -276,11 +280,12 @@ export async function scanOutInventory(barcode, qty = 1, location_id = null) {
   }
 }
 
-// Increase inventory quantity for an existing item (scan-in known item)
-export async function increaseInventory(item_id, amount = 1, location_id = null) {
+export async function increaseInventory(item_id, amount = 1, location_id = null, isAdjustment = false) {
   if (!item_id) throw new Error('item_id required')
   const body = { amount }
   if (location_id != null) body.location_id = location_id
+  if (isAdjustment) body.movement_type = 'ADJUSTMENT'
+  
   const res = await api.post(`/barcode/${item_id}/increase`, body)
   return res.data
 }
@@ -306,6 +311,12 @@ export async function bulkImportJSON(jsonData) {
 // Get all categories
 export async function getCategories() {
   const res = await api.get("/categories/");
+  return res.data;
+}
+
+// Get inventory movement history
+export async function getInventoryHistory(limit = 20) {
+  const res = await api.get("/inventory/history", { params: { limit } });
   return res.data;
 }
 

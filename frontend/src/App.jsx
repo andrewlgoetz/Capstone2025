@@ -13,6 +13,7 @@ import Inventory from './pages/Inventory.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Home from './pages/Home.jsx'
 import Help from './pages/Help.jsx'
+import Activity from './pages/Activity.jsx'
 
 // Persistent layout: Navbar stays mounted across all page navigations
 function AppLayout() {
@@ -61,6 +62,11 @@ function App() {
               <ProtectedRoute adminOnly>
                 <Admin />
               </ProtectedRoute>
+            } />
+            <Route path="/activity" element={
+              <RequirePermission permission="inventory:view">
+                <Activity />
+              </RequirePermission>
             } />
           </Route>
         </Routes>
