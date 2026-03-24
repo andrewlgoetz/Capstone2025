@@ -13,6 +13,7 @@ import InventoryTable from '../components/InventoryTable.jsx';
 import { getItems, getCategories } from '../services/api';
 import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
 import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
+import RecentActivity from '../components/RecentActivity.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
 import { Link } from 'react-router-dom'
@@ -305,17 +306,10 @@ const Home = () => {
                   />
               </div>
 
-              {/* Inventory Table */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h4 className="text-xl font-semibold text-slate-800 m-0 tracking-tight">
-                      Recent Inventory Activity
-                    </h4>
-                  </div>
-                  <InventoryTable mode="widget" limit={7} showFilterBar={false} locationIds={selectedLocationIds} />
-                </div>
-              </div>
+            {/* Recent Activity Widget */}
+            <div className="lg:col-span-2">
+              <RecentActivity />
+            </div>
             </div>
 
             {/* Forecasting & Trends */}
