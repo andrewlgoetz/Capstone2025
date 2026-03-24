@@ -39,8 +39,9 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
       const initialQuantity = initial.quantity ?? 1
       // Use the mapped category from product (backend already mapped it) or from initial
       const initialCategory = initial.category || product?.category || ''
-      // Auto-select location if user has exactly one
+      // Use initial location_id if provided, otherwise auto-select if only one location available
       const autoLocation = locations.length === 1 ? String(locations[0].location_id) : ''
+      const selectedLocation = initial.location_id ? String(initial.location_id) : autoLocation
       setForm({
         barcode: initial.barcode || '',
         quantity: initialQuantity,
@@ -50,7 +51,7 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
         expiry_date: initial.expiry_date || '',
         unit: initial.unit || 'units',
         custom_unit: initial.unit && !['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets'].includes(initial.unit) ? initial.unit : '',
-        location_id: autoLocation,
+        location_id: selectedLocation,
       })
     }
   }, [initial, product, locations])
