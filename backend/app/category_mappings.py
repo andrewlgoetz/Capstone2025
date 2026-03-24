@@ -225,16 +225,16 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     ],
     "Canned Vegetables - Mixed": ["mixed vegetables", "canned vegetables"],
     "Canned Vegetables - Other": [],
+        "Condiments": [
+        "ketchup", "mustards", "mayonnaises", "mayo", "relish", "condiments"
+        "salad dressings", "vinegars", "worcestershire",
+    ],
     "Pasta / Tomato Sauce": [
         "pasta sauces", "marinara", "tomato sauces", "bolognese", "arrabiata sauces", "sauces pesto"
     ],
     "Cooking Sauces": [
         "stir fry sauce", "curry sauces", "soy sauces", "hot sauces",
         "hoisin", "teriyaki",
-    ],
-    "Condiments": [
-        "ketchup", "mustards", "mayonnaises", "mayo", "relish", "condiments"
-        "salad dressings", "vinegars", "worcestershire",
     ],
     "Sauces / Condiments - Other": [],
     "Peanut Butter": ["peanut butters", "almond butters", "nut butters"],
@@ -313,7 +313,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "potato chips", "crisps", "tortilla chips", "popcorn", "pretzels",
     ],
     "Cookies / Biscuits": [
-        "cookies", "biscuits", "digestive", "shortbread", "wafers",
+        "cookies", "biscuits", "digestive", "shortbread", "wafers", "brownies"
     ],
     "Granola Bars / Energy Bars": [
         "granola bars", "energy bars", "cereal bars", "protein bars", "barres protéinées"

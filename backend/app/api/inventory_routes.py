@@ -33,8 +33,6 @@ def get_inventory_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW))
 ):
-    from app.models.user import User # Add this import
-    
     movements = (
         db.query(
             InventoryMovement.id,
@@ -216,7 +214,10 @@ def download_report(
         .join(InventoryItem, InventoryMovement.item_id == InventoryItem.item_id)
         .filter(
             InventoryItem.bank_id == current_user.bank_id,
-            InventoryMovement.movement_type.in_([MovementType.INBOUND, MovementType.OUTBOUND]),
+            InventoryMovement.movement_type.in_([
+                MovementType.INBOUND, MovementType.OUTBOUND,
+                MovementType.TRANSFER, MovementType.WASTE,
+            ]),
             InventoryMovement.created_at >= start_dt,
             InventoryMovement.created_at <= end_dt,
         )
@@ -244,17 +245,25 @@ def download_report(
             items[item_id] = {
                 "item_name": name,
                 "category": category or "",
-                "checked_in": 0,
-                "checked_out": 0,
+                "inbound": 0,
+                "outbound": 0,
+                "transfer": 0,
+                "waste": 0,
                 "current_quantity": quantity,
             }
         if movement_type == MovementType.INBOUND:
-            items[item_id]["checked_in"] = int(total)
-        else:
-            items[item_id]["checked_out"] = int(total)
+            items[item_id]["inbound"] = int(total)
+        elif movement_type == MovementType.OUTBOUND:
+            items[item_id]["outbound"] = int(total)
+        elif movement_type == MovementType.TRANSFER:
+            items[item_id]["transfer"] = int(total)
+        elif movement_type == MovementType.WASTE:
+            items[item_id]["waste"] = int(total)
 
-    total_in = sum(i["checked_in"] for i in items.values())
-    total_out = sum(i["checked_out"] for i in items.values())
+    total_in = sum(i["inbound"] for i in items.values())
+    total_out = sum(i["outbound"] for i in items.values())
+    total_transfer = sum(i["transfer"] for i in items.values())
+    total_waste = sum(i["waste"] for i in items.values())
 
     if start_date == end_date:
         period_label = start_date
@@ -264,17 +273,23 @@ def download_report(
     output = io.StringIO()
     output.write('\ufeff')  # UTF-8 BOM for Excel compatibility
     writer = csv.writer(output)
-    writer.writerow(["Item Name", "Category", "Inbound", "Outbound", "Current Quantity"])
+    writer.writerow(["Item Name", "Category", "Inbound", "Outbound", "Transfer", "Waste", "Current Quantity"])
     for item in sorted(items.values(), key=lambda x: x["item_name"]):
         writer.writerow([
             item["item_name"],
             item["category"],
-            item["checked_in"],
-            item["checked_out"],
+            item["inbound"],
+            item["outbound"],
+            item["transfer"],
+            item["waste"],
             item["current_quantity"],
         ])
     writer.writerow([])
-    writer.writerow([f"Report: {period_label}", "", f"Total Inbound: {total_in}", f"Total Outbound: {total_out}", ""])
+    writer.writerow([
+        f"Report: {period_label}", "",
+        f"Total Inbound: {total_in}", f"Total Outbound: {total_out}",
+        f"Total Transfer: {total_transfer}", f"Total Waste: {total_waste}", "",
+    ])
 
     output.seek(0)
     filename = f"inventory-report-{start_date}-to-{end_date}.csv"
