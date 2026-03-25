@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { getItemEmoji } from "./emojiMap";
 import ExpandableText from "../common/ExpandableText";
+import WidgetInfo from "./WidgetInfo";
 
 const ExpiringSoon = ({ data = [], days = 14, limit = 20 }) => {
   const [thresholdDays, setThresholdDays] = useState(days);
@@ -24,6 +25,7 @@ const ExpiringSoon = ({ data = [], days = 14, limit = 20 }) => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
            <h3 className="text-lg font-semibold text-slate-700">Expiring Soon</h3>
+           <WidgetInfo text="Shows items whose expiration date falls within the selected window. Drag the slider to widen or narrow the window (1–60 days). Items are sorted by nearest expiry date so the most urgent ones appear first." />
            <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">
              {expiring.length}
            </span>

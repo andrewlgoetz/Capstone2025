@@ -19,11 +19,13 @@ import app.services.inventory_service as inventory_service
 from app.models.location import Location
 from app.dependencies import get_db
 from app.services.permission_service import Permission, require_permission, require_any_permission, require_all_permissions
+from app.category_mappings import CATEGORY_GROUPS
 from app.services import auth_service
 import csv
 import io
 import re
-from datetime import datetime
+from datetime import datetime, date, timedelta
+from collections import defaultdict
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -542,6 +544,200 @@ def get_category_requests(
         for item in items
     ]
 
+@router.get("/category-group-summary")
+def get_category_group_summary(
+    location_ids: Optional[str] = Query(None, description="Comma-separated location IDs"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW)),
+):
+    """
+    Returns total quantity per broad category group (aggregated from granular categories).
+    Groups are defined in CATEGORY_GROUPS in category_mappings.py.
+    Response: [ { "group": str, "quantity": int }, ... ] sorted by quantity desc.
+    """
+    item_query = db.query(InventoryItem).filter(InventoryItem.bank_id == current_user.bank_id)
+    if location_ids:
+        ids = [int(i) for i in location_ids.split(",") if i.strip().isdigit()]
+        if ids:
+            item_query = item_query.filter(InventoryItem.location_id.in_(ids))
+    items = item_query.all()
+
+    group_totals: defaultdict = defaultdict(int)
+    for item in items:
+        cat = item.category or "Other"
+        group = CATEGORY_GROUPS.get(cat, cat)  # fall back to the category name itself
+        group_totals[group] += item.quantity or 0
+
+    result = [
+        {"group": group, "quantity": qty}
+        for group, qty in sorted(group_totals.items(), key=lambda x: -x[1])
+        if qty > 0
+    ]
+    return result
+
+
+# ── Time-series helpers ──────────────────────────────────────────────────────
+
+def _bucket_key(dt: date, granularity: str) -> str:
+    """Return a string key for a date given a granularity."""
+    if granularity == "daily":
+        return dt.strftime("%Y-%m-%d")
+    if granularity == "monthly":
+        return dt.strftime("%Y-%m")
+    # weekly — use Monday of that week
+    monday = dt - timedelta(days=dt.weekday())
+    return monday.strftime("%Y-%m-%d")
+
+
+def _bucket_dates(start: date, end: date, granularity: str) -> List[str]:
+    """Return an ordered list of bucket keys covering [start, end]."""
+    keys = []
+    seen = set()
+    cur = start
+    while cur <= end:
+        k = _bucket_key(cur, granularity)
+        if k not in seen:
+            keys.append(k)
+            seen.add(k)
+        if granularity == "daily":
+            cur += timedelta(days=1)
+        elif granularity == "monthly":
+            if cur.month == 12:
+                cur = date(cur.year + 1, 1, 1)
+            else:
+                cur = date(cur.year, cur.month + 1, 1)
+        else:
+            cur += timedelta(weeks=1)
+    return keys
+
+
+@router.get("/low-stock-trend")
+def get_low_stock_trend(
+    start_date: str = Query(..., description="Start date YYYY-MM-DD"),
+    end_date: str = Query(..., description="End date YYYY-MM-DD"),
+    threshold: int = Query(10, description="Low-stock quantity threshold"),
+    granularity: str = Query("weekly", description="daily | weekly | monthly"),
+    location_ids: Optional[str] = Query(None, description="Comma-separated location IDs"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW))
+):
+    """Returns a time-series of how many items were below threshold per bucket."""
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end   = datetime.strptime(end_date,   "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Dates must be YYYY-MM-DD")
+
+    if granularity not in ("daily", "weekly", "monthly"):
+        raise HTTPException(status_code=400, detail="granularity must be daily, weekly, or monthly")
+
+    requested = [int(x) for x in location_ids.split(",") if x.strip()] if location_ids else None
+    allowed = get_allowed_location_ids(current_user, db, requested)
+
+    item_query = db.query(InventoryItem).filter(InventoryItem.bank_id == current_user.bank_id)
+    if allowed is not None:
+        item_query = item_query.filter(InventoryItem.location_id.in_(allowed))
+    items = item_query.all()
+
+    buckets = _bucket_dates(start, end, granularity)
+    if not items:
+        return {"labels": buckets, "values": [0] * len(buckets)}
+
+    item_ids = [i.item_id for i in items]
+    current_qty = {i.item_id: (i.quantity or 0) for i in items}
+
+    all_movements = (
+        db.query(InventoryMovement)
+        .filter(InventoryMovement.item_id.in_(item_ids))
+        .order_by(InventoryMovement.created_at.asc())
+        .all()
+    )
+
+    movements_by_item: dict = defaultdict(list)
+    for mv in all_movements:
+        if mv.created_at:
+            movements_by_item[mv.item_id].append((mv.created_at.date(), mv.quantity_change))
+
+    def bucket_end_date(key: str, gran: str) -> date:
+        if gran == "monthly":
+            d = datetime.strptime(key, "%Y-%m").date()
+            if d.month == 12: return date(d.year + 1, 1, 1) - timedelta(days=1)
+            return date(d.year, d.month + 1, 1) - timedelta(days=1)
+        d = datetime.strptime(key, "%Y-%m-%d").date()
+        if gran == "daily":   return d
+        return d + timedelta(days=6)  # weekly
+
+    today = date.today()
+    values = []
+    for bk in buckets:
+        b_end = min(bucket_end_date(bk, granularity), today)
+        low_count = 0
+        for item in items:
+            qty = current_qty[item.item_id]
+            for mv_date, mv_change in movements_by_item[item.item_id]:
+                if mv_date > b_end:
+                    qty -= mv_change
+            if qty <= threshold:
+                low_count += 1
+        values.append(low_count)
+
+    return {"labels": buckets, "values": values}
+
+
+@router.get("/movement-summary")
+def get_movement_summary(
+    start_date: str = Query(..., description="Start date YYYY-MM-DD"),
+    end_date:   str = Query(..., description="End date YYYY-MM-DD"),
+    granularity: str = Query("weekly", description="daily | weekly | monthly"),
+    location_ids: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission(Permission.INVENTORY_VIEW, Permission.DASHBOARD_VIEW)),
+):
+    """Returns bucketed inbound vs outbound unit totals. Response: { labels, inbound, outbound }"""
+    start = datetime.strptime(start_date, "%Y-%m-%d").date()
+    end   = datetime.strptime(end_date,   "%Y-%m-%d").date()
+    buckets = _bucket_dates(start, end, granularity)
+
+    item_query = db.query(InventoryItem.item_id).filter(InventoryItem.bank_id == current_user.bank_id)
+    if location_ids:
+        ids = [int(i) for i in location_ids.split(",") if i.strip().isdigit()]
+        if ids:
+            item_query = item_query.filter(InventoryItem.location_id.in_(ids))
+    allowed_item_ids = [row[0] for row in item_query.all()]
+
+    if not allowed_item_ids:
+        return {"labels": buckets, "inbound": [0] * len(buckets), "outbound": [0] * len(buckets)}
+
+    movements = (
+        db.query(InventoryMovement)
+        .filter(
+            InventoryMovement.item_id.in_(allowed_item_ids),
+            InventoryMovement.created_at >= datetime.combine(start, datetime.min.time()),
+            InventoryMovement.created_at <= datetime.combine(end,   datetime.max.time()),
+        )
+        .all()
+    )
+
+    inbound_map:  defaultdict = defaultdict(int)
+    outbound_map: defaultdict = defaultdict(int)
+    INBOUND_TYPES  = {MovementType.INBOUND, MovementType.ADJUSTMENT}
+    OUTBOUND_TYPES = {MovementType.OUTBOUND, MovementType.WASTE, MovementType.TRANSFER}
+
+    for mv in movements:
+        bk  = _bucket_key(mv.created_at.date(), granularity)
+        qty = abs(mv.quantity_change)
+        if mv.movement_type in INBOUND_TYPES:
+            inbound_map[bk]  += qty
+        elif mv.movement_type in OUTBOUND_TYPES:
+            outbound_map[bk] += qty
+
+    return {
+        "labels":   buckets,
+        "inbound":  [inbound_map.get(b, 0)  for b in buckets],
+        "outbound": [outbound_map.get(b, 0) for b in buckets],
+    }
+
+
 @router.get("/{item_id}", response_model=InventoryRead)
 def get_item(
     item_id: int,
@@ -684,3 +880,4 @@ def bulk_import_json(
         failed=failed,
         errors=errors
     )
+

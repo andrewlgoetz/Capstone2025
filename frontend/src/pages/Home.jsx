@@ -16,6 +16,10 @@ import RecentActivity from '../components/home/RecentActivity.jsx';
 import CategoryDistribution from '../components/home/CategoryDistribution.jsx';
 
 import { fetchProductByBarcode } from '../services/off';
+import WidgetPicker from '../components/WidgetPicker.jsx';
+import WidgetRenderer from '../components/WidgetRenderer.jsx';
+import { useHomeWidgets } from '../hooks/useHomeWidgets';
+import { useDateRange } from '../hooks/useDateRange';
 import { useAuth } from '../contexts/AuthContext'
 import LocationFilter from '../components/common/LocationFilter.jsx'
 import ConfirmInventoryModal from '../components/ScanSheet/ConfirmInventoryModal.jsx'
@@ -47,6 +51,9 @@ const Home = () => {
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' })
   const [productDialog, setProductDialog] = useState({ open: false, loading: false, product: null, error: null })
   const [showBulkImport, setShowBulkImport] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const { slots, updateSlots } = useHomeWidgets()
+  const dateRange = useDateRange('last30')
 
   const { hasPermission, userLocations, selectedLocationIds, setSelectedLocationIds } = useAuth();
   const canViewInventory = hasPermission('inventory:view');
@@ -248,6 +255,26 @@ const Home = () => {
                 </div>
               </div>
             </div>
+
+            {/* My Widgets */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-slate-800 tracking-tight">My Widgets</h3>
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="text-sm px-3 py-1.5 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
+                >
+                  Customize
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {slots.map((key) => (
+                  <WidgetRenderer key={key} widgetKey={key} dateRange={dateRange} inventory={inventoryItems} />
+                ))}
+              </div>
+            </div>
+
+            <WidgetPicker open={pickerOpen} onClose={() => setPickerOpen(false)} currentSlots={slots} onSave={updateSlots} />
 
         </main>
       </div>
