@@ -18,6 +18,10 @@ export default function Admin() {
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', role_id: null });
 
+  // --- Search state ---
+  const [userSearch, setUserSearch] = useState('');
+  const [locationSearch, setLocationSearch] = useState('');
+
   // --- Locations state ---
   const [locModalOpen, setLocModalOpen] = useState(false);
   const [editingLoc, setEditingLoc] = useState(null);
@@ -164,6 +168,13 @@ export default function Admin() {
                 Create User
               </button>
             </div>
+            <input
+              type="text"
+              placeholder="Search by name, email, or role…"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              className="mb-4 w-full max-w-sm px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 transition"
+            />
 
             {usersLoading ? (
               <div className="text-center py-12 text-slate-400">Loading users…</div>
@@ -178,7 +189,10 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {users?.map((user) => (
+                    {users?.filter((u) => {
+                      const term = userSearch.trim().toLowerCase();
+                      return !term || u.name?.toLowerCase().includes(term) || u.email?.toLowerCase().includes(term) || u.role_name?.toLowerCase().includes(term);
+                    }).map((user) => (
                       <tr key={user.user_id} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
@@ -299,6 +313,13 @@ export default function Admin() {
                 Add Location
               </button>
             </div>
+            <input
+              type="text"
+              placeholder="Search by name or address…"
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              className="mb-4 w-full max-w-sm px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 transition"
+            />
 
             {locsLoading ? (
               <div className="text-center py-12 text-slate-400">Loading locations…</div>
@@ -317,7 +338,10 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {locations?.map((loc) => (
+                    {locations?.filter((l) => {
+                      const term = locationSearch.trim().toLowerCase();
+                      return !term || l.name?.toLowerCase().includes(term) || l.address?.toLowerCase().includes(term);
+                    }).map((loc) => (
                       <tr key={loc.location_id} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{loc.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{loc.address || '—'}</td>
