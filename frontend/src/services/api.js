@@ -447,6 +447,36 @@ export async function getItemChangesLog(limit = 100, entityType = null) {
   return res.data;
 }
 
+// --------------- Forecasting API Functions ---------------
+
+// Fetch the latest pre-computed forecasts for all categories.
+// Returns a ForecastResponse: { run_id, run_timestamp, bank_id, model_health,
+//   weeks_ahead, is_stale, categories: [{ category, data_status, model_type,
+//   weeks_of_history, historical, forecast, ci_80, ci_95 }] }
+export async function getForecastCategory(weeksAhead = 8) {
+  const res = await api.get("/forecasts/category", {
+    params: { weeks_ahead: weeksAhead },
+  });
+  return res.data;
+}
+
+// Manually trigger a new forecast run.
+// Returns { run_id, status, message } or throws on 409 (already running) / 429 (rate limited).
+export async function triggerForecastRun(weeksAhead = 8) {
+  const res = await api.post("/forecasts/run", null, {
+    params: { weeks_ahead: weeksAhead },
+  });
+  return res.data;
+}
+
+// Fetch the bank-level aggregate forecast (total items/week across all categories).
+// Returns an AggregateForecastResponse: { run_id, run_timestamp, bank_id, data_status,
+//   model_health, is_stale, points: [{ week_start, value, is_historical, ci_lower_80, ci_upper_80 }] }
+export async function getForecastAggregate() {
+  const res = await api.get("/forecasts/aggregate");
+  return res.data;
+}
+
 /*
   Dummy helpers (kept for local testing). Uncomment if you need the old behavior.
 

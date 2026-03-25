@@ -9,3 +9,8 @@ pytest
 passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
+# Forecasting dependencies
+statsmodels
+pandas
+scipy
+openpyxl

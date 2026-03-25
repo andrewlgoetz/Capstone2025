@@ -13,6 +13,7 @@ import LocationFilter from "../components/common/LocationFilter";
 import DateRangeFilter from "../components/DateRangeFilter";
 import { useDateRange } from "../hooks/useDateRange";
 import DownloadIcon from '@mui/icons-material/Download';
+import DemandLineChart from "../components/dashboard_widgets/DemandLineChart";
 
 const Dashboard = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -185,6 +186,11 @@ const Dashboard = () => {
           {/* Trend charts — receive the full dateRange object */}
           <MovementSummary dateRange={dateRange} />
           <LowStockTrend dateRange={dateRange} defaultThreshold={10} />
+
+          {/* Demand forecast — spans full width */}
+          <div className="lg:col-span-2">
+            <DemandLineChart />
+          </div>
         </div>
       </div>
     </div>

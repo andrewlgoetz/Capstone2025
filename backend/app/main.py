@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import inventory_routes, barcode_routes, category_routes, auth_routes, location_routes, activity_log_routes, checkout_routes, checkin_routes, dietary_routes
+from app.api import forecast_routes
 from app.models import *
 
 app = FastAPI(title="Inventory Management API")
@@ -35,6 +36,7 @@ app.include_router(activity_log_routes.router)
 app.include_router(checkout_routes.router)
 app.include_router(checkin_routes.router)
 app.include_router(dietary_routes.router)
+app.include_router(forecast_routes.router)
 
 @app.get("/")
 def root():
