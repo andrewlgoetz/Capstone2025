@@ -79,7 +79,7 @@ const Help = () => {
         <main className="flex-1 min-w-0">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900">Help Guide</h1>
-            <p className="text-slate-500 mt-2">Everything you need to know about using the Inventory Tracking System.</p>
+            <p className="text-slate-500 mt-2">Everything you need to know about using the Inventory Tracking System (ITS).</p>
           </div>
 
           {/* Overview */}
