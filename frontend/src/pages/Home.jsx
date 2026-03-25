@@ -237,25 +237,7 @@ const Home = () => {
             </div>
             </div>
 
-            {/* Forecasting & Trends */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 space-y-4">
-              <h3 className="text-xl font-semibold text-slate-800 tracking-tight mb-4">
-                Forecasting & Trends
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                
-                {/* Low Stock Trend Chart (StockTrend.jsx) */}
-                <div className="min-h-[450px]">
-                    <LowStockTrendChart />
-                </div>
-                
-                {/* Demand Forecast Chart (DemandLineChart.jsx) */}
-                <div className="min-h-[450px]">
-                    <DemandLineChart />
-                </div>
-              </div>
-            </div>
-
+            
             {/* My Widgets */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
