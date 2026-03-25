@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType
+from app.models.dietary_restriction import DietaryRestriction
 from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -39,7 +40,7 @@ def default_bank_id(db):
 def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int = None):
     bank_id = getattr(item, "bank_id", None) or default_bank_id(db)
     code = normalize_barcode(getattr(item, "barcode", None))
-    
+
     if code:
         dup = db.query(InventoryItem).filter(InventoryItem.barcode == code).first()
         if dup:
@@ -51,11 +52,18 @@ def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int 
     if "barcode" in data:
         data["barcode"] = code
 
+    dietary_ids = data.pop("dietary_restriction_ids", None) or []
+
     new_item = InventoryItem(**data)
 
     try:
         db.add(new_item)
         db.flush()  # Flush to get the item_id without committing yet
+
+        # Assign dietary restrictions
+        if dietary_ids:
+            restrictions = db.query(DietaryRestriction).filter(DietaryRestriction.id.in_(dietary_ids)).all()
+            new_item.dietary_restrictions = restrictions
 
         # Create initial inventory movement if quantity > 0
         if new_item.quantity and new_item.quantity > 0:
@@ -116,6 +124,7 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session, user_id: int =
     data = item.model_dump(exclude_unset=True)
     movement_type = data.pop("movement_type", None)
     movement_reason = data.pop("movement_reason", None)
+    dietary_ids = data.pop("dietary_restriction_ids", None)
 
     if "barcode" in data:
         code = normalize_barcode(data["barcode"])
@@ -132,6 +141,11 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session, user_id: int =
         setattr(db_item, field, value)
 
     db_item.last_modified = datetime.now(timezone.utc)
+
+    # Update dietary restrictions if provided
+    if dietary_ids is not None:
+        restrictions = db.query(DietaryRestriction).filter(DietaryRestriction.id.in_(dietary_ids)).all()
+        db_item.dietary_restrictions = restrictions
 
     new_qty = db_item.quantity
     new_loc = db_item.location_id

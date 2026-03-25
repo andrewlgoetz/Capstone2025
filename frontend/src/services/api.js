@@ -379,6 +379,33 @@ export async function reactivateCategory(categoryId) {
   return res.data;
 }
 
+// --------------- Dietary Restrictions API Functions ---------------
+
+export async function getDietaryRestrictions(includeInactive = false) {
+  const res = await api.get("/dietary-restrictions/", { params: includeInactive ? { include_inactive: true } : {} });
+  return res.data;
+}
+
+export async function createDietaryRestriction(data) {
+  const res = await api.post("/dietary-restrictions/", data);
+  return res.data;
+}
+
+export async function updateDietaryRestriction(restrictionId, data) {
+  const res = await api.put(`/dietary-restrictions/${restrictionId}`, data);
+  return res.data;
+}
+
+export async function deactivateDietaryRestriction(restrictionId) {
+  const res = await api.delete(`/dietary-restrictions/${restrictionId}`);
+  return res.data;
+}
+
+export async function reactivateDietaryRestriction(restrictionId) {
+  const res = await api.post(`/dietary-restrictions/${restrictionId}/reactivate`);
+  return res.data;
+}
+
 export async function getCategoryRequests() {
   const res = await api.get("/inventory/category-requests");
   return res.data;

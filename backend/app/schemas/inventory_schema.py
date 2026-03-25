@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import date,datetime
-from typing import Optional,Literal
+from typing import Optional,Literal, List
 from app.models.inventory_movement import MovementType
+from app.schemas.dietary_restriction_schema import DietaryRestrictionRead
 
 class InventoryCreate(BaseModel):
     name: str
@@ -13,15 +14,25 @@ class InventoryCreate(BaseModel):
     expiration_date: Optional[date] = None
     location_id: Optional[int] = None
     last_modified: Optional[datetime] = None
+    dietary_restriction_ids: Optional[List[int]] = None
 
-class InventoryRead(InventoryCreate):
+class InventoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     item_id: int
     bank_id: int
+    name: str
+    category: Optional[str] = None
+    category_notes: Optional[str] = None
+    barcode: Optional[str] = None
+    quantity: int
+    unit: Optional[str] = None
+    expiration_date: Optional[date] = None
+    location_id: Optional[int] = None
     date_added: datetime
     last_modified: Optional[datetime] = None
     created_by: Optional[int] = None
     modified_by: Optional[int] = None
+    dietary_restrictions: List[DietaryRestrictionRead] = []
 
 
 class InventoryUpdate(BaseModel):
@@ -34,6 +45,7 @@ class InventoryUpdate(BaseModel):
     expiration_date: Optional[date] = None
     location_id: Optional[int] = None
     last_modified: Optional[datetime] = None
+    dietary_restriction_ids: Optional[List[int]] = None
 
     # used ONLY for InventoryMovement, not stored on InventoryItem
     movement_type: Optional[MovementType] = None   # OUTBOUND / TRANSFER / WASTE
