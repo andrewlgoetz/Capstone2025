@@ -1,6 +1,6 @@
-# Granular foodbank categories with Open Food Facts keyword matching.
-# Each category has a list of keywords that may appear in OFF categories strings.
-# Used for: DB seeding, OFF category matching on barcode scan.
+# Granular foodbank item types with Open Food Facts keyword matching.
+# Each item type has a list of keywords that may appear in OFF category strings.
+# Used for: DB seeding, OFF category matching on barcode scan, and forecasting.
 
 FOODBANK_CATEGORIES = [
     # --- Soups (Canned) ---
@@ -116,7 +116,7 @@ FOODBANK_CATEGORIES = [
     {"name": "Other",                               "description": "Items that do not fit other categories",               "display_order": 999},
 ]
 
-# Keywords used to match Open Food Facts category strings → our category names.
+# Keywords used to match Open Food Facts category strings → our item type names.
 # Keys must exactly match names in FOODBANK_CATEGORIES above.
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "Canned Soup - Chicken / Meat": [
@@ -132,7 +132,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "cream of mushroom soups", "cream of chicken", "bisque", "cream soups",
     ],
     "Canned Soup - Bean / Lentil": [
-        "lentil soups", "bean soups", "split pea soup", "pea soup", 
+        "lentil soups", "bean soups", "split pea soup", "pea soup",
     ],
     "Canned Soup - Other": [],
     "Canned Fish": [
@@ -225,7 +225,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     ],
     "Canned Vegetables - Mixed": ["mixed vegetables", "canned vegetables"],
     "Canned Vegetables - Other": [],
-        "Condiments": [
+    "Condiments": [
         "ketchup", "mustards", "mayonnaises", "mayo", "relish", "condiments"
         "salad dressings", "vinegars", "worcestershire",
     ],
@@ -458,6 +458,9 @@ CATEGORY_GROUPS: dict[str, str] = {
     "Other":                              "Other",
 }
 
+# Full list of granular item type names (used by seed scripts and frontend fallbacks)
+NONPROFIT_CATEGORIES: list[str] = list(CATEGORY_KEYWORDS.keys())
+
 # Pre-build reverse lookup: keyword → category name (for fast matching)
 _KEYWORD_TO_CATEGORY: dict[str, str] = {}
 for _cat, _kws in CATEGORY_KEYWORDS.items():
@@ -465,12 +468,58 @@ for _cat, _kws in CATEGORY_KEYWORDS.items():
         _KEYWORD_TO_CATEGORY[_kw] = _cat
 
 
+# ---------------------------------------------------------------------------
+# Aggregate category names — must exactly match the `categories` table rows
+# ---------------------------------------------------------------------------
+CANONICAL_CATEGORIES: list[str] = [
+    "Canned Goods",
+    "Grains & Pasta",
+    "Meat & Seafood",
+    "Dairy & Eggs",
+    "Snacks",
+    "Beverages",
+    "Frozen",
+    "Fresh Produce",
+    "Sauces, Spreads & Condiments",
+    "Baby & Infant",
+    "Personal Care & Household",
+    "Other",
+]
+
+# Case-insensitive exact lookup against canonical aggregate names
+_CANONICAL_LOWER: dict[str, str] = {name.lower(): name for name in CANONICAL_CATEGORIES}
+
+
+def _aggregate_for_display_order(display_order: int) -> str:
+    """Map a FOODBANK_CATEGORIES display_order to an aggregate category name."""
+    if 10 <= display_order <= 29:  return "Canned Goods"
+    if 30 <= display_order <= 49:  return "Meat & Seafood"
+    if 50 <= display_order <= 83:  return "Grains & Pasta"
+    if 84 <= display_order <= 94:  return "Canned Goods"
+    if 95 <= display_order <= 119: return "Sauces, Spreads & Condiments"
+    if 120 <= display_order <= 129: return "Fresh Produce"
+    if 130 <= display_order <= 139: return "Frozen"
+    if 140 <= display_order <= 159: return "Dairy & Eggs"
+    if 160 <= display_order <= 169: return "Beverages"
+    if 170 <= display_order <= 179: return "Snacks"
+    if 180 <= display_order <= 189: return "Baby & Infant"
+    if 190 <= display_order <= 210: return "Personal Care & Household"
+    return "Other"
+
+
+# Granular item type name → aggregate category name
+_ITEM_TYPE_TO_CATEGORY: dict[str, str] = {
+    item["name"]: _aggregate_for_display_order(item["display_order"])
+    for item in FOODBANK_CATEGORIES
+}
+
+
 def match_off_to_category(off_categories: str, available_categories: list[str] | None = None) -> str | None:
     """
-    Try to match a raw Open Food Facts categories string to one of our foodbank categories.
+    Try to match a raw Open Food Facts categories string to one of our item type names.
 
-    Returns the matched category name, or None if no match is found.
-    Pass available_categories (list of names from DB) to restrict matching to active categories.
+    Returns the matched item type name, or None if no match is found.
+    Pass available_categories (list of names from DB) to restrict matching to active item types.
     """
     if not off_categories:
         return None
@@ -484,3 +533,40 @@ def match_off_to_category(off_categories: str, available_categories: list[str] |
                 return category
 
     return None
+
+
+def normalize_category(raw: str) -> str:
+    """
+    Normalize any value found in inventory.category to a canonical aggregate name.
+
+    Used exclusively by the forecasting pipeline to unify strings that may
+    have been written by multiple paths (UI dropdown uses granular item type
+    names, barcode scan uses OFF strings, bulk CSV may use either).
+
+    Resolution order:
+      1. Direct lookup: granular item type name → aggregate category
+         (handles the most common case: inventory.category = item type name)
+      2. Case-insensitive exact match against CANONICAL_CATEGORIES
+         (handles items that already store an aggregate name)
+      3. Keyword-based mapping (handles raw OpenFoodFacts strings)
+      4. Fallback: "Other"
+    """
+    if not raw or not raw.strip():
+        return "Other"
+
+    stripped = raw.strip()
+
+    # 1. Direct item-type → aggregate lookup
+    if stripped in _ITEM_TYPE_TO_CATEGORY:
+        return _ITEM_TYPE_TO_CATEGORY[stripped]
+
+    # 2. Case-insensitive exact match against canonical aggregate names
+    if stripped.lower() in _CANONICAL_LOWER:
+        return _CANONICAL_LOWER[stripped.lower()]
+
+    # 3. Keyword-based matching (for raw OpenFoodFacts strings from barcode scan)
+    matched_item_type = match_off_to_category(stripped)
+    if matched_item_type and matched_item_type in _ITEM_TYPE_TO_CATEGORY:
+        return _ITEM_TYPE_TO_CATEGORY[matched_item_type]
+
+    return "Other"
