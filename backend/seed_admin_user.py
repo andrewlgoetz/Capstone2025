@@ -10,6 +10,7 @@ import bcrypt
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.models.role import Role
+from app.services.permission_service import grant_admin_permissions
 
 def seed_admin_user():
     """Create or update an admin user with known credentials for testing."""
@@ -36,6 +37,7 @@ def seed_admin_user():
             existing_admin.role_id = admin_role.role_id
             existing_admin.requires_password_change = False
             db.commit()
+            grant_admin_permissions(existing_admin.user_id, db)
 
             print("\nUpdated existing admin user:")
             print(f"  Email: {existing_admin.email}")
@@ -59,6 +61,7 @@ def seed_admin_user():
             db.add(admin_user)
             db.commit()
             db.refresh(admin_user)
+            grant_admin_permissions(admin_user.user_id, db)
 
             print("\nAdmin user created successfully!")
             print("\nLogin credentials:")

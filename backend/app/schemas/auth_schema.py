@@ -31,7 +31,7 @@ class UserBase(BaseModel):
     """Base user fields shared across schemas."""
     name: str
     email: EmailStr
-    bank_id: int
+    bank_id: Optional[int] = None
     role_id: Optional[int] = None
 
 

@@ -211,6 +211,14 @@ def create_user(name: str, email: str, bank_id: int, role_id: Optional[int], db:
     db.commit()
     db.refresh(new_user)
 
+    # Grant default or admin permissions based on role
+    from app.services.permission_service import grant_default_permissions, grant_admin_permissions
+    ADMIN_ROLE_ID = 1
+    if role_id == ADMIN_ROLE_ID:
+        grant_admin_permissions(new_user.user_id, db)
+    else:
+        grant_default_permissions(new_user.user_id, db)
+
     return new_user, temp_password
 
 

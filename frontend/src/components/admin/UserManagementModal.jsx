@@ -1,33 +1,4 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Tabs,
-  Tab,
-  Box,
-  TextField,
-  MenuItem,
-  Alert,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  Typography,
-  Divider
-} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -37,704 +8,482 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { updateUser, resetUserPassword, getUserActivityLog, getAllPermissions, getUserPermissions, updateUserPermissions, getAllBankLocations, getUserLocations, updateUserLocations } from '../../services/api';
 
-function TabPanel({ children, value, index, ...other }) {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`user-tabpanel-${index}`}
-      aria-labelledby={`user-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
-  );
-}
+const ACTION_STYLES = {
+  CREATE:   'bg-emerald-100 text-emerald-700',
+  UPDATE:   'bg-blue-100 text-blue-700',
+  DELETE:   'bg-red-100 text-red-700',
+  SCAN_IN:  'bg-cyan-100 text-cyan-700',
+  SCAN_OUT: 'bg-amber-100 text-amber-700',
+};
+
+const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 transition";
+const labelClass = "block text-sm font-medium text-slate-700 mb-1";
+
+const TABS = ['User Info', 'Permissions', 'Activity Log', 'Security', 'Locations'];
+
+const PREREQUISITE_MAP = {
+  'inventory:create': 'inventory:view',
+  'inventory:edit':   'inventory:view',
+  'inventory:delete': 'inventory:view',
+};
+
+const DEPENDENTS_MAP = {
+  'inventory:view': ['inventory:create', 'inventory:edit', 'inventory:delete'],
+};
 
 export default function UserManagementModal({ user, open, onClose }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(0);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    bank_id: 1,
-    role_id: null
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', bank_id: 1, role_id: null });
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
+  const [permissionsChanged, setPermissionsChanged] = useState(false);
+  const [selectedLocationIds, setSelectedLocationIds] = useState([]);
+  const [locationsChanged, setLocationsChanged] = useState(false);
 
-  // Initialize form data when user changes
   useEffect(() => {
     if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        bank_id: user.bank_id || 1,
-        role_id: user.role_id || null
-      });
+      setFormData({ name: user.name || '', email: user.email || '', bank_id: user.bank_id || 1, role_id: user.role_id || null });
     }
   }, [user]);
 
-  // Fetch all available permissions (for the UI)
   const { data: allPermissions } = useQuery({
     queryKey: ['allPermissions'],
     queryFn: getAllPermissions,
-    staleTime: 1000 * 60 * 60 // Cache for 1 hour - permissions don't change often
+    staleTime: 1000 * 60 * 60,
   });
 
-  // Fetch user's current permissions
   const { data: userPermissions, isLoading: permissionsLoading, refetch: refetchPermissions } = useQuery({
     queryKey: ['userPermissions', user?.user_id],
     queryFn: () => getUserPermissions(user.user_id),
-    enabled: false
+    enabled: false,
   });
 
-  // State for permission changes (local until saved)
-  const [selectedPermissions, setSelectedPermissions] = useState([]);
-  const [permissionsChanged, setPermissionsChanged] = useState(false);
-
-  // Fetch activity log only when the tab is opened
   const { data: activityLog, isLoading: activityLoading, refetch: refetchActivity } = useQuery({
     queryKey: ['userActivity', user?.user_id],
     queryFn: () => getUserActivityLog(user.user_id),
-    enabled: false // Don't auto-fetch, only fetch when tab is opened
+    enabled: false,
   });
 
-  // Fetch all bank locations (for location assignment UI)
   const { data: allBankLocations } = useQuery({
     queryKey: ['bankLocations'],
     queryFn: getAllBankLocations,
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch user's assigned locations
   const { data: userLocationData, refetch: refetchUserLocations } = useQuery({
     queryKey: ['userLocations', user?.user_id],
     queryFn: () => getUserLocations(user.user_id),
     enabled: false,
   });
 
-  // Local state for location assignment
-  const [selectedLocationIds, setSelectedLocationIds] = useState([]);
-  const [locationsChanged, setLocationsChanged] = useState(false);
+  useEffect(() => { if (activeTab === 1 && user) refetchPermissions(); }, [activeTab, user, refetchPermissions]);
+  useEffect(() => { if (userPermissions?.permissions) { setSelectedPermissions(userPermissions.permissions); setPermissionsChanged(false); } }, [userPermissions]);
+  useEffect(() => { if (activeTab === 2 && user) refetchActivity(); }, [activeTab, user, refetchActivity]);
+  useEffect(() => { if (activeTab === 4 && user) refetchUserLocations(); }, [activeTab, user, refetchUserLocations]);
+  useEffect(() => { if (userLocationData?.location_ids) { setSelectedLocationIds(userLocationData.location_ids); setLocationsChanged(false); } }, [userLocationData]);
 
-  // Load permissions when Permissions tab is opened
-  useEffect(() => {
-    if (activeTab === 1 && user) {
-      refetchPermissions();
-    }
-  }, [activeTab, user, refetchPermissions]);
-
-  // Sync selectedPermissions with fetched data
-  useEffect(() => {
-    if (userPermissions?.permissions) {
-      setSelectedPermissions(userPermissions.permissions);
-      setPermissionsChanged(false);
-    }
-  }, [userPermissions]);
-
-  // Load activity log when Activity tab is opened
-  useEffect(() => {
-    if (activeTab === 2 && user) {
-      refetchActivity();
-    }
-  }, [activeTab, user, refetchActivity]);
-
-  // Load user locations when Locations tab is opened
-  useEffect(() => {
-    if (activeTab === 4 && user) {
-      refetchUserLocations();
-    }
-  }, [activeTab, user, refetchUserLocations]);
-
-  // Sync selectedLocationIds with fetched data
-  useEffect(() => {
-    if (userLocationData?.location_ids) {
-      setSelectedLocationIds(userLocationData.location_ids);
-      setLocationsChanged(false);
-    }
-  }, [userLocationData]);
-
-  // Update user mutation
   const updateUserMutation = useMutation({
     mutationFn: (data) => updateUser(user.user_id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setSuccessMessage('User updated successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    },
-    onError: (error) => {
-      const message = error.response?.data?.detail || 'Failed to update user';
-      setErrorMessage(message);
-      setTimeout(() => setErrorMessage(''), 5000);
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['users'] }); setSuccessMessage('User updated successfully!'); setTimeout(() => setSuccessMessage(''), 3000); },
+    onError: (error) => { setErrorMessage(error.response?.data?.detail || 'Failed to update user'); setTimeout(() => setErrorMessage(''), 5000); },
   });
 
-  // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: () => resetUserPassword(user.user_id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setSuccessMessage(
-        `Password reset successfully! Temporary password: ${data.temporary_password}`
-      );
-    },
-    onError: (error) => {
-      const message = error.response?.data?.detail || 'Failed to reset password';
-      setErrorMessage(message);
-      setTimeout(() => setErrorMessage(''), 5000);
-    }
+    onSuccess: (data) => { queryClient.invalidateQueries({ queryKey: ['users'] }); setSuccessMessage(`Password reset! Temporary password: ${data.temporary_password}`); },
+    onError: (error) => { setErrorMessage(error.response?.data?.detail || 'Failed to reset password'); setTimeout(() => setErrorMessage(''), 5000); },
   });
 
-  // Update permissions mutation
   const updatePermissionsMutation = useMutation({
     mutationFn: (permissions) => updateUserPermissions(user.user_id, permissions),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userPermissions', user.user_id] });
-      setSuccessMessage('Permissions updated successfully!');
-      setPermissionsChanged(false);
-      setTimeout(() => setSuccessMessage(''), 3000);
-    },
-    onError: (error) => {
-      const message = error.response?.data?.detail || 'Failed to update permissions';
-      setErrorMessage(message);
-      setTimeout(() => setErrorMessage(''), 5000);
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['userPermissions', user.user_id] }); setSuccessMessage('Permissions updated!'); setPermissionsChanged(false); setTimeout(() => setSuccessMessage(''), 3000); },
+    onError: (error) => { setErrorMessage(error.response?.data?.detail || 'Failed to update permissions'); setTimeout(() => setErrorMessage(''), 5000); },
   });
 
-  // Update user locations mutation
   const updateLocationsMutation = useMutation({
     mutationFn: (locationIds) => updateUserLocations(user.user_id, locationIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userLocations', user.user_id] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setSuccessMessage('Locations updated successfully!');
-      setLocationsChanged(false);
-      setTimeout(() => setSuccessMessage(''), 3000);
-    },
-    onError: (error) => {
-      const message = error.response?.data?.detail || 'Failed to update locations';
-      setErrorMessage(message);
-      setTimeout(() => setErrorMessage(''), 5000);
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['userLocations', user.user_id] }); queryClient.invalidateQueries({ queryKey: ['users'] }); setSuccessMessage('Locations updated!'); setLocationsChanged(false); setTimeout(() => setSuccessMessage(''), 3000); },
+    onError: (error) => { setErrorMessage(error.response?.data?.detail || 'Failed to update locations'); setTimeout(() => setErrorMessage(''), 5000); },
   });
 
+  const handlePermissionChange = (permissionKey) => {
+    setSelectedPermissions(prev => {
+      let next;
+      if (prev.includes(permissionKey)) {
+        const dependents = DEPENDENTS_MAP[permissionKey] || [];
+        next = prev.filter(p => p !== permissionKey && !dependents.includes(p));
+      } else {
+        const prerequisite = PREREQUISITE_MAP[permissionKey];
+        next = [...prev, permissionKey];
+        if (prerequisite && !next.includes(prerequisite)) next.push(prerequisite);
+      }
+      setPermissionsChanged(true);
+      return next;
+    });
+  };
+
+  const handleSelectAllInGroup = (groupPermKeys) => {
+    setSelectedPermissions(prev => {
+      const allSelected = groupPermKeys.every(p => prev.includes(p));
+      const next = allSelected ? prev.filter(p => !groupPermKeys.includes(p)) : [...new Set([...prev, ...groupPermKeys])];
+      setPermissionsChanged(true);
+      return next;
+    });
+  };
+
   const handleLocationToggle = (locationId) => {
-    setSelectedLocationIds((prev) => {
-      const next = prev.includes(locationId)
-        ? prev.filter((id) => id !== locationId)
-        : [...prev, locationId];
+    setSelectedLocationIds(prev => {
+      const next = prev.includes(locationId) ? prev.filter(id => id !== locationId) : [...prev, locationId];
       setLocationsChanged(true);
       return next;
     });
   };
 
   const handleSelectAllLocations = () => {
-    const allIds = (allBankLocations || []).map((l) => l.location_id);
-    const allSelected = allIds.every((id) => selectedLocationIds.includes(id));
+    const allIds = (allBankLocations || []).map(l => l.location_id);
+    const allSelected = allIds.every(id => selectedLocationIds.includes(id));
     setSelectedLocationIds(allSelected ? [] : allIds);
     setLocationsChanged(true);
   };
 
-  const handleSaveLocations = () => {
-    updateLocationsMutation.mutate(selectedLocationIds);
-  };
-
-  // Permissions that require a prerequisite to be enabled first
-  const PREREQUISITE_MAP = {
-    'inventory:create': 'inventory:view',
-    'inventory:edit': 'inventory:view',
-    'inventory:delete': 'inventory:view',
-  };
-
-  // Reverse: which permissions depend on a given prerequisite
-  const DEPENDENTS_MAP = {
-    'inventory:view': ['inventory:create', 'inventory:edit', 'inventory:delete'],
-  };
-
-  const handlePermissionChange = (permissionKey) => {
-    setSelectedPermissions(prev => {
-      let newPermissions;
-      if (prev.includes(permissionKey)) {
-        // Unchecking: also remove any permissions that depend on this one
-        const dependents = DEPENDENTS_MAP[permissionKey] || [];
-        newPermissions = prev.filter(p => p !== permissionKey && !dependents.includes(p));
-      } else {
-        // Checking: also add the prerequisite if needed
-        const prerequisite = PREREQUISITE_MAP[permissionKey];
-        newPermissions = [...prev, permissionKey];
-        if (prerequisite && !newPermissions.includes(prerequisite)) {
-          newPermissions.push(prerequisite);
-        }
-      }
-      setPermissionsChanged(true);
-      return newPermissions;
-    });
-  };
-
-  const handleSelectAllInGroup = (groupPermissions) => {
-    setSelectedPermissions(prev => {
-      const allSelected = groupPermissions.every(p => prev.includes(p));
-      let newPermissions;
-      if (allSelected) {
-        // Deselect all in group
-        newPermissions = prev.filter(p => !groupPermissions.includes(p));
-      } else {
-        // Select all in group
-        newPermissions = [...new Set([...prev, ...groupPermissions])];
-      }
-      setPermissionsChanged(true);
-      return newPermissions;
-    });
-  };
-
-  const handleSavePermissions = () => {
-    updatePermissionsMutation.mutate(selectedPermissions);
-  };
-
-  const handleUpdateUser = (e) => {
-    e.preventDefault();
-    updateUserMutation.mutate(formData);
-  };
-
   const handleResetPassword = () => {
-    if (window.confirm(`Are you sure you want to reset ${user.name}'s password? They will be required to change it on next login.`)) {
+    if (window.confirm(`Reset ${user.name}'s password? They will be required to change it on next login.`)) {
       resetPasswordMutation.mutate();
     }
   };
 
   const handleClose = () => {
-    setActiveTab(0);
-    setSuccessMessage('');
-    setErrorMessage('');
-    setSelectedPermissions([]);
-    setPermissionsChanged(false);
-    setSelectedLocationIds([]);
-    setLocationsChanged(false);
+    setActiveTab(0); setSuccessMessage(''); setErrorMessage('');
+    setSelectedPermissions([]); setPermissionsChanged(false);
+    setSelectedLocationIds([]); setLocationsChanged(false);
     onClose();
   };
 
   const handleExportActivityLog = () => {
-    if (!activityLog || activityLog.length === 0) {
-      alert('No activity log to export');
-      return;
-    }
-
-    // Format activity log as plain text
-    let textContent = `Activity Log for ${user.name}\n`;
-    textContent += `Email: ${user.email}\n`;
-    textContent += `User ID: ${user.user_id}\n`;
-    textContent += `Generated: ${new Date().toLocaleString()}\n`;
-    textContent += `${'='.repeat(60)}\n\n`;
-
-    activityLog.forEach((log, index) => {
-      textContent += `${index + 1}. ${log.action}\n`;
-      textContent += `   Item: ${log.item_name || log.item_id || 'N/A'}\n`;
-      textContent += `   Details: ${log.details || '-'}\n`;
-      textContent += `   Timestamp: ${new Date(log.timestamp).toLocaleString()}\n`;
-      textContent += `\n`;
+    if (!activityLog || activityLog.length === 0) { alert('No activity log to export'); return; }
+    let text = `Activity Log for ${user.name}\nEmail: ${user.email}\nUser ID: ${user.user_id}\nGenerated: ${new Date().toLocaleString()}\n${'='.repeat(60)}\n\n`;
+    activityLog.forEach((log, i) => {
+      text += `${i + 1}. ${log.action}\n   Item: ${log.item_name || log.item_id || 'N/A'}\n   Details: ${log.details || '-'}\n   Timestamp: ${new Date(log.timestamp).toLocaleString()}\n\n`;
     });
-
-    // Open in new window
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write('<pre style="font-family: monospace; padding: 20px;">');
-      newWindow.document.write(textContent);
-      newWindow.document.write('</pre>');
-      newWindow.document.title = `Activity Log - ${user.name}`;
-      newWindow.document.close();
-    } else {
-      alert('Please allow pop-ups to view the activity log');
-    }
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(`<pre style="font-family:monospace;padding:20px">${text}</pre>`); w.document.title = `Activity Log - ${user.name}`; w.document.close(); }
+    else alert('Please allow pop-ups to view the activity log');
   };
 
-  if (!user) return null;
+  if (!open || !user) return null;
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: { minHeight: '600px' }
-      }}
-    >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span>Manage User: {user.name}</span>
-        <IconButton onClick={handleClose} size="small">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden">
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="User Info" />
-          <Tab label="Permissions" />
-          <Tab label="Activity Log" />
-          <Tab label="Security" />
-          <Tab label="Locations" /*icon={<LocationOnIcon sx={{ fontSize: 16 }} />} iconPosition="start"*/ />
-        </Tabs>
-      </Box>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <h2 className="text-lg font-semibold text-slate-800">Manage User: {user.name}</h2>
+          <button onClick={handleClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-gray-100 hover:text-slate-600 transition">
+            <CloseIcon fontSize="small" />
+          </button>
+        </div>
 
-      <DialogContent>
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {successMessage}
-          </Alert>
-        )}
-        {errorMessage && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {errorMessage}
-          </Alert>
-        )}
-
-        {/* Tab 1: User Info & Password */}
-        <TabPanel value={activeTab} index={0}>
-          <form onSubmit={handleUpdateUser} className="space-y-4">
-            <TextField
-              label="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Bank ID"
-              type="number"
-              value={1}
-              disabled
-              fullWidth
-              helperText="Bank ID is managed automatically"
-            />
-            <TextField
-              label="Role"
-              select
-              value={formData.role_id || ''}
-              onChange={(e) => setFormData({ ...formData, role_id: e.target.value || null })}
-              fullWidth
-              helperText="Select user's role"
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 shrink-0 px-6">
+          {TABS.map((tab, i) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(i)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap ${
+                activeTab === i
+                  ? 'border-slate-800 text-slate-800'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
             >
-              <MenuItem value="">None</MenuItem>
-              <MenuItem value={1}>Admin</MenuItem>
-              <MenuItem value={2}>Manager</MenuItem>
-              <MenuItem value={3}>User</MenuItem>
-            </TextField>
+              {tab}
+            </button>
+          ))}
+        </div>
 
-            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled={updateUserMutation.isPending}
-                sx={{ backgroundColor: '#4f46e5', '&:hover': { backgroundColor: '#4338ca' } }}
-              >
-                {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<LockResetIcon />}
-                onClick={handleResetPassword}
-                disabled={resetPasswordMutation.isPending}
-              >
-                {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
-              </Button>
-            </Box>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {successMessage && (
+            <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">{successMessage}</div>
+          )}
+          {errorMessage && (
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{errorMessage}</div>
+          )}
 
-            {user.requires_password_change && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                This user must change their password before accessing the system.
-              </Alert>
-            )}
-          </form>
-        </TabPanel>
-
-        {/* Tab 2: Permissions */}
-        <TabPanel value={activeTab} index={1}>
-          {permissionsLoading ? (
-            <Box className="flex justify-center py-8">
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  <SecurityIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
-                  Select which actions this user can perform
-                </Typography>
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSavePermissions}
-                  disabled={!permissionsChanged || updatePermissionsMutation.isPending}
-                  sx={{ backgroundColor: '#4f46e5', '&:hover': { backgroundColor: '#4338ca' } }}
-                >
-                  {updatePermissionsMutation.isPending ? 'Saving...' : 'Save Permissions'}
-                </Button>
-              </Box>
-
-              {user.role_id === 1 && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  This user has the Admin role and automatically has all permissions regardless of individual settings.
-                </Alert>
+          {/* Tab 0: User Info */}
+          {activeTab === 0 && (
+            <form onSubmit={(e) => { e.preventDefault(); updateUserMutation.mutate(formData); }} className="space-y-4">
+              <div>
+                <label className={labelClass}>Name</label>
+                <input className={inputClass} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+              </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input className={inputClass} type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
+              </div>
+              <div>
+                <label className={labelClass}>Bank ID</label>
+                <input className={`${inputClass} opacity-60 cursor-not-allowed`} value={1} disabled />
+                <p className="text-xs text-slate-400 mt-1">Bank ID is managed automatically</p>
+              </div>
+              <div>
+                <label className={labelClass}>Role</label>
+                <select className={inputClass} value={formData.role_id || ''} onChange={e => setFormData({ ...formData, role_id: e.target.value || null })}>
+                  <option value="">None</option>
+                  <option value={1}>Admin</option>
+                  <option value={2}>Manager</option>
+                  <option value={3}>User</option>
+                </select>
+              </div>
+              {user.requires_password_change && (
+                <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                  This user must change their password before accessing the system.
+                </div>
               )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={updateUserMutation.isPending}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition disabled:opacity-60"
+                >
+                  <SaveIcon fontSize="small" />
+                  {updateUserMutation.isPending ? 'Saving…' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={resetPasswordMutation.isPending}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-amber-300 text-amber-700 bg-white rounded-xl text-sm font-medium hover:bg-amber-50 transition disabled:opacity-60"
+                >
+                  <LockResetIcon fontSize="small" />
+                  {resetPasswordMutation.isPending ? 'Resetting…' : 'Reset Password'}
+                </button>
+              </div>
+            </form>
+          )}
 
-              {allPermissions?.groups && Object.entries(allPermissions.groups).map(([groupName, groupPermKeys]) => (
-                <Box key={groupName} sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#334155' }}>
-                      {groupName}
-                    </Typography>
-                    <Button
-                      size="small"
-                      sx={{ ml: 1, minWidth: 'auto', fontSize: '0.7rem' }}
-                      onClick={() => handleSelectAllInGroup(groupPermKeys)}
-                    >
-                      {groupPermKeys.every(p => selectedPermissions.includes(p)) ? 'Deselect All' : 'Select All'}
-                    </Button>
-                  </Box>
-                  <Paper variant="outlined" sx={{ p: 2 }}>
-                    <FormGroup>
+          {/* Tab 1: Permissions */}
+          {activeTab === 1 && (
+            permissionsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800" />
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-slate-500 flex items-center gap-1">
+                    <SecurityIcon fontSize="small" /> Select which actions this user can perform
+                  </p>
+                  <button
+                    onClick={() => updatePermissionsMutation.mutate(selectedPermissions)}
+                    disabled={!permissionsChanged || updatePermissionsMutation.isPending}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition disabled:opacity-50"
+                  >
+                    <SaveIcon fontSize="small" />
+                    {updatePermissionsMutation.isPending ? 'Saving…' : 'Save Permissions'}
+                  </button>
+                </div>
+
+                {user.role_id === 1 && (
+                  <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
+                    This user has the Admin role and automatically has all permissions.
+                  </div>
+                )}
+
+                {allPermissions?.groups && Object.entries(allPermissions.groups).map(([groupName, groupPermKeys]) => (
+                  <div key={groupName} className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-semibold text-slate-700">{groupName}</span>
+                      <button
+                        onClick={() => handleSelectAllInGroup(groupPermKeys)}
+                        className="text-xs text-slate-500 hover:text-slate-700 underline"
+                      >
+                        {groupPermKeys.every(p => selectedPermissions.includes(p)) ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="border border-gray-200 rounded-xl p-3 space-y-2">
                       {groupPermKeys.map(permKey => {
                         const permInfo = allPermissions.permissions.find(p => p.key === permKey);
                         const prerequisite = PREREQUISITE_MAP[permKey];
                         const isDisabled = prerequisite && !selectedPermissions.includes(prerequisite);
                         return (
-                          <FormControlLabel
-                            key={permKey}
-                            control={
-                              <Checkbox
-                                checked={selectedPermissions.includes(permKey)}
-                                onChange={() => handlePermissionChange(permKey)}
-                                disabled={isDisabled}
-                                sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
-                              />
-                            }
-                            label={
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500, opacity: isDisabled ? 0.5 : 1 }}>
-                                  {permInfo?.name || permKey}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ opacity: isDisabled ? 0.5 : 1 }}>
-                                  {permInfo?.description}{isDisabled ? ' (requires View permission)' : ''}
-                                </Typography>
-                              </Box>
-                            }
-                            sx={{ alignItems: 'flex-start', mb: 1 }}
-                          />
+                          <label key={permKey} className={`flex items-start gap-3 cursor-pointer ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={selectedPermissions.includes(permKey)}
+                              onChange={() => handlePermissionChange(permKey)}
+                              disabled={isDisabled}
+                              className="mt-0.5 accent-slate-800"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-slate-700">{permInfo?.name || permKey}</p>
+                              <p className="text-xs text-slate-400">{permInfo?.description}{isDisabled ? ' (requires View permission)' : ''}</p>
+                            </div>
+                          </label>
                         );
                       })}
-                    </FormGroup>
-                  </Paper>
-                </Box>
-              ))}
-            </Box>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
-        </TabPanel>
 
-        {/* Tab 3: Activity Log */}
-        <TabPanel value={activeTab} index={2}>
-          {activityLoading ? (
-            <Box className="flex justify-center py-8">
-              <CircularProgress />
-            </Box>
-          ) : activityLog && activityLog.length > 0 ? (
-            <>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<DownloadIcon />}
-                  onClick={handleExportActivityLog}
-                >
-                  Export as TXT
-                </Button>
-              </Box>
-              <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f8fafc' }}>
-                    <TableCell><strong>Action</strong></TableCell>
-                    <TableCell><strong>Item</strong></TableCell>
-                    <TableCell><strong>Details</strong></TableCell>
-                    <TableCell><strong>Timestamp</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {activityLog.map((log, index) => (
-                    <TableRow key={index} hover>
-                      <TableCell>
-                        <Chip
-                          label={log.action}
-                          size="small"
-                          color={
-                            log.action === 'CREATE' ? 'success' :
-                            log.action === 'UPDATE' ? 'primary' :
-                            log.action === 'DELETE' ? 'error' :
-                            log.action === 'SCAN_IN' ? 'info' :
-                            log.action === 'SCAN_OUT' ? 'warning' : 'default'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>{log.item_name || log.item_id || 'N/A'}</TableCell>
-                      <TableCell className="text-sm text-slate-600">{log.details || '-'}</TableCell>
-                      <TableCell className="text-sm text-slate-600">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            </>
-          ) : (
-            <Box className="text-center py-8">
-              <p className="text-slate-600">No activity found for this user.</p>
-            </Box>
+          {/* Tab 2: Activity Log */}
+          {activeTab === 2 && (
+            activityLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800" />
+              </div>
+            ) : activityLog && activityLog.length > 0 ? (
+              <>
+                <div className="flex justify-end mb-3">
+                  <button
+                    onClick={handleExportActivityLog}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                  >
+                    <DownloadIcon fontSize="small" /> Export as TXT
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        {['Action', 'Item', 'Details', 'Timestamp'].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {activityLog.map((log, i) => (
+                        <tr key={i} className="hover:bg-slate-50">
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold uppercase ${ACTION_STYLES[log.action] || 'bg-slate-100 text-slate-600'}`}>
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">{log.item_name || log.item_id || 'N/A'}</td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">{log.details || '-'}</td>
+                          <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-slate-400 text-sm border border-dashed border-gray-200 rounded-xl">
+                No activity found for this user.
+              </div>
+            )
           )}
-        </TabPanel>
 
-        {/* Tab 4: Security (Placeholder) */}
-        <TabPanel value={activeTab} index={3}>
-          <Box className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-700 mb-2">Security Settings</h3>
-              <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">Account Status:</span>
-                  <Chip
-                    label={user.requires_password_change ? 'Pending Password Change' : 'Active'}
-                    color={user.requires_password_change ? 'warning' : 'success'}
-                    size="small"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">User ID:</span>
-                  <span className="text-slate-600">{user.user_id}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">Email Verified:</span>
-                  <Chip label="Not Implemented" size="small" />
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">Two-Factor Auth:</span>
-                  <Chip label="Not Enabled" size="small" />
-                </div>
+          {/* Tab 3: Security */}
+          {activeTab === 3 && (
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-slate-700">Security Settings</h3>
+              <div className="bg-slate-50 rounded-xl border border-gray-200 p-4 space-y-3">
+                {[
+                  { label: 'Account Status', value: user.requires_password_change ? 'Pending Password Change' : 'Active', style: user.requires_password_change ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' },
+                  { label: 'User ID', value: user.user_id, plain: true },
+                  { label: 'Email Verified', value: 'Not Implemented', style: 'bg-slate-100 text-slate-600' },
+                  { label: 'Two-Factor Auth', value: 'Not Enabled', style: 'bg-slate-100 text-slate-600' },
+                ].map(({ label, value, style, plain }) => (
+                  <div key={label} className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">{label}</span>
+                    {plain
+                      ? <span className="text-sm text-slate-500">{value}</span>
+                      : <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${style}`}>{value}</span>
+                    }
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
+                Additional security features coming soon:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Login history and session management</li>
+                  <li>Two-factor authentication setup</li>
+                  <li>Account lock/unlock controls</li>
+                  <li>Password expiration policies</li>
+                </ul>
               </div>
             </div>
+          )}
 
-            <Alert severity="info">
-              Additional security features coming soon:
-              <ul className="list-disc list-inside mt-2">
-                <li>Login history and session management</li>
-                <li>Two-factor authentication setup</li>
-                <li>Account lock/unlock controls</li>
-                <li>Password expiration policies</li>
-              </ul>
-            </Alert>
-          </Box>
-        </TabPanel>
+          {/* Tab 4: Locations */}
+          {activeTab === 4 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-slate-500 flex items-center gap-1">
+                  <LocationOnIcon fontSize="small" /> Assign locations this user can access
+                </p>
+                <button
+                  onClick={() => updateLocationsMutation.mutate(selectedLocationIds)}
+                  disabled={!locationsChanged || updateLocationsMutation.isPending}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition disabled:opacity-50"
+                >
+                  <SaveIcon fontSize="small" />
+                  {updateLocationsMutation.isPending ? 'Saving…' : 'Save Locations'}
+                </button>
+              </div>
 
-        {/* Tab 5: Locations */}
-        <TabPanel value={activeTab} index={4}>
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                <LocationOnIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
-                Assign locations this user can access
-              </Typography>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<SaveIcon />}
-                onClick={handleSaveLocations}
-                disabled={!locationsChanged || updateLocationsMutation.isPending}
-                sx={{ backgroundColor: '#4f46e5', '&:hover': { backgroundColor: '#4338ca' } }}
-              >
-                {updateLocationsMutation.isPending ? 'Saving...' : 'Save Locations'}
-              </Button>
-            </Box>
+              {user.role_id === 1 && (
+                <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
+                  Admin users automatically have access to all locations.
+                </div>
+              )}
 
-            {user.role_id === 1 && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Admin users automatically have access to all locations regardless of assignments.
-              </Alert>
-            )}
-
-            {!allBankLocations || allBankLocations.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                No locations have been created yet. Add locations in the Locations tab on the Admin page.
-              </Typography>
-            ) : (
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={
-                          allBankLocations.length > 0 &&
-                          allBankLocations.every((l) => selectedLocationIds.includes(l.location_id))
-                        }
-                        indeterminate={
-                          selectedLocationIds.length > 0 &&
-                          selectedLocationIds.length < allBankLocations.length
-                        }
-                        onChange={handleSelectAllLocations}
-                        sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        Select All ({selectedLocationIds.length} of {allBankLocations.length})
-                      </Typography>
-                    }
-                    sx={{ borderBottom: '1px solid #e2e8f0', pb: 1, mb: 1 }}
-                  />
-                  {allBankLocations.map((loc) => (
-                    <FormControlLabel
-                      key={loc.location_id}
-                      control={
-                        <Checkbox
-                          checked={selectedLocationIds.includes(loc.location_id)}
-                          onChange={() => handleLocationToggle(loc.location_id)}
-                          sx={{ '&.Mui-checked': { color: '#4f46e5' } }}
-                        />
-                      }
-                      label={
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {loc.name}
-                          </Typography>
-                          {loc.address && (
-                            <Typography variant="caption" color="text.secondary">
-                              {loc.address}
-                            </Typography>
-                          )}
-                        </Box>
-                      }
-                      sx={{ alignItems: 'flex-start', mb: 0.5 }}
+              {!allBankLocations || allBankLocations.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm border border-dashed border-gray-200 rounded-xl">
+                  No locations have been created yet. Add locations in the Locations tab on the Admin page.
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-xl p-3 space-y-2">
+                  {/* Select all */}
+                  <label className="flex items-center gap-3 cursor-pointer pb-2 border-b border-gray-100">
+                    <input
+                      type="checkbox"
+                      checked={allBankLocations.length > 0 && allBankLocations.every(l => selectedLocationIds.includes(l.location_id))}
+                      ref={el => { if (el) el.indeterminate = selectedLocationIds.length > 0 && selectedLocationIds.length < allBankLocations.length; }}
+                      onChange={handleSelectAllLocations}
+                      className="accent-slate-800"
                     />
+                    <span className="text-sm font-semibold text-slate-700">
+                      Select All ({selectedLocationIds.length} of {allBankLocations.length})
+                    </span>
+                  </label>
+                  {allBankLocations.map(loc => (
+                    <label key={loc.location_id} className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedLocationIds.includes(loc.location_id)}
+                        onChange={() => handleLocationToggle(loc.location_id)}
+                        className="mt-0.5 accent-slate-800"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">{loc.name}</p>
+                        {loc.address && <p className="text-xs text-slate-400">{loc.address}</p>}
+                      </div>
+                    </label>
                   ))}
-                </FormGroup>
-              </Paper>
-            )}
-          </Box>
-        </TabPanel>
-      </DialogContent>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-      <DialogActions>
-        <Button onClick={handleClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end shrink-0">
+          <button
+            onClick={handleClose}
+            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
