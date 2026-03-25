@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.session import Base
 
@@ -21,3 +22,9 @@ class InventoryItem(Base):
     # audit tracking
     created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
     modified_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    dietary_restrictions = relationship(
+        "DietaryRestriction",
+        secondary="item_dietary_restrictions",
+        lazy="joined",
+    )

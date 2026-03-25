@@ -7,3 +7,4 @@ from app.models.inventory_movement import InventoryMovement, MovementType
 from app.models.user_permission import UserPermission
 from app.models.activity_log import ActivityLog, ActivityAction
 from app.models.user_location import UserLocation
+from app.models.dietary_restriction import DietaryRestriction, item_dietary_restrictions

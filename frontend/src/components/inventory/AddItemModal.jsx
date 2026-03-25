@@ -1,7 +1,8 @@
 import * as React from "react";
 import { useQuery } from '@tanstack/react-query';
-import { fetchInventoryByBarcode, getCategories } from '../../services/api';
+import { fetchInventoryByBarcode, getCategories, getDietaryRestrictions } from '../../services/api';
 import CategorySearch from "./CategorySearch";
+import { DietaryRestrictionIcon } from "./ItemManagerModal";
 
 // Fallback categories if database fetch fails
 const FALLBACK_CATEGORY_OPTIONS = [
@@ -77,6 +78,13 @@ export default function AddItemModal({
       .map(cat => cat.name);
   }, [categoriesQuery.data]);
 
+  // Fetch dietary restrictions
+  const dietaryQuery = useQuery({
+    queryKey: ["dietary-restrictions"],
+    queryFn: getDietaryRestrictions,
+  });
+  const dietaryOptions = dietaryQuery.data ?? [];
+
   const [values, setValues] = React.useState({
     item_id: null,
     name: "",
@@ -89,6 +97,8 @@ export default function AddItemModal({
     movement_type: "",
     movement_reason: "",
   });
+
+  const [selectedDietaryIds, setSelectedDietaryIds] = React.useState([]);
 
   const [customUnit, setCustomUnit] = React.useState("");
   const [barcodeStatus, setBarcodeStatus] = React.useState(null); // null | 'KNOWN' | 'NEW'
@@ -131,6 +141,10 @@ export default function AddItemModal({
         quantity: quantityStr,
         location_id: locationStr,
       });
+      // Pre-populate dietary restrictions from existing item
+      setSelectedDietaryIds(
+        (defaultValues.dietary_restrictions ?? []).map((r) => r.id)
+      );
     } else {
       setValues({
         item_id: null,
@@ -147,6 +161,7 @@ export default function AddItemModal({
       setCustomUnit("");
       setOriginalValues(null);
       setBarcodeStatus(null);
+      setSelectedDietaryIds([]);
     }
   }, [defaultValues, open, mode]);
 
@@ -268,6 +283,7 @@ export default function AddItemModal({
       expiration_date: values.expiration_date || null,
       location_id:
         values.location_id === "" ? null : Number(values.location_id),
+      dietary_restriction_ids: selectedDietaryIds,
     };
 
     if (isEditMode && movementNeeded) {
@@ -503,6 +519,39 @@ export default function AddItemModal({
                   </select>
                   {chevron}
                 </div>
+              </div>
+
+              {/* Dietary Restrictions */}
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Dietary Restrictions</label>
+                {dietaryOptions.length === 0 ? (
+                  <p className="text-xs text-gray-400">No dietary restrictions defined.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {dietaryOptions.map((r) => {
+                      const selected = selectedDietaryIds.includes(r.id);
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() =>
+                            setSelectedDietaryIds((ids) =>
+                              selected ? ids.filter((id) => id !== r.id) : [...ids, r.id]
+                            )
+                          }
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition ${
+                            selected
+                              ? "bg-slate-800 text-white border-slate-800"
+                              : "bg-white text-slate-700 border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <DietaryRestrictionIcon restriction={r} size={16} />
+                          {r.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Movement fields (edit mode only) */}

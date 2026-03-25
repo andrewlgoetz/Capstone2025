@@ -14,6 +14,7 @@ import SortIcon from "@mui/icons-material/Sort";
 import api, { getCategories } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import CategorySearch from "./CategorySearch";
+import { DietaryRestrictionIcon } from "./ItemManagerModal";
 
 const formatDate = (dateString) => {
   if (!dateString) return "—";
@@ -62,6 +63,22 @@ const DEFAULT_COLUMNS = [
     accessorKey: "last_modified",
     header: "Date Modified",
     cell: ({ cell }) => formatDate(cell.getValue()),
+  },
+  {
+    id: "dietary",
+    header: "Dietary",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const restrictions = row.original.dietary_restrictions ?? [];
+      if (!restrictions.length) return <span className="text-slate-300 text-xs">—</span>;
+      return (
+        <div className="flex gap-1 flex-wrap">
+          {restrictions.map((r) => (
+            <DietaryRestrictionIcon key={r.id} restriction={r} size={20} />
+          ))}
+        </div>
+      );
+    },
   },
 ];
 
@@ -424,6 +441,13 @@ export default function InventoryTable({
                           <td className={`${tdClass} pl-8 text-slate-500`}>
                             <span className="text-xs text-slate-400 mr-2">#{serialMap[item.item_id] ?? "—"}</span>
                             {item.name}
+                            {(item.dietary_restrictions ?? []).length > 0 && (
+                              <span className="ml-1.5 inline-flex gap-0.5 align-middle">
+                                {(item.dietary_restrictions ?? []).map((r) => (
+                                  <DietaryRestrictionIcon key={r.id} restriction={r} size={16} />
+                                ))}
+                              </span>
+                            )}
                           </td>
                           <td className={`${tdClass} text-center`}>
                             <span className="font-mono text-xs text-slate-400">{item.barcode ?? "—"}</span>

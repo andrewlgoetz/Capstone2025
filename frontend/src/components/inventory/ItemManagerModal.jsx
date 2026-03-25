@@ -10,6 +10,11 @@ import {
   dismissCategoryRequest,
   getItemChangesLog,
   getUserActivityLog,
+  getDietaryRestrictions,
+  createDietaryRestriction,
+  updateDietaryRestriction,
+  deactivateDietaryRestriction,
+  reactivateDietaryRestriction,
 } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from "react-router-dom";
@@ -281,6 +286,244 @@ function CategoriesTab() {
   );
 }
 
+// ─── Dietary Restrictions Tab ──────────────────────────────────────────────────
+
+export function DietaryRestrictionIcon({ restriction, size = 20 }) {
+  if (restriction.preset_type === "halal") {
+    return (
+      <span
+        title="Halal"
+        style={{ width: size, height: size, fontSize: size * 0.65 }}
+        className="inline-flex items-center justify-center rounded-full bg-green-600 text-white font-bold shrink-0"
+      >
+        H
+      </span>
+    );
+  }
+  if (restriction.preset_type === "kosher") {
+    return (
+      <span
+        title="Kosher"
+        style={{ width: size, height: size, fontSize: size * 0.65 }}
+        className="inline-flex items-center justify-center rounded-full bg-blue-600 text-white font-bold shrink-0"
+      >
+        K
+      </span>
+    );
+  }
+  // Custom: colored circle
+  return (
+    <span
+      title={restriction.name}
+      style={{ width: size, height: size, backgroundColor: restriction.color || "#6b7280" }}
+      className="inline-block rounded-full shrink-0"
+    />
+  );
+}
+
+function DietaryRestrictionsTab() {
+  const qc = useQueryClient();
+
+  const { data: restrictions = [], isLoading } = useQuery({
+    queryKey: ["dietary-restrictions", "all"],
+    queryFn: () => getDietaryRestrictions(true),
+  });
+
+  const [newName, setNewName] = React.useState("");
+  const [newColor, setNewColor] = React.useState("#6b7280");
+  const [editingId, setEditingId] = React.useState(null);
+  const [editingName, setEditingName] = React.useState("");
+  const [editingColor, setEditingColor] = React.useState("#6b7280");
+  const [filter, setFilter] = React.useState("active");
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["dietary-restrictions"] });
+
+  const createMut = useMutation({
+    mutationFn: createDietaryRestriction,
+    onSuccess: () => { setNewName(""); setNewColor("#6b7280"); invalidate(); },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }) => updateDietaryRestriction(id, data),
+    onSuccess: () => { setEditingId(null); invalidate(); },
+  });
+
+  const deactivateMut = useMutation({
+    mutationFn: deactivateDietaryRestriction,
+    onSuccess: invalidate,
+  });
+
+  const reactivateMut = useMutation({
+    mutationFn: reactivateDietaryRestriction,
+    onSuccess: invalidate,
+  });
+
+  const handleCreate = (e) => {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    createMut.mutate({ name, color: newColor });
+  };
+
+  const handleUpdateSubmit = (e) => {
+    e.preventDefault();
+    const name = editingName.trim();
+    if (!name || !editingId) return;
+    updateMut.mutate({ id: editingId, data: { name, color: editingColor } });
+  };
+
+  const startEdit = (r) => {
+    setEditingId(r.id);
+    setEditingName(r.name);
+    setEditingColor(r.color || "#6b7280");
+  };
+
+  const filtered = restrictions.filter((r) => {
+    if (filter === "active") return r.is_active;
+    if (filter === "inactive") return !r.is_active;
+    return true;
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Create new custom restriction */}
+      <form onSubmit={handleCreate} className="flex gap-2 items-center">
+        <input
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500"
+          placeholder="New restriction name…"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+        />
+        <div className="flex items-center gap-1 shrink-0">
+          <label className="text-xs text-gray-500">Color</label>
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+            title="Pick icon color"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={!newName.trim() || createMut.isPending}
+          className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 disabled:opacity-50 transition"
+        >
+          {createMut.isPending ? "Adding…" : "Add"}
+        </button>
+      </form>
+
+      {createMut.isError && (
+        <p className="text-xs text-red-600">
+          {createMut.error?.response?.data?.detail || "Failed to create restriction"}
+        </p>
+      )}
+
+      {/* Filter toggles */}
+      <div className="flex gap-1">
+        {["active", "inactive", "all"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1 text-xs rounded-full capitalize transition ${
+              filter === f ? "bg-slate-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-gray-400 self-center">{filtered.length} shown</span>
+      </div>
+
+      {/* List */}
+      {isLoading ? (
+        <p className="text-sm text-gray-400 py-4 text-center">Loading…</p>
+      ) : (
+        <ul className="divide-y divide-gray-100 max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+          {filtered.length === 0 && (
+            <li className="p-4 text-sm text-gray-400 text-center">No dietary restrictions</li>
+          )}
+          {filtered.map((r) => (
+            <li
+              key={r.id}
+              className={`flex items-center gap-2 px-3 py-2 ${!r.is_active ? "opacity-50" : ""}`}
+            >
+              <DietaryRestrictionIcon restriction={r} size={22} />
+              {editingId === r.id && !r.is_preset ? (
+                <form onSubmit={handleUpdateSubmit} className="flex gap-2 flex-1 items-center">
+                  <input
+                    autoFocus
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                  />
+                  <input
+                    type="color"
+                    value={editingColor}
+                    onChange={(e) => setEditingColor(e.target.value)}
+                    className="w-7 h-7 rounded cursor-pointer border border-gray-300"
+                  />
+                  <button
+                    type="submit"
+                    disabled={updateMut.isPending}
+                    className="px-3 py-1 bg-slate-700 text-white text-xs rounded hover:bg-slate-600 disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                    className="px-3 py-1 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm text-gray-800">
+                    {r.name}
+                    {r.is_preset && (
+                      <span className="ml-1.5 text-xs text-gray-400 font-normal">(preset)</span>
+                    )}
+                  </span>
+                  {!r.is_active && <span className="text-xs text-gray-400 italic">inactive</span>}
+                  {!r.is_preset && (
+                    <button
+                      onClick={() => startEdit(r)}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {!r.is_preset && (
+                    r.is_active ? (
+                      <button
+                        onClick={() => deactivateMut.mutate(r.id)}
+                        disabled={deactivateMut.isPending}
+                        className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => reactivateMut.mutate(r.id)}
+                        disabled={reactivateMut.isPending}
+                        className="text-xs text-emerald-600 hover:underline disabled:opacity-50"
+                      >
+                        Reactivate
+                      </button>
+                    )
+                  )}
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // ─── Recent Changes Tab ────────────────────────────────────────────────────────
 
 function RecentChangesTab({ onOpenItem, onOpenUser }) {
@@ -406,6 +649,7 @@ export default function ItemManagerModal({ open, onClose, onOpenItem }) {
   const handleRefresh = async () => {
     setRefreshing(true);
     await qc.invalidateQueries({ queryKey: ["categories"] });
+    await qc.invalidateQueries({ queryKey: ["dietary-restrictions"] });
     await qc.invalidateQueries({ queryKey: ["item-changes"] });
     setRefreshing(false);
   };
@@ -454,6 +698,7 @@ export default function ItemManagerModal({ open, onClose, onOpenItem }) {
         <div className="flex border-b border-gray-200 px-6">
           {[
             { key: "categories", label: "Categories" },
+            { key: "dietary", label: "Dietary Restrictions" },
             { key: "changes", label: "Recent Changes" },
           ].map(({ key, label }) => (
             <button
@@ -473,6 +718,7 @@ export default function ItemManagerModal({ open, onClose, onOpenItem }) {
         {/* Body */}
         <div className="p-6 flex-1 overflow-y-auto">
           {tab === "categories" && <CategoriesTab />}
+          {tab === "dietary" && <DietaryRestrictionsTab />}
           {tab === "changes" && (
             <RecentChangesTab
               onOpenItem={onOpenItem}

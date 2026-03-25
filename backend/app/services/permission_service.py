@@ -51,6 +51,10 @@ class Permission(str, Enum):
     CATEGORY_CREATE = "category:create"
     CATEGORY_EDIT = "category:edit"
 
+    # Dietary restriction management permissions
+    DIETARY_CREATE = "dietary:create"
+    DIETARY_EDIT = "dietary:edit"
+
 
 # Human-readable descriptions for each permission
 PERMISSION_DESCRIPTIONS = {
@@ -70,6 +74,8 @@ PERMISSION_DESCRIPTIONS = {
     Permission.USERS_MANAGE_PERMISSIONS: "Manage user permissions",
     Permission.CATEGORY_CREATE: "Create new categories when entering items",
     Permission.CATEGORY_EDIT: "Edit item categories and manage the category list",
+    Permission.DIETARY_CREATE: "Create new dietary restriction tags",
+    Permission.DIETARY_EDIT: "Edit and manage dietary restriction tags",
 }
 
 # Group permissions by category for UI display
@@ -101,6 +107,10 @@ PERMISSION_GROUPS = {
     "Category Management": [
         Permission.CATEGORY_CREATE,
         Permission.CATEGORY_EDIT,
+    ],
+    "Dietary Restrictions": [
+        Permission.DIETARY_CREATE,
+        Permission.DIETARY_EDIT,
     ],
 }
 
