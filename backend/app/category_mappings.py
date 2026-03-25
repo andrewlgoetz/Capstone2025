@@ -339,6 +339,125 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "Other": [],
 }
 
+# ---------------------------------------------------------------------------
+# CATEGORY_GROUPS: maps every granular category name → a broad display group.
+# Use this to aggregate inventory totals for pie/bar charts without changing
+# the underlying granular category values stored in the database.
+# ---------------------------------------------------------------------------
+CATEGORY_GROUPS: dict[str, str] = {
+    # Canned Soups
+    "Canned Soup - Chicken / Meat":       "Canned Soups",
+    "Canned Soup - Vegetable":            "Canned Soups",
+    "Canned Soup - Tomato":               "Canned Soups",
+    "Canned Soup - Cream / Bisque":       "Canned Soups",
+    "Canned Soup - Bean / Lentil":        "Canned Soups",
+    "Canned Soup - Other":                "Canned Soups",
+    # Canned Proteins
+    "Canned Fish":                        "Canned Proteins",
+    "Canned Meat":                        "Canned Proteins",
+    "Canned Beans":                       "Canned Proteins",
+    "Canned Protein - Other":             "Canned Proteins",
+    # Fresh Meat
+    "Meat - Ground Beef":                 "Fresh Meat",
+    "Meat - Beef (Cuts / Roast)":         "Fresh Meat",
+    "Meat - Ground Pork":                 "Fresh Meat",
+    "Meat - Pork (Chops / Roast)":        "Fresh Meat",
+    "Meat - Bacon / Ham":                 "Fresh Meat",
+    "Meat - Sausage":                     "Fresh Meat",
+    "Meat - Chicken (Whole / Pieces)":    "Fresh Meat",
+    "Meat - Ground Poultry":              "Fresh Meat",
+    "Meat - Turkey":                      "Fresh Meat",
+    "Meat - Fish / Seafood":              "Fresh Meat",
+    "Meat - Other":                       "Fresh Meat",
+    # Pasta & Noodles
+    "Pasta - Long":                       "Pasta & Noodles",
+    "Pasta - Short":                      "Pasta & Noodles",
+    "Pasta - Mac & Cheese Kit":           "Pasta & Noodles",
+    "Noodles - Instant / Asian":          "Pasta & Noodles",
+    "Pasta - Other":                      "Pasta & Noodles",
+    # Rice & Grains
+    "Rice - White":                       "Rice & Grains",
+    "Rice - Brown / Whole Grain":         "Rice & Grains",
+    "Other Grains":                       "Rice & Grains",
+    "Dried Beans / Lentils":              "Rice & Grains",
+    "Grains - Other":                     "Rice & Grains",
+    # Breakfast
+    "Cereal - Ready to Eat":              "Breakfast",
+    "Cereal - Hot / Oatmeal":             "Breakfast",
+    # Bread & Baked Goods
+    "Bread":                              "Bread & Baked Goods",
+    "Crackers":                           "Bread & Baked Goods",
+    "Flour / Baking Supplies":            "Bread & Baked Goods",
+    "Baked Goods - Other":                "Bread & Baked Goods",
+    # Canned Vegetables
+    "Canned Vegetables - Corn":           "Canned Vegetables",
+    "Canned Vegetables - Peas":           "Canned Vegetables",
+    "Canned Vegetables - Tomatoes":       "Canned Vegetables",
+    "Canned Vegetables - Mixed":          "Canned Vegetables",
+    "Canned Vegetables - Other":          "Canned Vegetables",
+    # Sauces & Condiments
+    "Pasta / Tomato Sauce":               "Sauces & Condiments",
+    "Cooking Sauces":                     "Sauces & Condiments",
+    "Condiments":                         "Sauces & Condiments",
+    "Sauces / Condiments - Other":        "Sauces & Condiments",
+    # Spreads
+    "Peanut Butter":                      "Spreads",
+    "Jam / Jelly":                        "Spreads",
+    "Other Spreads":                      "Spreads",
+    # Fresh Produce
+    "Fresh Produce - Root Vegetables":    "Fresh Produce",
+    "Fresh Produce - Leafy Greens":       "Fresh Produce",
+    "Fresh Produce - Other Vegetables":   "Fresh Produce",
+    "Fresh Produce - Citrus":             "Fresh Produce",
+    "Fresh Produce - Berries":            "Fresh Produce",
+    "Fresh Produce - Other Fruit":        "Fresh Produce",
+    # Frozen
+    "Frozen Vegetables":                  "Frozen",
+    "Frozen Fruit":                       "Frozen",
+    "Frozen Meals":                       "Frozen",
+    "Frozen Meat - Chicken / Poultry":    "Frozen",
+    "Frozen Meat - Beef / Pork":          "Frozen",
+    "Frozen Meat - Fish / Seafood":       "Frozen",
+    "Frozen Desserts":                    "Frozen",
+    "Frozen - Other":                     "Frozen",
+    # Dairy & Eggs
+    "Milk - Fresh":                       "Dairy & Eggs",
+    "Milk - Shelf-Stable":                "Dairy & Eggs",
+    "Cheese":                             "Dairy & Eggs",
+    "Yogurt":                             "Dairy & Eggs",
+    "Eggs":                               "Dairy & Eggs",
+    "Butter / Margarine":                 "Dairy & Eggs",
+    "Dairy - Other":                      "Dairy & Eggs",
+    # Non-Dairy
+    "Non-Dairy Milk":                     "Non-Dairy",
+    # Beverages
+    "Juice":                              "Beverages",
+    "Water":                              "Beverages",
+    "Coffee / Tea":                       "Beverages",
+    "Beverages - Other":                  "Beverages",
+    # Snacks
+    "Chips / Crisps":                     "Snacks",
+    "Cookies / Biscuits":                 "Snacks",
+    "Granola Bars / Energy Bars":         "Snacks",
+    "Nuts / Seeds / Trail Mix":           "Snacks",
+    "Snacks - Other":                     "Snacks",
+    # Baby & Infant
+    "Baby Formula":                       "Baby & Infant",
+    "Baby Food":                          "Baby & Infant",
+    "Baby - Other":                       "Baby & Infant",
+    # Personal Care
+    "Soap / Body Wash":                   "Personal Care",
+    "Dental Care":                        "Personal Care",
+    "Feminine Hygiene":                   "Personal Care",
+    "Other Personal Care":                "Personal Care",
+    # Household
+    "Cleaning Products":                  "Household",
+    "Laundry / Dish Soap":                "Household",
+    "Household - Other":                  "Household",
+    # Other
+    "Other":                              "Other",
+}
+
 # Pre-build reverse lookup: keyword → category name (for fast matching)
 _KEYWORD_TO_CATEGORY: dict[str, str] = {}
 for _cat, _kws in CATEGORY_KEYWORDS.items():

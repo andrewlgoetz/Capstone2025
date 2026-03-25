@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { getItemEmoji } from "./emojiMap";
+import WidgetInfo from "./WidgetInfo";
 
 const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
   const [threshold, setThreshold] = useState(defaultThreshold);
@@ -20,6 +21,7 @@ const LowStockItems = ({ inventory, defaultThreshold = 10 }) => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
            <h3 className="text-lg font-semibold text-slate-700">Low Stock</h3>
+           <WidgetInfo text="Lists items whose current quantity is at or below the threshold. Drag the slider to adjust the threshold. Items are sorted from lowest to highest quantity so the most urgent ones appear first." />
            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
              {lowStockItems.length}
            </span>
