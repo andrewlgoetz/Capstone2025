@@ -544,9 +544,9 @@ export default function DemandLineChart() {
             </select>
             {activeCat.model_type && !isInsufficient && (
               <span className="text-xs text-slate-400">
-                {activeCat.model_type}
+                {/* {activeCat.model_type} */}
                 {activeCat.weeks_of_history > 0
-                  ? ` · ${activeCat.weeks_of_history} wks history`
+                  ? `${activeCat.weeks_of_history} wks history`
                   : ""}
               </span>
             )}
