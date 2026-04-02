@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.db.session import SessionLocal
 from app.models.category import Category
 from app.models.activity_log import ActivityLog, ActivityAction
 from app.models.user import User
 from app.schemas.category_schema import CategoryCreate, CategoryRead, CategoryUpdate
 from app.dependencies import get_db, get_current_active_user
-from app.services.permission_service import Permission, require_permission, require_any_permission
+from app.services.permission_service import Permission, require_permission
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 

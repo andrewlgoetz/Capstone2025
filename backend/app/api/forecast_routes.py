@@ -33,7 +33,6 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.dependencies import get_db
 from app.forecasting.pipeline import (
-    DEFAULT_STALE_DAYS,
     DEFAULT_WEEKS_AHEAD,
     has_running_job,
     is_stale,

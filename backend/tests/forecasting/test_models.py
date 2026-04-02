@@ -12,14 +12,11 @@ Covers:
 
 import pytest
 import pandas as pd
-import numpy as np
-from datetime import datetime, timezone
 
 from app.forecasting.models import (
     NaiveMeanForecaster,
     ETSForecaster,
     CrostonTSBForecaster,
-    ForecastResult,
     select_forecaster,
     rolling_backtest,
 )

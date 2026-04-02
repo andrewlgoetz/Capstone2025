@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType
 from app.models.dietary_restriction import DietaryRestriction
-from app.schemas.inventory_schema import InventoryCreate, InventoryRead, InventoryUpdate
+from app.schemas.inventory_schema import InventoryCreate, InventoryUpdate
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone

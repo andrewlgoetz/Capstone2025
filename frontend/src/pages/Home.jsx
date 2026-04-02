@@ -10,8 +10,6 @@ import RedeemIcon from '@mui/icons-material/Redeem';
 
 import ScanSheet from '../components/ScanSheet';
 import { getItems } from '../services/api';
-import DemandLineChart from '../components/dashboard_widgets/DemandLineChart.jsx';
-import LowStockTrendChart from '../components/dashboard_widgets/StockTrend.jsx';
 import RecentActivity from '../components/home/RecentActivity.jsx';
 import CategoryDistribution from '../components/home/CategoryDistribution.jsx';
 

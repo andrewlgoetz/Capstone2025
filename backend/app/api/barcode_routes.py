@@ -1,10 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
 from app.services.barcode_service import lookup_barcode
 from app.models.inventory import InventoryItem
-from app.models.food_banks import FoodBank
 from app.models.user import User
 from app.models.category import Category
 from app.schemas.inventory_schema import * # InventoryCreate, InventoryRead,ScanRequest,ScanResponse,BarcodeInfo, ScanOutResponse

@@ -6,7 +6,7 @@ from typing import Optional
 from app.models.activity_log import ActivityLog, ActivityAction
 from app.models.user import User
 from app.models.role import Role
-from app.dependencies import get_db, get_current_active_user
+from app.dependencies import get_db
 from app.services.permission_service import Permission, require_any_permission
 
 router = APIRouter(prefix="/activity-log", tags=["Activity Log"])

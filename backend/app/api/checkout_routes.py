@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from app.dependencies import get_db
-from app.dependencies import get_current_active_user
 from app.models.user import User
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType

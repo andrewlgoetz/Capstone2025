@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, or_
 from typing import Optional, List
 from app.models.inventory import InventoryItem
@@ -12,9 +10,8 @@ from app.models.user_location import UserLocation
 from app.models.user import User
 from app.schemas.inventory_schema import (
     InventoryCreate, InventoryRead, InventoryUpdate,
-    BulkImportRequest, BulkImportResult, BulkImportItem
+    BulkImportRequest, BulkImportResult
 )
-import app.services.barcode_service as barcode_service
 import app.services.inventory_service as inventory_service
 from app.models.location import Location
 from app.dependencies import get_db

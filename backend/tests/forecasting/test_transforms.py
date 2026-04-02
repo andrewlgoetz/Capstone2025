@@ -8,7 +8,6 @@ Covers:
   - intermittency_ratio: zero-heavy vs sparse series
 """
 
-import pytest
 import pandas as pd
 from datetime import datetime, timezone
 
@@ -16,7 +15,6 @@ from app.category_mappings import normalize_category, CANONICAL_CATEGORIES
 from app.forecasting.transforms import (
     check_data_status,
     intermittency_ratio,
-    iso_week_start,
     to_weekly_series,
     THRESHOLD_INSUFFICIENT,
     THRESHOLD_LIMITED,
