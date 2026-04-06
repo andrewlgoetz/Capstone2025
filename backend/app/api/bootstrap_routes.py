@@ -25,11 +25,9 @@ def get_bootstrap_status(db: Session = Depends(get_db)):
 @router.post("", response_model=BootstrapResponse, status_code=status.HTTP_201_CREATED)
 def bootstrap_deployment(
     payload: BootstrapRequest,
-    db: Session = Depends(get_db),
 ):
-    """Initialize a fresh deployment exactly once."""
-    result = bootstrap_service.bootstrap_database(
-        db=db,
+    """Reset the database, rerun migrations, and apply bootstrap data."""
+    result = bootstrap_service.reset_migrate_and_bootstrap(
         food_bank_name=payload.food_bank_name.strip(),
         food_bank_address=(payload.food_bank_address or "").strip() or None,
         location_name=payload.location_name.strip(),
