@@ -82,8 +82,8 @@ def main() -> None:
         db.close()
 
     print(f"\n  Categories inserted: {result.inserted_categories}")
-    print(f"  Admin created: {result.admin_user.email}")
-    _print_password_box(result.admin_user.email, result.temporary_password)
+    print(f"  Admin created: {result.admin_email}")
+    _print_password_box(result.admin_email, result.temporary_password)
 
     print("\n" + "=" * 50)
     print("  Setup complete.")

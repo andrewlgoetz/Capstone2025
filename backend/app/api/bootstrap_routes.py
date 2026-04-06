@@ -37,8 +37,8 @@ def bootstrap_deployment(
     )
 
     return BootstrapResponse(
-        admin_email=result.admin_user.email,
+        admin_email=result.admin_email,
         temporary_password=result.temporary_password,
-        requires_password_change=result.admin_user.requires_password_change,
+        requires_password_change=result.requires_password_change,
         inserted_categories=result.inserted_categories,
     )

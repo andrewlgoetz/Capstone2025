@@ -20,7 +20,8 @@ from app.services import auth_service
 class BootstrapResult:
     """Bootstrap outcome returned to API and CLI callers."""
 
-    admin_user: User
+    admin_email: str
+    requires_password_change: bool
     temporary_password: str
     inserted_categories: int
 
@@ -117,7 +118,8 @@ def bootstrap_database(
     )
 
     return BootstrapResult(
-        admin_user=admin_user,
+        admin_email=admin_user.email,
+        requires_password_change=admin_user.requires_password_change,
         temporary_password=temporary_password,
         inserted_categories=inserted_categories,
     )
