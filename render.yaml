@@ -4,6 +4,7 @@
 ##   1. Fork this repo on GitHub
 ##   2. Go to render.com → New → Blueprint → connect your fork
 ##   3. Render provisions the database, backend, and frontend automatically
+##      (migrations run automatically on each deploy via startCommand)
 ##   4. After deploy: set CORS_ORIGINS and VITE_API_BASE_URL (see notes below)
 ##   5. Open the backend Shell tab → run: python setup.py
 ##
@@ -30,8 +31,7 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: alembic upgrade head
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
