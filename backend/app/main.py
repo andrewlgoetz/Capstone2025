@@ -1,4 +1,5 @@
 # main.py
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import inventory_routes, barcode_routes, category_routes, auth_routes, location_routes, activity_log_routes, checkout_routes, checkin_routes, dietary_routes
@@ -7,14 +8,18 @@ from app.models import *
 
 app = FastAPI(title="Inventory Management API")
 
-# Allowed origins
+# Allowed origins: always include local dev servers.
+# Add production/mobile origins via CORS_ORIGINS env var (comma-separated).
+# Example: CORS_ORIGINS=https://app.myfoodbank.org,exp://192.168.1.10:8081
+_extra_origins = [
+    o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()
+]
 origins = [
-    "http://localhost:5173",   # React dev server (Vite)
+    "http://localhost:5173",
     "http://localhost:5174",
-    "http://127.0.0.1:5173",   # sometimes needed too
+    "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
-    "*",  # <--- insecure but allows mobile connection (change later)
-    # "https://your-deployed-frontend.com",  # add prod later
+    *_extra_origins,
 ]
 
 # CORS middleware

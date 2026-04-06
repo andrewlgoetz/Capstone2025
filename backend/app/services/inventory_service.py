@@ -192,10 +192,12 @@ def get_item_by_barcode(barcode: str, db: Session) -> InventoryItem:
     return db_item
 
 def adjust_item_quantity(item_id: int, delta: int, db: Session, movement_type=None, user_id: int = None) -> InventoryItem:
-    # Load the existing item
+    # Load the existing item with a row-level lock to prevent lost updates
+    # when multiple users scan the same item simultaneously.
     db_item = (
         db.query(InventoryItem)
         .filter(InventoryItem.item_id == item_id)
+        .with_for_update()
         .first()
     )
     if not db_item:

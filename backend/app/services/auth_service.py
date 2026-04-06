@@ -14,7 +14,12 @@ from app.models.user import User
 from app.models.role import Role
 
 # Configuration - load from environment variables
-SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_urlsafe(32)
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -169,6 +174,17 @@ def is_admin(user: User, db: Session) -> bool:
 
 # --------------- User Management ---------------
 
+def default_bank_id(db):
+    # TEMP: until auth/multi-bank is implemented
+    return 1
+
+    # bank ID Expansion (later)
+        # bank = db.query(FoodBank).first()
+        # if not bank:
+        #     raise HTTPException(status_code=400, detail="No food bank found in the database.")
+        # return bank.bank_id
+
+
 def create_user(name: str, email: str, bank_id: int, role_id: Optional[int], db: Session) -> tuple[User, str]:
     """
     Create a new user with a temporary password.
@@ -202,7 +218,7 @@ def create_user(name: str, email: str, bank_id: int, role_id: Optional[int], db:
         name=name,
         email=email,
         password_hash=hash_password(temp_password),
-        bank_id=bank_id,
+        bank_id=default_bank_id(db),
         role_id=role_id,
         requires_password_change=True  # Force password change on first login
     )
