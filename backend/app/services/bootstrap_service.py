@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.category_mappings import FOODBANK_CATEGORIES
 from app.constants import BANK_ID
+from app.db.session import SessionLocal
 from app.models.category import Category
 from app.models.food_banks import FoodBank
 from app.models.location import Location
@@ -120,3 +121,32 @@ def bootstrap_database(
         temporary_password=temporary_password,
         inserted_categories=inserted_categories,
     )
+
+
+def reset_migrate_and_bootstrap(
+    *,
+    food_bank_name: str,
+    food_bank_address: str | None,
+    location_name: str,
+    location_address: str | None,
+    admin_email: str,
+    admin_name: str,
+) -> BootstrapResult:
+    """Reset the database, rerun migrations, and apply bootstrap data."""
+    from reset_db import reset_and_migrate_database
+
+    reset_and_migrate_database()
+
+    db = SessionLocal()
+    try:
+        return bootstrap_database(
+            db=db,
+            food_bank_name=food_bank_name,
+            food_bank_address=food_bank_address,
+            location_name=location_name,
+            location_address=location_address,
+            admin_email=admin_email,
+            admin_name=admin_name,
+        )
+    finally:
+        db.close()

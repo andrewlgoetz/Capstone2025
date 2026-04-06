@@ -128,36 +128,8 @@ ORIGINAL_CATEGORIES = [
 
 
 def upgrade() -> None:
-    conn = op.get_bind()
-
-    new_names = [c["name"] for c in FOODBANK_CATEGORIES]
-
-    # Deactivate any categories not in the new list
-    conn.execute(
-        sa.text(
-            "UPDATE categories SET is_active = false "
-            "WHERE name != ALL(:names)"
-        ),
-        {"names": new_names},
-    )
-
-    # Upsert all new categories
-    for cat in FOODBANK_CATEGORIES:
-        conn.execute(
-            sa.text(
-                "INSERT INTO categories (name, description, display_order, is_active) "
-                "VALUES (:name, :description, :display_order, true) "
-                "ON CONFLICT (name) DO UPDATE SET "
-                "  is_active = true, "
-                "  description = EXCLUDED.description, "
-                "  display_order = EXCLUDED.display_order"
-            ),
-            {
-                "name": cat["name"],
-                "description": cat["description"],
-                "display_order": cat["display_order"],
-            },
-        )
+    """Preserve migration order without seeding category rows."""
+    pass
 
 
 def downgrade() -> None:

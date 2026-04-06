@@ -32,15 +32,6 @@ def upgrade() -> None:
         sa.Column('dietary_restriction_id', sa.Integer(), sa.ForeignKey('dietary_restrictions.id', ondelete='CASCADE'), primary_key=True),
     )
 
-    # Seed preset restrictions
-    op.execute("""
-        INSERT INTO dietary_restrictions (name, is_preset, preset_type, color, is_active)
-        VALUES
-            ('Halal', true, 'halal', null, true),
-            ('Kosher', true, 'kosher', null, true)
-    """)
-
-
 def downgrade() -> None:
     op.drop_table('item_dietary_restrictions')
     op.drop_table('dietary_restrictions')

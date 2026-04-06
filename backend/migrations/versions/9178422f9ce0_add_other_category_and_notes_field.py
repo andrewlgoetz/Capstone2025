@@ -20,23 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Add "Other" category
-    from sqlalchemy import table, column, String, Integer, Boolean
-    categories_table = table('categories',
-        column('name', String),
-        column('display_order', Integer),
-        column('is_active', Boolean)
-    )
-
-    op.execute(
-        categories_table.insert().values(
-            name="Other",
-            display_order=11,
-            is_active=True
-        )
-    )
-
-    # Add category_notes field to inventory table
     op.add_column('inventory', sa.Column('category_notes', sa.String(), nullable=True))
 
 

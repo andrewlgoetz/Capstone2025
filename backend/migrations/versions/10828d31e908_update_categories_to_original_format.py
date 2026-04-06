@@ -19,40 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
-    # Delete all existing categories
-    op.execute("DELETE FROM categories")
-
-    # Reseed with original category format
-    categories = [
-        {"name": "Canned Goods", "display_order": 1},
-        {"name": "Snacks", "display_order": 2},
-        {"name": "Spreads", "display_order": 3},
-        {"name": "Frozen", "display_order": 4},
-        {"name": "Meat", "display_order": 5},
-        {"name": "Grains", "display_order": 6},
-        {"name": "Refrigerated", "display_order": 7},
-        {"name": "Produce", "display_order": 8},
-        {"name": "Beverages", "display_order": 9},
-        {"name": "Dairy", "display_order": 10},
-    ]
-
-    # Insert categories
-    from sqlalchemy import table, column, String, Integer, Boolean
-    categories_table = table('categories',
-        column('name', String),
-        column('display_order', Integer),
-        column('is_active', Boolean)
-    )
-
-    for cat in categories:
-        op.execute(
-            categories_table.insert().values(
-                name=cat["name"],
-                display_order=cat["display_order"],
-                is_active=True
-            )
-        )
+    """Preserve migration order without modifying category rows."""
+    pass
 
 
 def downgrade() -> None:
