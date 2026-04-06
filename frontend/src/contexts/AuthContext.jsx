@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { getMyPermissions } from '../services/api';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   const fetchUserInfo = async (token) => {
     try {
       console.log('Fetching user info with token:', token.substring(0, 20) + '...');
-      const response = await fetch('http://127.0.0.1:8000/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

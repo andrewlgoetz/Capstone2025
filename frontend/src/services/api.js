@@ -1,9 +1,27 @@
 import axios from "axios";
 import { jwtDecode } from 'jwt-decode';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
+  baseURL: API_BASE_URL,
 });
+
+// Shared refresh promise — prevents concurrent requests from each triggering
+// their own refresh call when the token is close to expiry.
+let _refreshPromise = null;
+
+async function refreshToken(token) {
+  if (!_refreshPromise) {
+    _refreshPromise = axios
+      .post(`${API_BASE_URL}/auth/refresh`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then((res) => res.data.access_token)
+      .finally(() => { _refreshPromise = null; });
+  }
+  return _refreshPromise;
+}
 
 // Request interceptor - add JWT token and auto-refresh if needed
 api.interceptors.request.use(
@@ -18,12 +36,8 @@ api.interceptors.request.use(
         const fiveMinutes = 5 * 60 * 1000;
 
         if (expiresIn < fiveMinutes && expiresIn > 0) {
-          // Token expiring soon, refresh it
           try {
-            const response = await axios.post('http://127.0.0.1:8000/auth/refresh', {}, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            token = response.data.access_token;
+            token = await refreshToken(token);
             localStorage.setItem('access_token', token);
           } catch (error) {
             // Refresh failed, will use old token (might get 401)
@@ -66,7 +80,7 @@ export async function loginUser(email, password) {
   formData.append('username', email);  // OAuth2 uses 'username' field
   formData.append('password', password);
 
-  const res = await axios.post('http://127.0.0.1:8000/auth/login', formData, {
+  const res = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
