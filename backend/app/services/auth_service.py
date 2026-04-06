@@ -12,6 +12,7 @@ import os
 
 from app.models.user import User
 from app.models.role import Role
+from app.constants import BANK_ID
 
 # Configuration - load from environment variables
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -174,17 +175,6 @@ def is_admin(user: User, db: Session) -> bool:
 
 # --------------- User Management ---------------
 
-def default_bank_id(db):
-    # TEMP: until auth/multi-bank is implemented
-    return 1
-
-    # bank ID Expansion (later)
-        # bank = db.query(FoodBank).first()
-        # if not bank:
-        #     raise HTTPException(status_code=400, detail="No food bank found in the database.")
-        # return bank.bank_id
-
-
 def create_user(name: str, email: str, bank_id: int, role_id: Optional[int], db: Session) -> tuple[User, str]:
     """
     Create a new user with a temporary password.
@@ -218,7 +208,7 @@ def create_user(name: str, email: str, bank_id: int, role_id: Optional[int], db:
         name=name,
         email=email,
         password_hash=hash_password(temp_password),
-        bank_id=default_bank_id(db),
+        bank_id=BANK_ID,
         role_id=role_id,
         requires_password_change=True  # Force password change on first login
     )

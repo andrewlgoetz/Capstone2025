@@ -8,6 +8,7 @@ from app.schemas.inventory_schema import InventoryCreate, InventoryUpdate
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
+from app.constants import BANK_ID
 
 
 def get_db():
@@ -26,7 +27,7 @@ def normalize_barcode(code):
 
 
 def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int = None, bank_id: int = None):
-    bank_id = bank_id or getattr(item, "bank_id", None)
+    bank_id = bank_id = BANK_ID # bank_id or getattr(item, "bank_id", None)
     if not bank_id:
         raise HTTPException(status_code=400, detail="bank_id is required to create an inventory item.")
     code = normalize_barcode(getattr(item, "barcode", None))
