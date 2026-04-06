@@ -157,10 +157,10 @@ def seed_inventory():
 
 
 def main():
-    # seed_roles()
-    # seed_food_banks()
+    seed_roles()
+    seed_food_banks()
     # # seed_users() skipped — users are already seeded by the auth migration (e5f6g7h8i9j0)
-    # seed_locations()
+    seed_locations()
     seed_inventory()
     print("\nAll data seeded successfully!")
     print("\nTest user credentials (all passwords: password123):")
