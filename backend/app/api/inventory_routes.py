@@ -319,6 +319,17 @@ def get_allowed_location_ids(user: User, db: Session, requested_ids: Optional[Li
     return assigned
 
 
+def validate_location_bank(location_id: Optional[int], bank_id: int, db: Session):
+    """Raise 400 if location_id is set but belongs to a different bank."""
+    if not location_id:
+        return
+    location = db.query(Location).filter(Location.location_id == location_id).first()
+    if not location:
+        raise HTTPException(status_code=400, detail="Location not found.")
+    if location.bank_id != bank_id:
+        raise HTTPException(status_code=400, detail="Location does not belong to this food bank.")
+
+
 def log_activity(db: Session, user_id: int, action: ActivityAction, entity_id: int, item_name: str, details: str = None):
     """Record an inventory action in the activity log."""
     entry = ActivityLog(
@@ -339,7 +350,8 @@ def add_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_all_permissions(Permission.INVENTORY_VIEW, Permission.INVENTORY_CREATE))
 ):
-    new_item = inventory_service.add_item(item, db, current_user.user_id)
+    validate_location_bank(item.location_id, current_user.bank_id, db)
+    new_item = inventory_service.add_item(item, db, current_user.user_id, bank_id=current_user.bank_id)
     log_activity(db, current_user.user_id, ActivityAction.CREATE, new_item.item_id, new_item.name,
                  f"Added with qty {new_item.quantity}")
     # Log category assignment separately so supervisors can review selections
@@ -360,6 +372,8 @@ def update_item(
     sent = item.model_dump(exclude_unset=True, exclude={"movement_type", "movement_reason"})
     old_vals = {k: getattr(old_item, k, None) for k in sent} if old_item else {}
 
+    if "location_id" in sent:
+        validate_location_bank(sent["location_id"], current_user.bank_id, db)
     updated = inventory_service.update_item(item_id, item, db, current_user.user_id)
 
     # build readable diff: only fields that actually changed

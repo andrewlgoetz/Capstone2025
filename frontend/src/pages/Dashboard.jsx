@@ -184,8 +184,8 @@ const Dashboard = () => {
           <ExpiringSoon data={inventoryData} days={30} />
 
           {/* Trend charts — receive the full dateRange object */}
-          <MovementSummary dateRange={dateRange} />
-          <LowStockTrend dateRange={dateRange} defaultThreshold={10} />
+          <MovementSummary dateRange={dateRange} locationIds={selectedLocationIds} />
+          <LowStockTrend dateRange={dateRange} defaultThreshold={10} locationIds={selectedLocationIds} />
 
           {/* Demand forecast — spans full width */}
           <div className="lg:col-span-2">

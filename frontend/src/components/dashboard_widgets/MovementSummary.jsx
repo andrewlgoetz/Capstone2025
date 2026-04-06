@@ -19,7 +19,7 @@ function resolveGranularity(dateRange) {
   return "monthly";
 }
 
-export default function MovementSummary({ dateRange }) {
+export default function MovementSummary({ dateRange, locationIds }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
@@ -35,14 +35,19 @@ export default function MovementSummary({ dateRange }) {
     setError(null);
 
     api.get("/inventory/movement-summary", {
-      params: { start_date: startISO, end_date: endISO, granularity },
+      params: {
+        start_date: startISO,
+        end_date: endISO,
+        granularity,
+        ...(locationIds?.length && { location_ids: locationIds.join(",") }),
+      },
     })
       .then((res) => { if (!cancelled) setData(res.data); })
       .catch((err) => { if (!cancelled) setError(err?.response?.data?.detail ?? "Failed to load."); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [startISO, endISO, granularity]);
+  }, [startISO, endISO, granularity, locationIds]);
 
   const totalInbound  = data?.inbound?.reduce((a, b) => a + b, 0) ?? 0;
   const totalOutbound = data?.outbound?.reduce((a, b) => a + b, 0) ?? 0;

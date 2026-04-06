@@ -25,20 +25,10 @@ def normalize_barcode(code):
     return code or None
 
 
-def default_bank_id(db):
-    # TEMP: until auth/multi-bank is implemented
-    return 1
-
-    #TODO LATER: how will bankid be stored, will changing locations change bank id? 
-
-        # bank = db.query(FoodBank).first()
-        # if not bank:
-        #     raise HTTPException(status_code=400, detail="No food bank found in the database.")
-        # return bank.bank_id
-
-
-def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int = None):
-    bank_id = getattr(item, "bank_id", None) or default_bank_id(db)
+def add_item(item: InventoryCreate, db: Session = Depends(get_db), user_id: int = None, bank_id: int = None):
+    bank_id = bank_id or getattr(item, "bank_id", None)
+    if not bank_id:
+        raise HTTPException(status_code=400, detail="bank_id is required to create an inventory item.")
     code = normalize_barcode(getattr(item, "barcode", None))
 
     if code:
@@ -156,7 +146,6 @@ def update_item(item_id: int, item: InventoryUpdate, db: Session, user_id: int =
     
     loc_changed = new_loc is not None and new_loc != old_loc
 
-    # --- UPDATED: Trigger on ANY quantity change (not just negative) ---
     should_create_movement = (
         (qty_delta is not None and qty_delta != 0)
         or loc_changed

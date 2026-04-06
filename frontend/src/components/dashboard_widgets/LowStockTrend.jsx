@@ -25,7 +25,7 @@ function resolveGranularity(dateRange) {
   return "monthly";
 }
 
-export default function LowStockTrend({ dateRange, defaultThreshold = DEFAULT_THRESHOLD }) {
+export default function LowStockTrend({ dateRange, defaultThreshold = DEFAULT_THRESHOLD, locationIds }) {
   const [threshold, setThreshold] = useState(
     THRESHOLD_OPTIONS.includes(defaultThreshold) ? defaultThreshold : DEFAULT_THRESHOLD
   );
@@ -50,6 +50,7 @@ export default function LowStockTrend({ dateRange, defaultThreshold = DEFAULT_TH
         end_date:    endISO,
         threshold,
         granularity,
+        ...(locationIds?.length && { location_ids: locationIds.join(",") }),
       },
     })
       .then((res) => {
@@ -63,7 +64,7 @@ export default function LowStockTrend({ dateRange, defaultThreshold = DEFAULT_TH
       });
 
     return () => { cancelled = true; };
-  }, [startISO, endISO, threshold, granularity]);
+  }, [startISO, endISO, threshold, granularity, locationIds]);
 
   const summary = useMemo(() => {
     const vals = seriesData?.values ?? [];
