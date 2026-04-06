@@ -24,6 +24,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from sqlalchemy import inspect
+    existing = inspect(op.get_bind()).get_table_names()
+    if 'forecast_runs' in existing and 'forecast_values' in existing:
+        return  # already created by d8e9f0a1b2c3_add_forecast_tables
+
     op.create_table(
         'forecast_runs',
         sa.Column(
