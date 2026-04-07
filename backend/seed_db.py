@@ -11,6 +11,7 @@ All seeded users are given the Volunteer (basic user) role under bank_id=1.
 
 import bcrypt
 from datetime import date
+from sqlalchemy import text
 from app.db.session import SessionLocal
 from app.models.food_banks import FoodBank
 from app.models.role import Role
@@ -177,11 +178,52 @@ def seed_inventory(db_session=None, main_location_id=None):
     print("Inventory seeded.")
 
 
+def reset_sequences(db_session):
+    """Reset all PostgreSQL sequences to be above the current max ID in each table.
+
+    When rows are inserted with explicit primary key values (as in seeding),
+    PostgreSQL's auto-increment sequences are not advanced. This causes the next
+    auto-generated ID to collide with an already-seeded row. This function
+    detects all sequences and resets each one to MAX(pk) so subsequent inserts
+    work correctly. No-op on SQLite and other non-PostgreSQL databases.
+    """
+    engine = db_session.get_bind()
+    if engine.dialect.name != "postgresql":
+        return
+
+    rows = db_session.execute(text("""
+        SELECT
+            s.relname   AS seq_name,
+            n.nspname   AS seq_schema,
+            t.relname   AS tbl_name,
+            a.attname   AS col_name
+        FROM pg_class s
+        JOIN pg_depend d      ON d.objid        = s.oid
+        JOIN pg_class t       ON t.oid           = d.refobjid
+        JOIN pg_attribute a   ON a.attrelid      = t.oid
+                              AND a.attnum        = d.refobjsubid
+        JOIN pg_namespace n   ON n.oid           = s.relnamespace
+        WHERE s.relkind = 'S'
+          AND d.deptype  = 'a'
+    """)).fetchall()
+
+    for seq_name, seq_schema, tbl_name, col_name in rows:
+        qualified_seq = f'"{seq_schema}"."{seq_name}"'
+        db_session.execute(text(
+            f"SELECT setval('{qualified_seq}', "
+            f"COALESCE((SELECT MAX({col_name}) FROM {tbl_name}), 1))"
+        ))
+
+    db_session.commit()
+    print("Sequences reset.")
+
+
 def seed_dummy_inventory_bundle(db_session=None, main_location_id=None):
     db_session = db_session or db
     seed_users(db_session)
     seed_locations(db_session)
     seed_inventory(db_session, main_location_id=main_location_id)
+    reset_sequences(db_session)
 
 
 def main():
