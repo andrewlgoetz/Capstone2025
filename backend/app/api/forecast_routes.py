@@ -24,8 +24,11 @@ by the existing reports / dashboard features.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -207,7 +210,7 @@ def get_forecasts(
 # POST /forecasts/run
 # ---------------------------------------------------------------------------
 
-def _expire_stuck_runs(bank_id: int, db: Session, max_minutes: int = 15) -> None:
+def _expire_stuck_runs(bank_id: int, db: Session, max_minutes: int = 3) -> None:
     """Mark 'running' jobs older than max_minutes as 'failed'.
 
     A request that timed out on the host (e.g. Render killing a long HTTP
@@ -233,6 +236,7 @@ def _expire_stuck_runs(bank_id: int, db: Session, max_minutes: int = 15) -> None
 
 def _run_forecast_background(bank_id: int, user_id: int, weeks_ahead: int) -> None:
     """Entry point for BackgroundTasks: opens its own DB session."""
+    logger.info("Background forecast starting for bank %d (user %s)", bank_id, user_id)
     db = SessionLocal()
     try:
         run_forecast(
@@ -241,8 +245,9 @@ def _run_forecast_background(bank_id: int, user_id: int, weeks_ahead: int) -> No
             weeks_ahead=weeks_ahead,
             triggered_by_user_id=user_id,
         )
-    except Exception:
-        pass  # run_forecast already persists the 'failed' status
+        logger.info("Background forecast completed for bank %d", bank_id)
+    except Exception as exc:
+        logger.error("Background forecast failed for bank %d: %s", bank_id, exc, exc_info=True)
     finally:
         db.close()
 
@@ -489,11 +494,13 @@ def _background_run_forecast(bank_id: int) -> None:
     request-scoped session is already closed.  We create a new session here
     and close it ourselves.
     """
+    logger.info("Auto-staleness forecast starting for bank %d", bank_id)
     db = SessionLocal()
     try:
         run_forecast(bank_id=bank_id, db=db)
-    except Exception:
-        pass   # errors are recorded in the forecast_runs row; don't crash the worker
+        logger.info("Auto-staleness forecast completed for bank %d", bank_id)
+    except Exception as exc:
+        logger.error("Auto-staleness forecast failed for bank %d: %s", bank_id, exc, exc_info=True)
     finally:
         db.close()
 

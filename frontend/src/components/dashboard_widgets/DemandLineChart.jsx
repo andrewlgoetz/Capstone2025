@@ -332,6 +332,10 @@ export default function DemandLineChart() {
   const handleTriggerRun = async () => {
     setTriggering(true);
     setTriggerError(null);
+
+    // Snapshot the current run_id so we can detect when a new run completes
+    const previousRunId = forecastResponse?.run_id ?? null;
+
     try {
       await triggerForecastRun(8);
     } catch (err) {
@@ -344,8 +348,9 @@ export default function DemandLineChart() {
       }
     }
 
-    // Poll every 5 s until the run completes (max 2 min)
-    const maxAttempts = 24;
+    // Poll every 5 s until the run completes (max 5 min)
+    const maxAttempts = 60;
+    let found = false;
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, 5000));
       try {
@@ -353,7 +358,9 @@ export default function DemandLineChart() {
           getForecastCategory(8),
           getForecastAggregate(),
         ]);
-        if (catData.model_health !== "no_data") {
+        // A new run has completed when run_id changed OR model_health is no longer no_data
+        const newRunArrived = catData.run_id && catData.run_id !== previousRunId;
+        if (newRunArrived || catData.model_health !== "no_data") {
           setForecastResponse(catData);
           setAggregateResponse(aggData);
           setSelectedCategory((prev) => {
@@ -363,11 +370,17 @@ export default function DemandLineChart() {
               catData.categories?.[0];
             return first?.category ?? null;
           });
+          found = true;
           break;
         }
       } catch {
         // network hiccup — keep polling
       }
+    }
+
+    // If polling timed out, do one final refresh to pick up any completed run
+    if (!found) {
+      fetchForecasts();
     }
 
     setTriggering(false);
