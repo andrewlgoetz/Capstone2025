@@ -35,6 +35,7 @@ def bootstrap_deployment(
         admin_email=payload.admin_email.strip().lower(),
         admin_name=payload.admin_name.strip(),
         include_dummy_inventory=payload.include_dummy_inventory,
+        include_dummy_forecast_movements=payload.include_dummy_forecast_movements,
     )
 
     return BootstrapResponse(
@@ -43,4 +44,5 @@ def bootstrap_deployment(
         requires_password_change=result.requires_password_change,
         inserted_categories=result.inserted_categories,
         included_dummy_inventory=result.included_dummy_inventory,
+        included_dummy_forecast_movements=result.included_dummy_forecast_movements,
     )
