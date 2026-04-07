@@ -1,7 +1,7 @@
 
 # Backend Setup Guide 
 
-This document explains how to set up, run, and extend the backend for the project.
+This document explains how to set up and run this project for development.
 
 ## Overview
 

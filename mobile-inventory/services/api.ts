@@ -1,10 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-export const API_URL = 'http://xxx:8000';
-// example: 
-// export const API_URL = 'http://192.168.1.129:8000';
-// and run the backend w/  uvicorn app.main:app --reload --host 0.0.0.0
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 const TOKEN_KEY = 'access_token';
 

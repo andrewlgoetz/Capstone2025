@@ -171,6 +171,46 @@ Use Postman for:
 - `POST /auth/login`
 - `GET /auth/me`
 
+## 9. Mobile App Deployment
+
+The mobile app (`mobile-inventory/`) is built and distributed separately from the Render deployment using Expo's EAS (Expo Application Services).
+
+### Prerequisites
+
+- An Expo account (free at expo.dev)
+- EAS CLI installed: `sudo npm install -g eas-cli`
+
+### Set the backend URL
+
+Create `mobile-inventory/.env` (not committed to git):
+
+```text
+EXPO_PUBLIC_API_URL=https://your-backend.onrender.com
+```
+
+Replace with your actual Render backend URL.
+
+### Android build (no app store required)
+
+```bash
+eas login
+cd mobile-inventory
+eas build --platform android --profile preview
+```
+
+The build runs on Expo's servers (~10–15 minutes). When complete, EAS provides a QR code and download link. Android users can scan the QR code or open the link to install the `.apk` directly on their device (enable "Install from unknown sources" if prompted).
+
+### iOS (demo only)
+
+Install **Expo Go** from the App Store, then run:
+
+```bash
+cd mobile-inventory
+npx expo start
+```
+
+Scan the QR code from the terminal using the iPhone camera. The app will open in Expo Go. All devices must be on the same WiFi network as the host machine to load the app bundle, but API calls go to the Render backend and work from any network.
+
 ## Summary
 
 The deployment flow is:
@@ -181,3 +221,4 @@ The deployment flow is:
 4. Redeploy frontend and backend
 5. Send `POST /bootstrap`
 6. Log in with the generated admin account
+7. For mobile: build Android via EAS or run iOS via Expo Go

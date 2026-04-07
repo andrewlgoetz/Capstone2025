@@ -145,7 +145,7 @@ export default function App(): React.ReactElement {
           .map((cat: any) => cat.name);
         setCategories(activeCategories);
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        //console.error('Failed to fetch categories:', error);
         setCategories([
           "Canned & Packaged",
           "Fresh Produce",
