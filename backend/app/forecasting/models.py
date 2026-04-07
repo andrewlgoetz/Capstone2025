@@ -143,6 +143,7 @@ class ETSForecaster(BaseForecaster):
         self._fit_result = None
         self._training_index: Optional[pd.DatetimeIndex] = None
         self._trend_used: Optional[str] = None
+        self._seasonal_used: bool = False
 
     def fit(self, series: pd.Series) -> None:
         from statsmodels.tsa.holtwinters import ExponentialSmoothing
@@ -150,20 +151,21 @@ class ETSForecaster(BaseForecaster):
         self._training_index = series.index
         values = series.values.astype(float)
 
-        # Only use additive trend when there is enough data for stable estimation.
-        # Damped trend prevents runaway extrapolation beyond the training window —
-        # the forecast converges toward a flat level rather than projecting a steep
-        # trend indefinitely.
         trend = "add" if len(values) >= 12 else None
         use_damped = trend is not None
         self._trend_used = trend
+
+        # Holt-Winters seasonal component requires at least 2 full cycles (104 weeks).
+        use_seasonal = len(values) >= 104
+        self._seasonal_used = use_seasonal
 
         def _build_model():
             return ExponentialSmoothing(
                 values,
                 trend=trend,
                 damped_trend=use_damped,
-                seasonal=None,
+                seasonal="add" if use_seasonal else None,
+                seasonal_periods=52 if use_seasonal else None,
                 initialization_method="estimated",
             )
 
@@ -238,9 +240,9 @@ class ETSForecaster(BaseForecaster):
     def get_params(self) -> Dict[str, Any]:
         if self._fit_result is None:
             return {}
-        params: Dict[str, Any] = {"trend": self._trend_used}
+        params: Dict[str, Any] = {"trend": self._trend_used, "seasonal": self._seasonal_used}
         result_params = getattr(self._fit_result, "params", {}) or {}
-        for attr in ("smoothing_level", "smoothing_trend", "initial_level", "initial_trend"):
+        for attr in ("smoothing_level", "smoothing_trend", "smoothing_seasonal", "initial_level", "initial_trend"):
             val = result_params.get(attr)
             if val is not None and not (isinstance(val, float) and np.isnan(val)):
                 params[attr] = round(float(val), 6)
