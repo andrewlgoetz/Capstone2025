@@ -1,8 +1,15 @@
 # Inventory Tracking System (ITS) for Non-Profits
-**McMaster University CS Capstone 2025**
+## McMaster University CS Capstone 2025
 
-**Members: Alyssa Wang &lt;wanga121@mcmaster.ca>; Victor Moucattash &lt;moucattv@mcmaster.ca>; Taaliah Ayub &lt;ayubt@mcmaster.ca>; Haley Johnson &lt;johnsh20@mcmaster.ca>; Nika Khajehpour &lt;khajehn@mcmaster.ca>; Insiyah Yusuf Ujjainwala &lt;ujjainwi@mcmaster.ca>**
----
+**Members:**
+
+Alyssa Wang &lt;wanga121@mcmaster.ca> \
+Andrew Goetz &lt;goetza3@mcmaster.ca> \
+Haley Johnson &lt;johnsh20@mcmaster.ca> \
+Insiyah Yusuf Ujjainwala &lt;ujjainwi@mcmaster.ca> \
+Nika Khajehpour &lt;khajehn@mcmaster.ca> \
+Taaliah Ayub &lt;ayubt@mcmaster.ca> \
+Victor Moucattash &lt;moucattv@mcmaster.ca> \
 
 ## Accessing the Deployed App
 
