@@ -9,7 +9,7 @@ Haley Johnson &lt;johnsh20@mcmaster.ca> \
 Insiyah Yusuf Ujjainwala &lt;ujjainwi@mcmaster.ca> \
 Nika Khajehpour &lt;khajehn@mcmaster.ca> \
 Taaliah Ayub &lt;ayubt@mcmaster.ca> \
-Victor Moucattash &lt;moucattv@mcmaster.ca> \
+Victor Moucattash &lt;moucattv@mcmaster.ca> 
 
 ## Accessing the Deployed App
 
