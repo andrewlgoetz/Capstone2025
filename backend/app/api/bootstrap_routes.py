@@ -34,6 +34,7 @@ def bootstrap_deployment(
         location_address=(payload.location_address or "").strip() or None,
         admin_email=payload.admin_email.strip().lower(),
         admin_name=payload.admin_name.strip(),
+        include_dummy_inventory=payload.include_dummy_inventory,
     )
 
     return BootstrapResponse(
@@ -41,4 +42,5 @@ def bootstrap_deployment(
         temporary_password=result.temporary_password,
         requires_password_change=result.requires_password_change,
         inserted_categories=result.inserted_categories,
+        included_dummy_inventory=result.included_dummy_inventory,
     )

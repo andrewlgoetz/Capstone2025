@@ -25,6 +25,7 @@ class BootstrapResult:
     requires_password_change: bool
     temporary_password: str
     inserted_categories: int
+    included_dummy_inventory: bool
 
 
 def is_bootstrap_required(db: Session) -> bool:
@@ -132,6 +133,7 @@ def bootstrap_database(
     location_address: str | None,
     admin_email: str,
     admin_name: str,
+    include_dummy_inventory: bool = False,
 ) -> BootstrapResult:
     """Initialize a new deployment exactly once."""
     ensure_bootstrap_required(db)
@@ -140,7 +142,7 @@ def bootstrap_database(
     inserted_categories = seed_categories(db)
     seed_dietary_restrictions(db)
     create_food_bank(db, name=food_bank_name, address=food_bank_address)
-    create_location(db, name=location_name, address=location_address)
+    location = create_location(db, name=location_name, address=location_address)
     admin_user, temporary_password = auth_service.create_user(
         name=admin_name,
         email=admin_email,
@@ -148,12 +150,17 @@ def bootstrap_database(
         role_id=1,
         db=db,
     )
+    if include_dummy_inventory:
+        from seed_db import seed_dummy_inventory_bundle
+
+        seed_dummy_inventory_bundle(db, main_location_id=location.location_id)
 
     return BootstrapResult(
         admin_email=admin_user.email,
         requires_password_change=admin_user.requires_password_change,
         temporary_password=temporary_password,
         inserted_categories=inserted_categories,
+        included_dummy_inventory=include_dummy_inventory,
     )
 
 
@@ -165,6 +172,7 @@ def reset_migrate_and_bootstrap(
     location_address: str | None,
     admin_email: str,
     admin_name: str,
+    include_dummy_inventory: bool = False,
 ) -> BootstrapResult:
     """Reset the database, rerun migrations, and apply bootstrap data."""
     from reset_db import reset_and_migrate_database
@@ -181,6 +189,7 @@ def reset_migrate_and_bootstrap(
             location_address=location_address,
             admin_email=admin_email,
             admin_name=admin_name,
+            include_dummy_inventory=include_dummy_inventory,
         )
     finally:
         db.close()

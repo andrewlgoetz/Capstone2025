@@ -69,6 +69,10 @@ def main() -> None:
             print("[ERROR] A name is required.")
             sys.exit(1)
 
+        include_dummy_inventory = (
+            input("  Seed dummy inventory for testing? [y/N]: ").strip().lower() == "y"
+        )
+
         result = bootstrap_service.bootstrap_database(
             db=db,
             food_bank_name=food_bank_name,
@@ -77,12 +81,14 @@ def main() -> None:
             location_address=location_address,
             admin_email=admin_email,
             admin_name=admin_name,
+            include_dummy_inventory=include_dummy_inventory,
         )
     finally:
         db.close()
 
     print(f"\n  Categories inserted: {result.inserted_categories}")
     print(f"  Admin created: {result.admin_email}")
+    print(f"  Dummy inventory seeded: {'yes' if result.included_dummy_inventory else 'no'}")
     _print_password_box(result.admin_email, result.temporary_password)
 
     print("\n" + "=" * 50)

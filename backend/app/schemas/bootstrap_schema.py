@@ -12,6 +12,7 @@ class BootstrapRequest(BaseModel):
     location_address: str | None = None
     admin_email: EmailStr
     admin_name: str = Field(..., min_length=1)
+    include_dummy_inventory: bool = False
 
 
 class BootstrapStatusResponse(BaseModel):
@@ -27,4 +28,5 @@ class BootstrapResponse(BaseModel):
     temporary_password: str
     requires_password_change: bool
     inserted_categories: int
+    included_dummy_inventory: bool = False
     message: str = "Bootstrap completed successfully"
