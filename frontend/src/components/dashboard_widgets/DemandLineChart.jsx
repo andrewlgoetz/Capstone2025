@@ -334,13 +334,43 @@ export default function DemandLineChart() {
     setTriggerError(null);
     try {
       await triggerForecastRun(8);
-      await fetchForecasts();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      setTriggerError(detail ?? "Failed to trigger forecast run.");
-    } finally {
-      setTriggering(false);
+      const status = err.response?.status;
+      // 409 = already in progress — still poll below so UI updates when it finishes
+      if (status !== 409) {
+        setTriggerError(err.response?.data?.detail ?? "Failed to trigger forecast run.");
+        setTriggering(false);
+        return;
+      }
     }
+
+    // Poll every 5 s until the run completes (max 2 min)
+    const maxAttempts = 24;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      try {
+        const [catData, aggData] = await Promise.all([
+          getForecastCategory(8),
+          getForecastAggregate(),
+        ]);
+        if (catData.model_health !== "no_data") {
+          setForecastResponse(catData);
+          setAggregateResponse(aggData);
+          setSelectedCategory((prev) => {
+            if (prev) return prev;
+            const first =
+              catData.categories?.find((c) => c.data_status !== "insufficient") ??
+              catData.categories?.[0];
+            return first?.category ?? null;
+          });
+          break;
+        }
+      } catch {
+        // network hiccup — keep polling
+      }
+    }
+
+    setTriggering(false);
   };
 
   // ---- Loading ----
