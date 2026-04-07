@@ -9,6 +9,7 @@ from app.category_mappings import FOODBANK_CATEGORIES
 from app.constants import BANK_ID
 from app.db.session import SessionLocal
 from app.models.category import Category
+from app.models.dietary_restriction import DietaryRestriction
 from app.models.food_banks import FoodBank
 from app.models.location import Location
 from app.models.role import Role
@@ -75,6 +76,36 @@ def seed_categories(db: Session) -> int:
     return inserted
 
 
+def seed_dietary_restrictions(db: Session) -> None:
+    """Ensure the preset dietary restrictions exist."""
+    presets = [
+        {"name": "Halal", "preset_type": "halal"},
+        {"name": "Kosher", "preset_type": "kosher"},
+    ]
+    for preset in presets:
+        existing = (
+            db.query(DietaryRestriction)
+            .filter(DietaryRestriction.name == preset["name"])
+            .first()
+        )
+        if existing:
+            existing.is_preset = True
+            existing.preset_type = preset["preset_type"]
+            existing.is_active = True
+            continue
+
+        db.add(
+            DietaryRestriction(
+                name=preset["name"],
+                is_preset=True,
+                preset_type=preset["preset_type"],
+                is_active=True,
+            )
+        )
+
+    db.commit()
+
+
 def create_food_bank(db: Session, name: str, address: str | None) -> FoodBank:
     """Create the single tenant food bank record."""
     food_bank = FoodBank(bank_id=BANK_ID, name=name, address=address)
@@ -107,6 +138,7 @@ def bootstrap_database(
 
     seed_roles(db)
     inserted_categories = seed_categories(db)
+    seed_dietary_restrictions(db)
     create_food_bank(db, name=food_bank_name, address=food_bank_address)
     create_location(db, name=location_name, address=location_address)
     admin_user, temporary_password = auth_service.create_user(
