@@ -356,6 +356,7 @@ def list_runs(
             training_start=r.training_start,
             training_end=r.training_end,
             per_category=r.model_params,
+            error_message=r.error_message,
         )
         for r in runs
     ]
