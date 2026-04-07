@@ -404,7 +404,6 @@ export default function DemandLineChart() {
   // ---- No forecast run exists yet ----
   const noData =
     !forecastResponse ||
-    forecastResponse.model_health === "no_data" ||
     forecastResponse.categories.length === 0;
 
   if (noData) {
