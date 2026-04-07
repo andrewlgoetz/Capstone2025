@@ -72,6 +72,11 @@ def main() -> None:
         include_dummy_inventory = (
             input("  Seed dummy inventory for testing? [y/N]: ").strip().lower() == "y"
         )
+        include_dummy_forecast_movements = False
+        if include_dummy_inventory:
+            include_dummy_forecast_movements = (
+                input("  Seed dummy forecast movements too? [y/N]: ").strip().lower() == "y"
+            )
 
         result = bootstrap_service.bootstrap_database(
             db=db,
@@ -82,6 +87,7 @@ def main() -> None:
             admin_email=admin_email,
             admin_name=admin_name,
             include_dummy_inventory=include_dummy_inventory,
+            include_dummy_forecast_movements=include_dummy_forecast_movements,
         )
     finally:
         db.close()
@@ -89,6 +95,10 @@ def main() -> None:
     print(f"\n  Categories inserted: {result.inserted_categories}")
     print(f"  Admin created: {result.admin_email}")
     print(f"  Dummy inventory seeded: {'yes' if result.included_dummy_inventory else 'no'}")
+    print(
+        f"  Dummy forecast movements seeded: "
+        f"{'yes' if result.included_dummy_forecast_movements else 'no'}"
+    )
     _print_password_box(result.admin_email, result.temporary_password)
 
     print("\n" + "=" * 50)

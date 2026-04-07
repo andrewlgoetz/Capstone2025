@@ -26,6 +26,7 @@ class BootstrapResult:
     temporary_password: str
     inserted_categories: int
     included_dummy_inventory: bool
+    included_dummy_forecast_movements: bool
 
 
 def is_bootstrap_required(db: Session) -> bool:
@@ -134,8 +135,15 @@ def bootstrap_database(
     admin_email: str,
     admin_name: str,
     include_dummy_inventory: bool = False,
+    include_dummy_forecast_movements: bool = False,
 ) -> BootstrapResult:
     """Initialize a new deployment exactly once."""
+    if include_dummy_forecast_movements and not include_dummy_inventory:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Dummy forecast movements require dummy inventory to be seeded",
+        )
+
     ensure_bootstrap_required(db)
 
     seed_roles(db)
@@ -154,6 +162,19 @@ def bootstrap_database(
         from seed_db import seed_dummy_inventory_bundle
 
         seed_dummy_inventory_bundle(db, main_location_id=location.location_id)
+    if include_dummy_forecast_movements:
+        from seed_forecast_movements import seed_movements
+
+        seed_movements(
+            bank_id=BANK_ID,
+            weeks=104,
+            scenario="seasonal",
+            spike_category="Canned Goods",
+            spike_multiplier=4.0,
+            seed=42,
+            dry_run=False,
+            reset=True,
+        )
 
     return BootstrapResult(
         admin_email=admin_user.email,
@@ -161,6 +182,7 @@ def bootstrap_database(
         temporary_password=temporary_password,
         inserted_categories=inserted_categories,
         included_dummy_inventory=include_dummy_inventory,
+        included_dummy_forecast_movements=include_dummy_forecast_movements,
     )
 
 
@@ -173,6 +195,7 @@ def reset_migrate_and_bootstrap(
     admin_email: str,
     admin_name: str,
     include_dummy_inventory: bool = False,
+    include_dummy_forecast_movements: bool = False,
 ) -> BootstrapResult:
     """Reset the database, rerun migrations, and apply bootstrap data."""
     from reset_db import reset_and_migrate_database
@@ -190,6 +213,7 @@ def reset_migrate_and_bootstrap(
             admin_email=admin_email,
             admin_name=admin_name,
             include_dummy_inventory=include_dummy_inventory,
+            include_dummy_forecast_movements=include_dummy_forecast_movements,
         )
     finally:
         db.close()

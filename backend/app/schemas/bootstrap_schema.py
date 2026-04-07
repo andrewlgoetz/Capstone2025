@@ -13,6 +13,7 @@ class BootstrapRequest(BaseModel):
     admin_email: EmailStr
     admin_name: str = Field(..., min_length=1)
     include_dummy_inventory: bool = False
+    include_dummy_forecast_movements: bool = False
 
 
 class BootstrapStatusResponse(BaseModel):
@@ -29,4 +30,5 @@ class BootstrapResponse(BaseModel):
     requires_password_change: bool
     inserted_categories: int
     included_dummy_inventory: bool = False
+    included_dummy_forecast_movements: bool = False
     message: str = "Bootstrap completed successfully"
