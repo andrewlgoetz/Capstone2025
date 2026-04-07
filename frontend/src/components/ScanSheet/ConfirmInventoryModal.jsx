@@ -62,6 +62,10 @@ const ConfirmInventoryModal = ({ open, onClose, initial = {}, imageUrl, onConfir
   const UNIT_OPTIONS = ['units','kg','g','lbs','oz','cups','ml','L','packs','boxes','bags','bottles','cans','cartons','blocks','pieces','dozen','trays','rolls','sachets','CUSTOM']
 
   const handleConfirm = () => {
+    if (Number(form.quantity) <= 0) {
+      setError('Quantity must be greater than 0.')
+      return
+    }
     // perform create on backend, then notify parent
     setSaving(true)
     setError(null)
