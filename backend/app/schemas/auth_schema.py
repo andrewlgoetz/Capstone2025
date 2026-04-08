@@ -31,7 +31,6 @@ class UserBase(BaseModel):
     """Base user fields shared across schemas."""
     name: str
     email: EmailStr
-    bank_id: Optional[int] = None
     role_id: Optional[int] = None
 
 
@@ -54,6 +53,7 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     user_id: int
+    bank_id: int
     requires_password_change: bool
     role_name: Optional[str] = None  # Joined from Role table
     locations: list[UserLocationRead] = []  # User's assigned locations

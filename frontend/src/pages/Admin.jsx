@@ -49,7 +49,12 @@ export default function Admin() {
       setFormData({ name: '', email: '', role_id: null });
     },
     onError: (error) => {
-      alert(error.response?.data?.detail || 'Failed to create user');
+      const detail = error.response?.data?.detail;
+    
+      alert(
+        typeof detail == "string"
+        ? detail
+        : JSON.stringify(detail) || 'Failed to create user');
     },
   });
 
