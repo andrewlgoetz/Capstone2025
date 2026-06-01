@@ -1,0 +1,73 @@
+## FoodBank Inventory System - Render Blueprint
+##
+## Deploy steps for a new food bank:
+##   1. Fork this repo on GitHub
+##   2. Go to render.com -> New -> Blueprint -> connect your fork
+##   3. Render provisions the database, backend, and frontend automatically
+##      (migrations run automatically on each deploy via startCommand)
+##   4. After deploy: set CORS_ORIGINS and VITE_API_BASE_URL (see notes below)
+##   5. Free Render web services do not provide Shell access.
+##      Run setup locally instead:
+##      - set DATABASE_URL to the Render Postgres connection string
+##      - set SECRET_KEY to the backend service's SECRET_KEY value
+##      - from /backend run: python setup.py
+##
+## URL wiring (two values to set manually after first deploy):
+##   - In the foodbank-backend service: set CORS_ORIGINS to your frontend URL
+##     e.g. https://foodbank-frontend.onrender.com
+##   - In the foodbank-frontend service: set VITE_API_BASE_URL to your backend URL
+##     e.g. https://foodbank-backend.onrender.com
+##   Then trigger a manual redeploy of the frontend so Vite picks up the new URL.
+##
+## Free-tier notes:
+##   - Backend web service can use plan: free
+##   - Static frontend is free and should not include a plan field
+##   - Free Render Postgres expires 30 days after creation
+##
+## Mobile (future): add the backend URL to CORS_ORIGINS when ready.
+
+databases:
+  - name: foodbank-db
+    databaseName: foodbank
+    user: foodbankuser
+    plan: free
+
+services:
+  # Backend (FastAPI)
+  - type: web
+    name: foodbank-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: foodbank-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+  # Frontend (React/Vite static site)
+  - type: web
+    name: foodbank-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false

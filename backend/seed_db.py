@@ -11,6 +11,7 @@ All seeded users are given the Volunteer (basic user) role under bank_id=1.
 
 import bcrypt
 from datetime import date
+from sqlalchemy import text
 from app.db.session import SessionLocal
 from app.models.food_banks import FoodBank
 from app.models.role import Role
@@ -49,12 +50,13 @@ def seed_food_banks():
     print("Food bank seeded.")
 
 
-def seed_users():
+def seed_users(db_session=None):
+    db_session = db_session or db
     # All users belong to bank_id=1 with basic Volunteer role (role_id=3)
     users_data = [
-        dict(user_id=1, name="Haley Johnson", email="haley@hamfoodbank.ca",  password="password123"),
-        dict(user_id=2, name="Tony Singh",    email="tony@hamfoodbank.ca",   password="password123"),
-        dict(user_id=3, name="Alex Rider",    email="alexr@hamfoodbank.ca",  password="password123"),
+        dict(user_id=2, name="Haley Johnson", email="haley@hamfoodbank.ca",  password="password123"),
+        dict(user_id=3, name="Tony Singh",    email="tony@hamfoodbank.ca",   password="password123"),
+        dict(user_id=4, name="Alex Rider",    email="alexr@hamfoodbank.ca",  password="password123"),
     ]
     for u in users_data:
         user = User(
@@ -66,27 +68,41 @@ def seed_users():
             bank_id=1,
             requires_password_change=False,
         )
-        db.merge(user)
-    db.commit()
+        db_session.merge(user)
+    db_session.commit()
     print("Users seeded.")
 
 
-def seed_locations():
-    # All locations under bank_id=1
+def seed_locations(db_session=None):
+    db_session = db_session or db
+    # Extra locations under bank_id=1; Main Warehouse is created by bootstrap.
     locations = [
-        Location(location_id=1, name="Main Warehouse",    address="500 King St E",              bank_id=1, notes="A2"),
         Location(location_id=2, name="Freezer Room",      address="500 King St E - Unit B",     bank_id=1, notes="C2"),
         Location(location_id=3, name="Front Pantry",      address="500 King St E - Room 1",     bank_id=1, notes="B3"),
         Location(location_id=4, name="Cold Storage",      address="500 King St E - Basement",   bank_id=1, notes="B2"),
     ]
     for loc in locations:
-        db.merge(loc)
-    db.commit()
+        db_session.merge(loc)
+    db_session.commit()
     print("Locations seeded.")
 
 
-def seed_inventory():
-    # All items: bank_id=1, location_ids 1-4, created_by/modified_by from user_ids 1-3
+def seed_inventory(db_session=None, main_location_id=None):
+    db_session = db_session or db
+    # Resolve actual location IDs by name; bootstrap creates Main Warehouse separately.
+    location_ids = {
+        loc.name: loc.location_id
+        for loc in db_session.query(Location).filter(Location.bank_id == 1).all()
+    }
+    if main_location_id is not None:
+        location_ids["Main Warehouse"] = main_location_id
+    expected_locations = {
+        1: "Main Warehouse",
+        2: "Freezer Room",
+        3: "Front Pantry",
+        4: "Cold Storage",
+    }
+    # All items: bank_id=1, location names mapped to actual IDs, created_by/modified_by remapped to user_ids 2-4.
     items = [
         dict(item_id=1,  name="Canned Beans",       category="Canned Beans",                    barcode="100000111001", quantity=250, unit="cans",    expiration_date=date(2026, 5,  1),  location_id=1, bank_id=1, created_by=1, modified_by=2),
         dict(item_id=2,  name="Peanut Butter",       category="Peanut Butter",                   barcode="100000111002", quantity=120, unit="jars",    expiration_date=date(2026, 2, 15),  location_id=1, bank_id=1, created_by=2, modified_by=2),
@@ -137,31 +153,83 @@ def seed_inventory():
     ]
 
     for i in items:
+        payload = dict(i)
+        if payload["created_by"] in (1, 2, 3):
+            payload["created_by"] += 1
+        if payload["modified_by"] in (1, 2, 3):
+            payload["modified_by"] += 1
+        payload["location_id"] = location_ids[expected_locations[payload["location_id"]]]
         item = InventoryItem(
-            item_id=i["item_id"],
-            name=i["name"],
-            category=i["category"],
+            item_id=payload["item_id"],
+            name=payload["name"],
+            category=payload["category"],
             category_notes=None,
-            barcode=i["barcode"],
-            quantity=i["quantity"],
-            unit=i["unit"],
-            expiration_date=i["expiration_date"],
-            location_id=i["location_id"],
-            bank_id=i["bank_id"],
-            created_by=i["created_by"],
-            modified_by=i["modified_by"],
+            barcode=payload["barcode"],
+            quantity=payload["quantity"],
+            unit=payload["unit"],
+            expiration_date=payload["expiration_date"],
+            location_id=payload["location_id"],
+            bank_id=payload["bank_id"],
+            created_by=payload["created_by"],
+            modified_by=payload["modified_by"],
         )
-        db.merge(item)
-    db.commit()
+        db_session.merge(item)
+    db_session.commit()
     print("Inventory seeded.")
 
 
+def reset_sequences(db_session):
+    """Reset all PostgreSQL sequences to be above the current max ID in each table.
+
+    When rows are inserted with explicit primary key values (as in seeding),
+    PostgreSQL's auto-increment sequences are not advanced. This causes the next
+    auto-generated ID to collide with an already-seeded row. This function
+    detects all sequences and resets each one to MAX(pk) so subsequent inserts
+    work correctly. No-op on SQLite and other non-PostgreSQL databases.
+    """
+    engine = db_session.get_bind()
+    if engine.dialect.name != "postgresql":
+        return
+
+    rows = db_session.execute(text("""
+        SELECT
+            s.relname   AS seq_name,
+            n.nspname   AS seq_schema,
+            t.relname   AS tbl_name,
+            a.attname   AS col_name
+        FROM pg_class s
+        JOIN pg_depend d      ON d.objid        = s.oid
+        JOIN pg_class t       ON t.oid           = d.refobjid
+        JOIN pg_attribute a   ON a.attrelid      = t.oid
+                              AND a.attnum        = d.refobjsubid
+        JOIN pg_namespace n   ON n.oid           = s.relnamespace
+        WHERE s.relkind = 'S'
+          AND d.deptype  = 'a'
+    """)).fetchall()
+
+    for seq_name, seq_schema, tbl_name, col_name in rows:
+        qualified_seq = f'"{seq_schema}"."{seq_name}"'
+        db_session.execute(text(
+            f"SELECT setval('{qualified_seq}', "
+            f"COALESCE((SELECT MAX({col_name}) FROM {tbl_name}), 1))"
+        ))
+
+    db_session.commit()
+    print("Sequences reset.")
+
+
+def seed_dummy_inventory_bundle(db_session=None, main_location_id=None):
+    db_session = db_session or db
+    seed_users(db_session)
+    seed_locations(db_session)
+    seed_inventory(db_session, main_location_id=main_location_id)
+    reset_sequences(db_session)
+
+
 def main():
-    seed_roles()
-    seed_food_banks()
-    # # seed_users() skipped — users are already seeded by the auth migration (e5f6g7h8i9j0)
-    seed_locations()
-    seed_inventory()
+    # seed_roles()
+    # seed_food_banks()
+    seed_dummy_inventory_bundle()
     print("\nAll data seeded successfully!")
     print("\nTest user credentials (all passwords: password123):")
     print("  haley@hamfoodbank.ca")

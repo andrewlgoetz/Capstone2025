@@ -12,6 +12,7 @@ const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
   }, [open])
 
   const handleConfirm = () => {
+    if (Number(quantity) <= 0) return
     onConfirm?.({ barcode: initial.barcode, item_id: initial.item_id, quantity: Number(quantity) })
     onClose?.()
   }
@@ -35,7 +36,7 @@ const ConfirmIncreaseModal = ({ open, onClose, initial = {}, imageUrl, onConfirm
             <TextField label="Category" value={initial.category || ''} InputProps={{ readOnly: true }} />
 
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <IconButton size="small" onClick={() => setQuantity((q) => Math.max(0, Number(q || 0) - 1))} aria-label="decrease">
+              <IconButton size="small" onClick={() => setQuantity((q) => Math.max(1, Number(q || 0) - 1))} aria-label="decrease">
                 <RemoveIcon />
               </IconButton>
 

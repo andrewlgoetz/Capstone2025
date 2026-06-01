@@ -379,7 +379,11 @@ const Home = () => {
                 setSnack({ open: true, message: `Added ${payload.quantity} — new qty ${res.quantity}`, severity: 'success' })
                 setScanInTarget(null)
               })
-              .catch(() => setSnack({ open: true, message: 'Increase failed', severity: 'warning' }))
+              .catch((err) => {
+                console.error('Increase failed', err);
+                const msg = err?.response?.data?.detail || err?.message || 'Increase failed';
+                setSnack({ open: true, message: msg, severity: 'warning' });
+              })
           }}
         />
       )}

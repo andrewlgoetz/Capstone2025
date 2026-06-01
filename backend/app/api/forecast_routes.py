@@ -24,8 +24,11 @@ by the existing reports / dashboard features.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -207,8 +210,51 @@ def get_forecasts(
 # POST /forecasts/run
 # ---------------------------------------------------------------------------
 
-@router.post("/run", response_model=RunTriggeredResponse)
+def _expire_stuck_runs(bank_id: int, db: Session, max_minutes: int = 3) -> None:
+    """Mark 'running' jobs older than max_minutes as 'failed'.
+
+    A request that timed out on the host (e.g. Render killing a long HTTP
+    connection) leaves the ForecastRun record in status='running' forever,
+    which blocks all future manual runs via the has_running_job() check.
+    """
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(minutes=max_minutes)
+    stuck = (
+        db.query(ForecastRun)
+        .filter(
+            ForecastRun.bank_id == bank_id,
+            ForecastRun.status == "running",
+            ForecastRun.run_timestamp < cutoff,
+        )
+        .all()
+    )
+    for r in stuck:
+        r.status = "failed"
+        r.error_message = "Run timed out — expired automatically."
+    if stuck:
+        db.commit()
+
+
+def _run_forecast_background(bank_id: int, user_id: int, weeks_ahead: int) -> None:
+    """Entry point for BackgroundTasks: opens its own DB session."""
+    logger.info("Background forecast starting for bank %d (user %s)", bank_id, user_id)
+    db = SessionLocal()
+    try:
+        run_forecast(
+            bank_id=bank_id,
+            db=db,
+            weeks_ahead=weeks_ahead,
+            triggered_by_user_id=user_id,
+        )
+        logger.info("Background forecast completed for bank %d", bank_id)
+    except Exception as exc:
+        logger.error("Background forecast failed for bank %d: %s", bank_id, exc, exc_info=True)
+    finally:
+        db.close()
+
+
+@router.post("/run", response_model=RunTriggeredResponse, status_code=202)
 def trigger_run(
+    background_tasks: BackgroundTasks,
     weeks_ahead: int = Query(DEFAULT_WEEKS_AHEAD, ge=1, le=26),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.REPORTS_VIEW)),
@@ -216,14 +262,17 @@ def trigger_run(
     """
     Manually trigger a new forecast run for the current user's food bank.
 
-    Rate-limited to one run per hour per bank to prevent excessive compute
-    from repeated manual triggers.  The run executes synchronously so the
-    response includes the run_id of the newly-created and fully-completed run.
+    Returns 202 immediately and runs the forecast in a background task so
+    that long-running computation does not block or time out the HTTP request.
+    The caller should poll GET /forecasts/category until model_health != 'no_data'.
 
     Returns HTTP 429 if a run was completed within the last hour.
     Returns HTTP 409 if a run is currently in progress.
     """
     bank_id = current_user.bank_id
+
+    # Expire any runs stuck in 'running' from a previous timed-out request
+    _expire_stuck_runs(bank_id, db)
 
     # 409 if already running
     if has_running_job(bank_id, db):
@@ -256,16 +305,13 @@ def trigger_run(
                 ),
             )
 
-    run_id = run_forecast(
-        bank_id=bank_id,
-        db=db,
-        weeks_ahead=weeks_ahead,
-        triggered_by_user_id=current_user.user_id,
+    background_tasks.add_task(
+        _run_forecast_background, bank_id, current_user.user_id, weeks_ahead
     )
     return RunTriggeredResponse(
-        run_id=run_id,
+        run_id="pending",
         status="started",
-        message="Forecast run completed successfully.",
+        message="Forecast run started. Poll GET /forecasts/category for results.",
     )
 
 
@@ -310,6 +356,7 @@ def list_runs(
             training_start=r.training_start,
             training_end=r.training_end,
             per_category=r.model_params,
+            error_message=r.error_message,
         )
         for r in runs
     ]
@@ -448,11 +495,13 @@ def _background_run_forecast(bank_id: int) -> None:
     request-scoped session is already closed.  We create a new session here
     and close it ourselves.
     """
+    logger.info("Auto-staleness forecast starting for bank %d", bank_id)
     db = SessionLocal()
     try:
         run_forecast(bank_id=bank_id, db=db)
-    except Exception:
-        pass   # errors are recorded in the forecast_runs row; don't crash the worker
+        logger.info("Auto-staleness forecast completed for bank %d", bank_id)
+    except Exception as exc:
+        logger.error("Auto-staleness forecast failed for bank %d: %s", bank_id, exc, exc_info=True)
     finally:
         db.close()
 

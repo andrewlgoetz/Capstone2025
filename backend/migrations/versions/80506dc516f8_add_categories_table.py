@@ -34,36 +34,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_categories_category_id'), 'categories', ['category_id'], unique=False)
 
-    # Seed with nonprofit categories
-    categories = [
-        {"name": "Canned & Packaged", "display_order": 1},
-        {"name": "Fresh Produce", "display_order": 2},
-        {"name": "Dairy & Eggs", "display_order": 3},
-        {"name": "Proteins & Meat", "display_order": 4},
-        {"name": "Grains & Pasta", "display_order": 5},
-        {"name": "Condiments & Oils", "display_order": 6},
-        {"name": "Beverages", "display_order": 7},
-        {"name": "Other", "display_order": 8},
-    ]
-
-    # Insert categories
-    from sqlalchemy import table, column, String, Integer, Boolean
-    categories_table = table('categories',
-        column('name', String),
-        column('display_order', Integer),
-        column('is_active', Boolean)
-    )
-
-    for cat in categories:
-        op.execute(
-            categories_table.insert().values(
-                name=cat["name"],
-                display_order=cat["display_order"],
-                is_active=True
-            )
-        )
-
-
 def downgrade() -> None:
     """Downgrade schema."""
     op.drop_index(op.f('ix_categories_category_id'), table_name='categories')

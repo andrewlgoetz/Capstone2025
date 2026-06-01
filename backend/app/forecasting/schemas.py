@@ -116,6 +116,7 @@ class ForecastRunSummary(BaseModel):
     training_start: Optional[date]
     training_end: Optional[date]
     per_category: Optional[Dict[str, Any]]   # model_params JSONB
+    error_message: Optional[str]
 
 
 class ForecastRunsResponse(BaseModel):

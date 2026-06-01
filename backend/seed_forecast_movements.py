@@ -73,7 +73,7 @@ from app.models.inventory_movement import InventoryMovement, MovementType
 CATEGORY_BASELINE: Dict[str, Tuple[float, float]] = {
     # category          (mean, std_dev)   std ≈ 7-8 % of mean so weekly series
     # look like a learnable pattern rather than white noise.
-    "Canned Goods":    (120.0,  8.0),
+    "Canned Goods":    (102.5,  1.5),
     "Grains":          ( 95.0,  7.0),
     "Produce":         ( 85.0,  7.0),
     "Dairy":           ( 55.0,  4.0),
@@ -136,6 +136,7 @@ def _weekly_demand(
     week_index: int,       # 0-based index within the batch
     total_weeks: int,
     rng: random.Random,
+    week_dt: Optional[datetime] = None,
 ) -> int:
     """
     Compute a single week's demand quantity for one category.
@@ -168,6 +169,16 @@ def _weekly_demand(
             progress = week_index / max(total_weeks - 1, 1)
             multiplier = 0.2 + 0.8 * progress
             qty = base * multiplier
+        else:
+            qty = base
+
+    elif scenario == "seasonal":
+        # Spike the target category in May (~180 units), normal otherwise.
+        # Uses first-word prefix matching so "Canned Goods" targets all "Canned *" items.
+        prefix = spike_category.lower().split()[0] if spike_category else ""
+        is_seasonal_target = prefix and category.lower().startswith(prefix)
+        if is_seasonal_target and week_dt is not None and week_dt.month == 5:
+            qty = 180.0 + rng.gauss(0, 1.5)
         else:
             qty = base
 
@@ -212,8 +223,8 @@ def seed_movements(
             start_monday = last_monday + timedelta(weeks=1)
             print(f"Last OUTBOUND week detected: {last_monday.date()}  -> appending from {start_monday.date()}")
         else:
-            # No history yet — start 12 weeks ago so the model has a training window
-            start_monday = _monday(datetime.now(timezone.utc)) - timedelta(weeks=12)
+            # No history yet — start `weeks` weeks ago so all generated data lands in the past
+            start_monday = _monday(datetime.now(timezone.utc)) - timedelta(weeks=weeks)
             print(f"No existing OUTBOUND data found -> seeding from scratch starting {start_monday.date()}")
 
         # --- Gather items ---
@@ -249,6 +260,7 @@ def seed_movements(
                     week_index=week_offset,
                     total_weeks=weeks,
                     rng=rng,
+                    week_dt=week_dt,
                 )
                 if qty == 0:
                     continue  # zero demand week -- no movement record
@@ -339,7 +351,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--scenario",
-        choices=["normal", "spike", "drop", "intermittent", "recovery"],
+        choices=["normal", "spike", "drop", "intermittent", "recovery", "seasonal"],
         default="normal",
         help="Demand pattern to generate (default: normal)",
     )
@@ -371,7 +383,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Validate spike_category is required for non-normal scenarios
-    if args.scenario in ("spike", "drop", "intermittent", "recovery") and not args.spike_category:
+    if args.scenario in ("spike", "drop", "intermittent", "recovery", "seasonal") and not args.spike_category:
         parser.error(
             f"--spike-category is required when --scenario={args.scenario}\n"
             f"  Available categories: {', '.join(sorted(CATEGORY_BASELINE))}"

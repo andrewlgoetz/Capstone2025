@@ -332,15 +332,58 @@ export default function DemandLineChart() {
   const handleTriggerRun = async () => {
     setTriggering(true);
     setTriggerError(null);
+
+    // Snapshot the current run_id so we can detect when a new run completes
+    const previousRunId = forecastResponse?.run_id ?? null;
+
     try {
       await triggerForecastRun(8);
-      await fetchForecasts();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      setTriggerError(detail ?? "Failed to trigger forecast run.");
-    } finally {
-      setTriggering(false);
+      const status = err.response?.status;
+      // 409 = already in progress — still poll below so UI updates when it finishes
+      if (status !== 409) {
+        setTriggerError(err.response?.data?.detail ?? "Failed to trigger forecast run.");
+        setTriggering(false);
+        return;
+      }
     }
+
+    // Poll every 5 s until the run completes (max 5 min)
+    const maxAttempts = 60;
+    let found = false;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      try {
+        const [catData, aggData] = await Promise.all([
+          getForecastCategory(8),
+          getForecastAggregate(),
+        ]);
+        // A new run has completed when run_id changed OR model_health is no longer no_data
+        const newRunArrived = catData.run_id && catData.run_id !== previousRunId;
+        if (newRunArrived || catData.model_health !== "no_data") {
+          setForecastResponse(catData);
+          setAggregateResponse(aggData);
+          setSelectedCategory((prev) => {
+            if (prev) return prev;
+            const first =
+              catData.categories?.find((c) => c.data_status !== "insufficient") ??
+              catData.categories?.[0];
+            return first?.category ?? null;
+          });
+          found = true;
+          break;
+        }
+      } catch {
+        // network hiccup — keep polling
+      }
+    }
+
+    // If polling timed out, do one final refresh to pick up any completed run
+    if (!found) {
+      fetchForecasts();
+    }
+
+    setTriggering(false);
   };
 
   // ---- Loading ----
@@ -374,7 +417,6 @@ export default function DemandLineChart() {
   // ---- No forecast run exists yet ----
   const noData =
     !forecastResponse ||
-    forecastResponse.model_health === "no_data" ||
     forecastResponse.categories.length === 0;
 
   if (noData) {

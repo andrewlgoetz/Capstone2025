@@ -37,8 +37,12 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set
 
+import logging
+
 import numpy as np
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.forecasting.extractor import extract_outbound
 from app.forecasting.models import (
@@ -261,8 +265,9 @@ def _execute_pipeline(
         forecaster = select_forecaster(series)
         try:
             forecaster.fit(series)
-        except Exception:
+        except Exception as exc:
             # Graceful fallback: naive mean never fails on non-empty data
+            logger.warning("Forecaster %s failed for category %r: %s — falling back to NaiveMean", forecaster.name, category, exc)
             forecaster = NaiveMeanForecaster()
             forecaster.fit(series)
 

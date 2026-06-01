@@ -1,12 +1,11 @@
 from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, lazyload
+from sqlalchemy.exc import IntegrityError
 from app.db.session import SessionLocal
 from app.models.inventory import InventoryItem
 from app.models.inventory_movement import InventoryMovement, MovementType
 from app.models.dietary_restriction import DietaryRestriction
 from app.schemas.inventory_schema import InventoryCreate, InventoryUpdate
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from app.constants import BANK_ID
 
@@ -198,6 +197,7 @@ def adjust_item_quantity(item_id: int, delta: int, db: Session, movement_type=No
     db_item = (
         db.query(InventoryItem)
         .filter(InventoryItem.item_id == item_id)
+        .options(lazyload("*"))  # prevent joined loads — FOR UPDATE fails on outer joins in PostgreSQL
         .with_for_update()
         .first()
     )
