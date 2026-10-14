@@ -11,7 +11,7 @@ Nika Khajehpour &lt;khajehn@mcmaster.ca> \
 Taaliah Ayub &lt;ayubt@mcmaster.ca> \
 Victor Moucattash &lt;moucattv@mcmaster.ca> 
 
-## Accessing the Deployed App
+## Accessing the Deployed App (Live until November 13, 2026):
 
 The application is live at:
 
