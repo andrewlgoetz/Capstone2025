@@ -15,17 +15,17 @@ Victor Moucattash &lt;moucattv@mcmaster.ca>
 
 The application is live at:
 
-**Frontend:** https://foodbank-frontend-tf1f.onrender.com
+**Frontend:** https://foodbank-frontend-riy5.onrender.com
 
-**Backend API:** https://foodbank-backend-8qwm.onrender.com
+**Backend API:** https://foodbank-backend-95be.onrender.com
 
-**API Docs (Swagger):** https://foodbank-backend-8qwm.onrender.com/docs
+**API Docs (Swagger):** https://foodbank-backend-95be.onrender.com/docs
 
 ### Test Account Credentials
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@hamfoodbank.org | admin123 |
+| Admin | admin@myfoodbank.org | Admin@123 |
 
 > **Note:** The app is hosted on Render's free tier. If the page takes 30–60 seconds to load, the server is spinning up from idle, it's normal.
 
